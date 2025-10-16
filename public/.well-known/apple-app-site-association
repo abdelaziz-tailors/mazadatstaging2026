@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "S2QF6L6CJZ.com.vlogs.app",
+        "paths": [ "/reels/*" ]
+      }
+    ]
+  }
+}

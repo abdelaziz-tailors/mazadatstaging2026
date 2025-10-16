@@ -1,0 +1,29 @@
+.banner-content .header-icon {left: -30px;right: auto;}
+.header .header-nav .main-nav > li:last-child {margin-right: 20px!important;}
+.search-input {float: right; width: 21%}
+.select2-container .select2-selection--single {height: 30px!important;}
+.select2-container--default .select2-selection--single .select2-selection__rendered {line-height: 32px!important;}
+.select2-container--default .select2-selection--single .select2-selection__arrow b {top: 32% !important;left: 97% !important}
+.search-input input {    padding: 0 32px 0 10px;}
+.search-input > i.bficon {right: 9px;left: auto;}
+.search-input.search-map-line > i {right: 9px;left: auto;}
+.search-input.search-line::before {left: 0;right: auto}
+.search-input.search-map-line::before {left: 0;right: auto}
+.search-input.search-line {width: 25%}
+.search-input.search-map-line {width: 19%}
+.search-input.search-calendar-line > i {left: auto;right: 10px}
+
+
+.section-header-one .section-title::before {left: -5px;right: auto}
+.section-header-two .section-title::before {left: -5px;right: auto}
+.section-header-three .section-title::before {left: -5px;right: auto}
+.owl_navs_div .owl-nav{text-align: left!important;}
+.doctors-section .section-header-one .section-title::before {left: -41px}
+.articles-section .section-header-one .section-title::before {left: -41px}
+.doctor-amount {left: 20px; right: auto}
+.doc-pro-location p i {margin-left: 8px; margin-right:0}
+.reviews-ratings span {margin:0 0 0 4px}
+/*.section-header-one {direction: rtl}*/
+
+
+

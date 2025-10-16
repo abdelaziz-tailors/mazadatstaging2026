@@ -1,0 +1,132 @@
+// site-header
+.site-header{
+	&.style-2{
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		.main-bar{
+			background-color:transparent;
+			box-shadow:none;
+		}
+		.extra-nav{
+			@include respond ('desktop'){
+				height:120px;
+			}
+			@include transitionMedium;
+		}
+		.is-fixed{
+			.main-bar{
+				background:var(--gradient-sec);
+				box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .05);
+			}
+			.header-nav{
+				.nav{
+					&>li{
+						&>a{
+							@include respond ('tab-port-min'){
+								padding-top:30px;
+								padding-bottom:30px;
+							}
+						}
+					}
+				}
+			}
+			.logo-header{
+				height:80px;
+				img{
+					height:80px;
+				}
+			}
+			.extra-nav{
+				height:80px;
+			}
+		}
+		.header-nav{
+			.nav{
+				&>li{
+					&>a{
+						@include respond ('desktop'){
+							//padding:52px 20px;
+						}
+						@include respond ('tab-port-min'){
+							color:#fff;
+						}
+					}
+				}
+			}
+		}
+		.logo-header{
+			@include respond ('desktop'){
+				height:120px;
+				@include transitionMedium;
+				img{
+					height:120px;
+					@include transitionMedium;
+				}
+			}
+		}
+		@include respond ('phone'){
+			.extra-nav{
+				display:none;
+			}
+		}
+	}
+	&.center{
+		.logo-header {
+			position: absolute;
+			transform: translate(-50%);
+			-moz-transform: translate(-50%);
+			-webkit-transform: translate(-50%);
+			-o-transform: translate(-50%);
+			position: absolute;
+			left: 50%;
+			text-align: center;
+			@include respond('tab-port'){	
+				position: unset;
+				transform:unset;
+				-moz-transform:unset;
+				-webkit-transform: unset;
+				-o-transform: unset;
+				position: unset;
+				left: auto;
+				text-align: left;
+			}
+		}
+		.header-nav .nav {
+			display: inline-block;
+			float: left;
+			width: 40%;
+			@include respond('tab-port'){
+				width: 100%;
+				float: none;
+			}
+			& > li{
+				display: inline-block;
+			}
+			&.navbar-left {
+				text-align: right;
+				margin-right:150px;
+				@include respond('wide-desktop'){
+					margin-right:120px;					
+				}
+				@include respond('tab-port'){
+					text-align: left;
+					margin-right:0;
+				}
+			}
+			&.navbar-right {
+				float: right;
+				margin-left:150px;
+				@include respond('wide-desktop'){
+					margin-left:120px;
+				}
+				@include respond('tab-port'){
+					float: none;
+					margin-left:0;
+				}
+				
+			}
+		}
+	}
+}

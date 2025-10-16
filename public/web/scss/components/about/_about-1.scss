@@ -1,0 +1,52 @@
+.about-bx1{
+	.dz-media{
+		overflow:visible;
+		padding-left: 30px;
+		padding-right: 30px;
+		padding-top: 40px;
+		padding-bottom: 40px;
+		img{
+			width:auto;
+			box-shadow: 4px 6.928px 60px 0px rgba(0, 0, 0, 0.1);
+		}
+		.app-2{
+			position: absolute;
+			right: 40px;
+			top: 50%;
+			transform: translateY(-50%);
+		}
+		.group-img{
+			transform: scale(1.22);
+			z-index: -1;
+			margin-left:-20px;
+		}
+		svg{
+			z-index: -1;
+			position:absolute;
+			width:100%;
+			transform: scale(1.2);
+			height:auto;
+			left:0;
+			bottom:0;
+		}
+		@include respond ('tab-port'){
+			svg,
+			.group-img{
+				transform:scale(1);
+			}
+		}
+		@include respond ('phone-land'){
+			padding:0;
+		}
+		@include respond ('phone'){
+			.app-1{
+				width:200px;
+			}
+			.app-2{
+				width: 175px;
+				right:0;
+			}
+		}
+		
+	}
+}

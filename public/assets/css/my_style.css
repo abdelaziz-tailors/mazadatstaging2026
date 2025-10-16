@@ -1,0 +1,75 @@
+.main_cat_li_div h4 {color: #fff!important;}
+.main_cat_li_div {background: #334155!important;}
+.main_cat_li_div.active {background: #fff!important;}
+.main_cat_li_div.active h4{color: #334155!important;}
+.main_cat_icon {background: none!important;}
+
+.header-one.header-space .header-nav {height: 80px!important;}
+.header-one.header-space .header-nav .logo img {width: 65px!important;}
+.doctor-profile-widget.doc-grid .doc-content .review-price p {font-size: 16px!important;}
+.doc-pro-info .doc-pro-name a {font-size: 17px!important;}
+.doc-pro-info {padding-bottom: 3px!important;}
+.doctor-content.content {padding: 30px 0 }
+.doctor-profile-widget.doc-grid .doc-pro-img .doctor-profile-img {max-height: 295px!important;border-radius: 8px!important;}
+.clinic-booking a.book_btn {width: 75%}
+.clinic-booking a.fav-btn {padding: 9px 12px;}
+.clini-infos {padding-left: 3px}
+.user-tabs .nav-tabs.nav-tabs-bottom > li > a.active, .user-tabs .nav-tabs.nav-tabs-bottom > li > a.active:hover, .user-tabs .nav-tabs.nav-tabs-bottom > li > a.active:focus {    background: #efefef;border-radius: 3px;}
+.main-wrapper.home-twelve .services-section-fourteen .our-services-list {margin: 0px 5px;}
+
+@media (min-width: 991px) and (max-width: 1400px) {
+    .header-one .container {max-width: 1400px}
+    .header .header-nav .logo {width: 90px}
+
+}
+
+
+.search-box-3 .select2-container .select2-selection--single {height: 38px!important;border-radius: 10px;}
+.search-box-3  .select2-container--default .select2-selection--single .select2-selection__rendered {line-height: 36px!important;color: #858789;}
+.header.header-fixed {    border-bottom: 1px solid #ddd;}
+.breadcrumb-bar-two {background: #f2f6f6}
+.footer-one .social-icon ul li a {font-size: 26px}
+.footer-one .social-icon ul li {margin-right: 0;margin-bottom: 15px;display: block;}
+.footer-one .social-icon ul {display: block;text-align: center;}
+.search_img {width: 22px;position: absolute;left: 35%;}
+.theiaStickySidebar .collapse:not(.show) {display: block}
+
+.doc-info-cont {flex: 0 0 400px}
+
+.doc-location {font-size: 17px!important;}
+.doc-department, .doc-speciality {font-size: 18px!important;}
+.doctor-widget .doc-name {font-size:24px}
+.clini-infos ul li {    display: block;line-height: 30px;color: #4E4852;font-size: 16px;font-weight: 500;}
+.clini-infos ul li i {margin-right: 12px;margin-left: 5px;font-size:20px!important;}
+.clini-infos ul li .rating i {margin-right: 0;margin-left: 0;font-size:20px!important;}
+.clini-infos ul li img {margin-right: 5px; width: 32px}
+.comment-content {width: 60%}
+.comment-date {position:absolute;bottom: 0;right: 3px}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

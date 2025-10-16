@@ -1,0 +1,72 @@
+.dz-team{
+	// Style 2
+	&.style-2{
+		.dz-position{
+			font-size: 15px;
+			font-weight: 500;
+		}
+		.dz-media{
+			border-radius: var(--border-radius-base);
+		}
+		.team-social{
+			position: absolute;
+			top: 10px;
+			right: 10px;
+			
+			li{
+				display: block;
+				margin-bottom: -35px;
+				@include transitionMedium;
+				
+				&.share{
+					height: 35px;
+					width: 35px;
+					line-height: 35px;
+					text-align: center;
+					font-size: 16px;
+					background-color: var(--secondary);
+					display: block;
+					border-radius: var(--border-radius-base);
+					color: #fff;
+					@include transitionMedium;
+					z-index: 1;
+					position: relative;
+					i{
+						position: relative;
+						@include transitionMedium;
+						display: block;
+					}
+				}
+				a{
+					height: 35px;
+					width: 35px;
+					line-height: 35px;
+					text-align: center;
+					font-size: 15px;
+					background-color: var(--secondary);
+					display: block;
+					border-radius: var(--border-radius-base);
+					color: #fff;
+					@include transitionMedium;
+					
+					&:hover{
+						background-color: var(--primary);						
+					}
+				}
+			}
+		}
+		&:hover{
+			.team-social{
+				li{
+					margin-bottom: 10px;
+					&.share{
+						background-color: var(--primary);
+						i{
+							transform: rotate(45deg);
+						}
+					}
+				}
+			}
+		}
+	}
+}

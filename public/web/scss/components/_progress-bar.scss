@@ -1,0 +1,57 @@
+// Progress Bar
+.progress-bx{
+	overflow: hidden;
+	
+	// Progress Info
+	.progress-info{
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 15px;
+		.title{
+			margin-bottom: 0;
+		}
+		.progress-value{
+			margin-bottom: 0;
+		}
+	}
+	
+	// Progress
+	.progress{
+		overflow: unset;		
+		.progress-bar{
+			position: relative;
+			overflow: unset;
+		}
+	}
+	
+	// Style 1
+	&.style-1{
+		.progress{
+			background-color: #d5e6ff;
+			height: 10px;
+			border-radius:var(--border-radius-base);
+			.progress-bar{
+				border-radius:var(--border-radius-base);
+				background: var(--gradient-sec);
+				box-shadow: 0px 10px 24px 0px rgba(0, 195, 255, 0.3);
+				animation-duration: 5s;
+				animation-name: myanimation;
+				transition: all 5s ease 0s;
+			}
+		}
+		.title,
+		.progress-value{
+			font-size:20px;
+			font-family: var(--font-family-title);
+		}
+	}
+	
+}
+
+@keyframes myanimation {
+  0% {
+    width: 0; } }
+@keyframes myanimation {
+  0% {
+    width: 0; } }

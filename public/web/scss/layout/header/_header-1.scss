@@ -1,0 +1,117 @@
+// site-header
+.site-header{
+	&.style-1{
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		.main-bar{
+			background:transparent;
+			box-shadow:none;
+			.container{
+				padding: 0 30px;
+				box-shadow: 1px 1.732px 60px 0px rgba(0, 0, 0, 0.1);
+				border-radius:var(--border-radius-base);
+				@include respond ('tab-land'){
+					padding:0 20px;
+				}
+			}
+		}
+		.is-fixed{
+			.main-bar{
+				box-shadow: 1px 1.732px 60px 0px rgba(0, 0, 0, 0.1);
+				background-color:#fff;
+				.container{
+					box-shadow:none;
+				}
+			}
+		}
+		.main-bar-wraper{
+			margin-top:30px;
+			@include respond ('phone-land'){
+				margin-top:0px;
+			}
+		}
+		.top-bar + .main-bar-wraper{
+			margin-top:0;
+			@include respond ('tab-port'){
+				margin-top:20px;
+			}
+			@include respond ('phone-land'){
+				margin-top:0px;
+			}
+		}
+		.top-bar{
+			background-color:transparent;
+			border-bottom:0;
+		}
+		@include respond ('phone-land'){
+			top:0;
+			position:relative;
+			background-color:#fff;
+			box-shadow: 1px 1.732px 60px 0px rgba(0, 0, 0, 0.1);
+			.main-bar{
+				.container{
+					box-shadow:none;
+					border-radius:0;
+				}
+			}
+		}
+		@include respond ('phone'){
+			.extra-nav{
+				display:none;
+			}
+		}
+	}
+	&.center{
+		.logo-header {
+			position: absolute;
+			transform: translate(-50%);
+			-moz-transform: translate(-50%);
+			-webkit-transform: translate(-50%);
+			-o-transform: translate(-50%);
+			position: absolute;
+			left: 50%;
+			text-align: center;
+			@include respond('tab-port'){	
+				position: unset;
+				transform:unset;
+				-moz-transform:unset;
+				-webkit-transform: unset;
+				-o-transform: unset;
+				position: unset;
+				left: auto;
+				text-align: left;
+			}
+		}
+		.header-nav .nav {
+			display: inline-block;
+			float: left;
+			width: 40%;
+			@include respond('tab-port'){
+				width: 100%;
+				float: none;
+			}
+			& > li{
+				display: inline-block;
+			}
+			&.navbar-left {
+				text-align: right;
+				margin-right:100px;
+				@include respond('tab-port'){
+					text-align: left;
+					margin-right:0;
+				}
+			}
+			&.navbar-right {
+				float: right;
+				margin-left:100px;
+				@include respond('tab-port'){
+					float: none;
+					margin-left:0;
+				}
+				
+			}
+		}
+	}
+}

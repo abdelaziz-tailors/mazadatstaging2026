@@ -1,0 +1,41 @@
+.dz-card{
+	&.style-2{
+		.dz-media{
+			img{
+				border-radius:var(--border-radius-base);
+			}
+			.dz-badge-list{
+				position:absolute;
+				top:20px;
+				left:20px;
+			}
+			.dz-badge{
+				background-color:var(--primary);
+				color:#fff;
+				border-radius:var(--border-radius-base);
+				padding: 8px 15px;
+				font-size: 12px;
+				text-transform:uppercase;
+			}
+		}
+		.dz-info{
+			padding:0;
+			padding-top:30px;
+		}
+		.meta-bottom{
+			display:flex;
+			align-items:center;
+			justify-content:space-between;
+		}
+		@include respond ('phone'){
+			.dz-media{
+				.dz-badge{	
+					top:10px;
+					left:10px;
+					padding: 5px 10px;
+					font-size: 14px;
+				}
+			}
+		}
+	}
+}

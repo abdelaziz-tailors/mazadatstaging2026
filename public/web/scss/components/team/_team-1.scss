@@ -1,0 +1,73 @@
+.dz-team{
+	// Style 1
+	&.style-1{
+		position:relative;
+		.dz-media{
+			img{
+				border-radius:var(--border-radius-base);
+			}
+		}
+		.team-social{
+			position: absolute;
+			left: 50%;
+			bottom: 140px;
+			transform: translateX(-50%);
+			li{
+				display:inline-block;
+				position: relative;
+				opacity:0;
+				transform: translateY(80px);
+				@for $i from 1 to 4 {
+				   &:nth-child(#{$i}) { transition: $i * 0.2s; }
+				}
+				a{
+					display:inline-block;
+					margin: 0 5px;
+					height:35px;
+					line-height:35px;
+					width:35px;
+					border-radius:35px;
+					text-align:center;
+					color:#fff;
+					background-color:var(--primary);
+					&.twitter{
+						background-color:#15b7ec;
+					}
+					&.facebook{
+						background-color:#0160e7;
+					}
+					&.pintrest{
+						background-color:#fe4c1c;
+					}
+				}
+			}
+		}
+		.dz-position{
+			font-size:15px;
+			margin-bottom:0;
+			font-weight: 400;
+			font-family:var(--font-family-base);
+		}
+		.dz-name{
+			margin-bottom:3px;
+		}
+		.dz-content{
+			position:absolute;
+			left:20px;
+			bottom:20px;
+			width:calc(100% - 40px);
+			background-color:#fff;
+			border-radius:var(--border-radius-base);
+			padding:20px 20px;
+		}
+		&:hover,
+		&.active{
+			.team-social{
+				li{
+					transform: translateY(0px);
+					opacity:1;
+				}
+			}
+		}
+	}
+}

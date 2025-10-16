@@ -1,0 +1,63 @@
+.map-iframe{
+	iframe{
+		height:700px;
+		@include respond ('phone'){
+			height:350px;
+		}		
+	}
+}
+.contact-area1{
+	padding: 80px 40px;
+    box-shadow: 0 0 15px 0 rgba(0, 0, 0, 0.1);
+    border-radius: 0;
+    margin-top: -200px;
+    position: relative;
+    z-index: 1;
+    background: #fff;
+	@include respond('phone'){
+		padding: 40px 15px;
+	}
+}
+.contact-area2{
+	padding: 120px;
+	border-radius: var(--border-radius-base);
+	.form-control{
+		border-radius: var(--border-radius-base);
+		background-color: #454a4f;
+		border-color: #454a4f;
+		color: #cfd0d2;
+		padding: 15px 30px;
+
+		&:hover,
+		&:active,
+		&:focus{
+			background-color: #454a4f;			
+			border-color: var(--primary);
+		}
+		
+		&::-webkit-input-placeholder{
+			color: #cfd0d2;
+		}
+		&:-ms-input-placeholder{
+			color: #cfd0d2;
+		}
+		&::placeholder{
+			color: #cfd0d2;
+		}
+	}
+	@include respond('tab-land'){
+		padding: 80px;
+	}
+	@include respond('tab-port'){
+		padding: 50px;
+	}
+	@include respond('phone'){
+		padding: 25px;
+		.section-head {
+			margin-bottom: 20px;
+		}
+		.form-control{
+			padding: 15px 25px;
+		}
+	}
+}

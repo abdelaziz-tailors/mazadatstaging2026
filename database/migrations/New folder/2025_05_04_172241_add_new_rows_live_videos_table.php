@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class AddNewRowsLiveVideosTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::table('live_videos', function (Blueprint $table) {
+            //
+            $table->string('title_ar')->nullable();
+            $table->text('information_ar')->nullable();
+            $table->text('terms_conditions_ar')->nullable();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::table('live_videos', function (Blueprint $table) {
+            //
+        });
+    }
+}

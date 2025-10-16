@@ -1,0 +1,35 @@
+.about-bx2{
+	.dz-media{
+		text-align:center;
+		img{
+			width:auto;
+			max-width:100%;
+		}
+		&:after{
+			content:"";
+			position:absolute;
+			left:50%;
+			top:50%;
+			transform:translate(-50%,-50%);
+			height:440px;
+			width:440px;
+			border-radius:440px;
+			z-index: -1;
+			background-color:var(--primary);
+		}
+		@include respond ('tab-port'){
+			img{
+				width: 340px;
+			}
+		}
+		@include respond ('phone-land'){
+			img{
+				width: 260px;
+			}
+			&:after{
+				height: 300px;
+				width: 300px;
+			}
+		}
+	}
+}

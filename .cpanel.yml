@@ -1,0 +1,5 @@
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/dev02/public_html/oun
+    - composer update
+    - php artisan migrate

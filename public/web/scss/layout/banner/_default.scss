@@ -1,0 +1,148 @@
+// dz-bnr-inr
+.dz-bnr-inr{
+	background:var(--gradient-sec);
+    height: 400px;
+    background-size: cover;
+	background-position: center;
+	position: relative;
+    overflow: hidden;
+	z-index:1;
+	width: 100%;
+		
+	@include respond('tab-port'){
+		height: 300px;
+	}
+	@include respond('phone'){
+		height: 230px;
+	}
+	.container{
+		display: table;
+		height: 100%;
+		
+	}
+	.dz-bnr-inr-entry{
+	    height: 400px;
+		vertical-align: middle;
+		display: table-cell;
+		@include respond('tab-port'){
+			height: 300px;
+		}		
+		@include respond('phone-land'){
+			text-align:center;
+			.breadcrumb-row{
+				display:inline-block;
+			}
+		}	
+		@include respond('phone'){
+			height: 230px;
+		}	
+	}
+	h1 {
+		font-weight: 700;
+		font-size: 70px;
+		margin-bottom: 10px;
+		color:#fff;
+		text-transform: capitalize;
+		@include respond('tab-port'){
+			font-size: 42px;
+		}
+		@include respond('phone-land'){
+			font-size: 32px;
+		}
+	}
+	
+	// height sm
+	&.dz-bnr-inr-lg{
+		height: 700px;
+		.dz-bnr-inr-entry{
+			height: 700px;
+			padding-bottom: 120px;
+		}
+		@include respond('tab-port'){
+			height: 460px;
+			.dz-bnr-inr-entry{
+				height: 460px;
+				padding-bottom: 50px;
+			}
+		}
+		@include respond('phone-land'){
+			height: 350px;
+			.dz-bnr-inr-entry{
+				height: 350px;
+				padding-bottom:0;
+			}
+		}
+		@include respond('phone'){
+			height: 300px;
+			.dz-bnr-inr-entry{
+				height: 300px;
+			}
+		}
+	}
+	
+	// height sm
+	&.dz-bnr-inr-sm{
+		height: 300px;
+		.dz-bnr-inr-entry{
+			height: 300px;
+		}
+	}
+	&.bnr-no-img:before{
+		content:none;
+	}
+	&:after{
+		position:absolute;
+		top:0;
+		left:0;
+		content:"";
+		z-index:-1;
+		height:100%;
+		width:100%;
+		background-image:url('../images/shape-11.png'),url('../images/background/pattern7.png');
+		background-size:100%;
+		background-position:bottom,center;
+		background-repeat:no-repeat;
+	}
+}
+.breadcrumb-row{
+	ul {
+		background:var(--primary);
+		padding: 0;
+		display:inline-block;
+		padding: 8px 30px;
+		border-radius:30px;
+		li {
+			padding: 0;
+			margin-right: 3px;
+			display: inline-block;
+			font-size: 18px;
+			font-weight: 500;
+			color: $white;
+			&.active{
+				color: $white;			
+			}
+			a{
+				color: $white;
+			}
+		}
+		.breadcrumb-item + .breadcrumb-item::before{
+			content: "\f105";
+			color: $white;
+			font-weight: 700;
+			font-family: 'Line Awesome Free';
+			font-size: 15px;
+			padding-right: 10px;
+			top: 3px;
+			position: relative;
+			@include respond ('phone-land'){
+				top: 2px;
+			}
+		}
+		@include respond ('phone-land'){
+			padding: 5px 20px;
+			li{
+				font-size:15px;
+			}
+		}
+	}
+}

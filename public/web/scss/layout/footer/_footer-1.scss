@@ -1,0 +1,121 @@
+// ft-clients
+.ft-clients{
+	background-color: $white;
+	border-bottom: 10px solid var(--primary);
+	box-shadow: 5px 0 15px rgba(0, 0, 0, 0.15);
+	border-radius: 10px;
+	z-index: 1;
+	position: relative;
+}
+.ft-clients-area{
+	position: relative;
+	&:before{
+		content: "";
+		position: absolute;
+		height: 50%;
+		width: 100%;
+		left: 0;
+		top: 0;
+		background-color: $white;
+	}
+	&.bg-gray{
+		background-color: transparent;
+		&:before{
+			background-color: #f7f9fb;
+		}
+	}
+}
+.footer-logo-head{
+	border-bottom:1px dashed #959595;
+    margin-bottom: 50px;
+	padding-bottom:20px;
+	@include respond('phone'){
+		margin-bottom: 30px;	
+		padding-bottom:40px;
+	}
+}
+.site-footer{
+	&.style-1{
+		position:relative;
+		z-index:1;
+		&:before{
+			z-index: 0;
+			content: "";
+			position: absolute;
+			height: 100%;
+			width: 100%;
+			left: 0;
+			top: 0;
+			background-image: url('../images/background/pattern4.png');
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: 100%;
+		}
+		.dz-social-icon{
+			position: relative;
+		}
+		.footer-bottom{
+			position:relative;
+		}
+	}
+	&.style-1,
+	&.style-2,
+	&.style-3{
+		.footer-top{
+			padding-top:90px;
+			padding-bottom:60px;
+			@include custommq ($max:1200px){
+				padding-top:70px;
+				padding-bottom:40px;
+			}
+			@include respond ('phone-land'){
+				padding-top: 50px;
+				padding-bottom: 20px;
+			}
+		}
+		.footer-title{
+			position:relative;
+			padding-bottom: 8px;
+			margin-bottom: 30px;
+			&:after{
+				width:70px;
+				height:1px;
+				background-color:#fff;
+				content:"";
+				position:absolute;
+				bottom:0;
+				left:0;
+			}
+		}
+		.widget_services{
+			&>ul{
+				margin-top:-.5rem;
+			}
+		}
+		.widget_services ul li a{
+			color:rgba(255,255,255,.8);
+			&:hover{
+				color:#fff;
+			}
+		}
+		.recent-posts-entry .widget-post-bx .widget-post .dz-meta ul li{
+			color:#fff;
+		}
+		.recent-posts-entry .widget-post-bx .widget-post .title a{
+			color:rgba(255,255,255,1);
+		}
+		.footer-bottom{
+			background-color:var(--secondary);
+			.copyright-text{
+				color:rgba(255,255,255,.7);
+				a{
+					color:var(--primary);
+				}
+			}
+		}
+		.footer-link li{
+			color:rgba(255,255,255,.7);
+		}
+	}
+}
+

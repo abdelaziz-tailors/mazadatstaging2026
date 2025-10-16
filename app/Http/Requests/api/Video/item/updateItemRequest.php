@@ -1,0 +1,96 @@
+<?php
+
+namespace App\Http\Requests\api\Video\item;
+
+use App\Helpers\TranslationHelper;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+
+class updateItemRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        return true; // Set to true for now; adjust based on your auth logic
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules()
+    {
+        return [
+            // Ensure each item in the 'title' array is required, a string, and max 255 chars
+            'lineage_title_ar' => 'required',
+            'lineage_title' => 'required',
+            // 'address' => 'required',
+            'information' => 'required',
+            'information_ar' => 'required',
+            'category_id' => 'required|integer|exists:categories,id', // Assuming category_id references a table
+            'weight' => 'required|numeric', // Assuming weight should be a number
+            'age' => 'required|integer', // Assuming age is an integer
+            'age_type' => 'required', // Assuming age is an integer
+            'start_price' => 'required|numeric', // Assuming price is a number
+            'bidding' => 'required', // Assuming bidding is a true/false field
+            // 'quantity' => 'required|integer|min:1', // Assuming quantity is a positive integer
+            'color_id' => 'required|integer|exists:colors,id', // Assuming category_id references a table
+            'video'=>'nullable|file|mimes:mp4,mov,avi,wmv,flv|max:20480'
+        ];
+    }
+
+    /**
+     * Custom validation error messages.
+     *
+     * @return array
+     */
+    public function messages()
+    {
+        return [
+            'lineage_title_ar.required' => TranslationHelper::translate('lineage_title_ar field is required.'),
+            'lineage_title.required' => TranslationHelper::translate('lineage_title field is required.'),
+            'address.required' => TranslationHelper::translate('address field is required.'),
+            'information.required' => TranslationHelper::translate('information field is required.'),
+            'information_ar.required' => TranslationHelper::translate('information_ar field is required.'),
+            'category_id.required' => TranslationHelper::translate('category_id field is required.'),
+            'category_id.integer' => TranslationHelper::translate('category_id must be a number.'),
+            'category_id.exists' => TranslationHelper::translate('category_id must exist in the system.'),
+            'weight.required' => TranslationHelper::translate('weight field is required.'),
+            'weight.numeric' => TranslationHelper::translate('weight must be a number.'),
+            'age.required' => TranslationHelper::translate('age field is required.'),
+            'age.integer' => TranslationHelper::translate('age must be a number.'),
+            'start_price.required' => TranslationHelper::translate('start price field is required.'),
+            'start_price.numeric' => TranslationHelper::translate('start price must be a number.'),
+            'bidding.required' => TranslationHelper::translate('bidding field is required.'),
+            'bidding.boolean' => TranslationHelper::translate('bidding must be true or false.'),
+            'quantity.required' => TranslationHelper::translate('quantity field is required.'),
+            'quantity.integer' => TranslationHelper::translate('quantity must be a number.'),
+            'quantity.min' => TranslationHelper::translate('quantity must be at least 1.'),
+            'image.*.required' => TranslationHelper::translate('image is required.'),
+            'image.*.image' => TranslationHelper::translate('file must be an image.'),
+            'image.*.mimes' => TranslationHelper::translate('Only JPEG, JPG, and PNG formats are allowed.'),
+            'image.*.max' => TranslationHelper::translate('image must not exceed 20MB.'),
+        ];
+    }
+
+    /**
+     * Handle failed validation by returning a JSON response.
+     *
+     * @param Validator $validator
+     * @return void
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'code' => 422, // Use 422 for validation errors, not 200
+            'success' => false,
+            'message' => $validator->errors()->first(),
+        ], 422));
+    }
+}

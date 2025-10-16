@@ -1,0 +1,18 @@
+:root{
+	--gradient: linear-gradient(to right,#fead44 0,#fead44 51%,#ffb85d 100%);
+	--gradient-sec: linear-gradient(to right, rgb(30,38,109) 0%, rgb(72,87,218) 100%);
+	--primary: #fead44;
+	--secondary: #202871;
+	--primary-hover: #ef9f39;
+	--primary-dark: #d48828;
+	--rgba-primary-1: rgba(254,173,68,0.1);
+	--rgba-primary-2: rgba(254,173,68,0.2);
+	--rgba-primary-3: rgba(254,173,68,0.3);
+	--rgba-primary-4: rgba(254,173,68,0.4);
+	--rgba-primary-5: rgba(254,173,68,0.5);
+	--rgba-primary-6: rgba(254,173,68,0.6);
+	--rgba-primary-7: rgba(254,173,68,0.7);
+	--rgba-primary-8: rgba(254,173,68,0.8);
+	--rgba-primary-9: rgba(254,173,68,0.9);
+	--title: #212529;
+}

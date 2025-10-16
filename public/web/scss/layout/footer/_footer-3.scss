@@ -1,0 +1,30 @@
+// Site Footer
+.site-footer{
+	&.style-3{
+		position:relative;
+		z-index:1;
+		padding-top: 160px;
+		&:before{
+			z-index: -1;
+			content: "";
+			position: absolute;
+			height: 100%;
+			width: 100%;
+			left: 0;
+			top: 0;
+			background-image: url('../images/shape-15.png'),url('../images/pattern/pattern9.png'),url('../images/pattern/pattern10.png'),url('../images/pattern/pattern7.png');
+			background-repeat: no-repeat;
+			background-position: top, top left,top center,center right;
+			background-size: 100%;
+		}
+		@include custommq ($max:1200px){
+			padding-top:100px;
+		}
+		@include respond ('tab-port'){
+			padding-top:60px;
+		}
+		@include respond ('phone'){
+			padding-top:0px;
+		}
+	}
+}

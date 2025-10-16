@@ -1,0 +1,89 @@
+// Testimonial 2
+.testimonial-2{
+	display: flex;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    margin: 15px;
+    align-items: center;
+	border-radius: var(--border-radius-base);
+	
+	.testimonial-review{
+		margin-bottom: 15px;
+		.star-rating{
+			margin: 0 -3px;
+			display: flex;
+			li{
+				font-size: 18px;
+				margin: 0 3px;
+			}
+		}
+	}
+	.testimonial-pic{
+		min-width: 200px;
+		width: 200px;
+		border: 0;
+		height: auto;
+		margin-right: 20px;
+		overflow: hidden;
+		border-radius: var(--border-radius-base);
+		
+		&:after{
+			content: "\f10e";
+			height: 80px;
+			width: 80px;
+			border-radius: 50%;
+			position: absolute;
+			left: -18px;
+			top: -18px;
+			font-family: "Font Awesome 5 Free";
+			background-color: var(--primary);
+			font-weight: 900;
+			text-align: center;
+			line-height: 75px;
+			color: #fff;
+			font-size: 25px;
+			padding: 10px 0 0 12px;
+		}
+	}
+	.testimonial-name{
+		margin-bottom: 0;
+	}	
+	.testimonial-text {
+		margin-bottom: 15px;
+	}
+	@include respond('phone-land'){
+		padding: 15px;
+		margin: 10px;
+		
+		.testimonial-pic{
+			min-width: 140px;
+			width: 140px;
+			margin-right: 15px;
+			&:after {
+				height: 65px;
+				width: 65px;
+				left: -20px;
+				top: -20px;
+				line-height: 65px;
+				font-size: 16px;
+			}
+		}
+		.testimonial-review{
+			margin-bottom: 10px;
+			.star-rating li {
+				font-size: 14px;
+			}
+		}
+		.testimonial-text {
+			margin-bottom: 10px;
+		}
+	}
+	@include respond('phone'){
+		padding: 20px;
+		display: block;
+		.testimonial-pic {
+			margin-bottom: 15px;
+		}
+	}
+}

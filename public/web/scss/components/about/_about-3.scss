@@ -1,0 +1,58 @@
+.about-bx3{
+	.dz-media{
+		overflow:visible;
+		background-image:url('../images/shape-12.png');
+		background-size:100%;
+		background-position: bottom;
+		background-repeat: no-repeat;
+		padding-bottom: 50px;
+		padding-left: 40px;
+		z-index:1;
+		.main-img{
+			width:auto;
+			-webkit-transition: background .3s,border .3s,-webkit-border-radius .3s,-webkit-box-shadow .3s;
+			transition: background .3s,border .3s,-webkit-border-radius .3s,-webkit-box-shadow .3s;
+			-o-transition: background .3s,border .3s,border-radius .3s,box-shadow .3s;
+			transition: background .3s,border .3s,border-radius .3s,box-shadow .3s;
+			transition: background .3s,border .3s,border-radius .3s,box-shadow .3s,-webkit-border-radius .3s,-webkit-box-shadow .3s;
+			animation: animationupdown 1s ease infinite alternate;
+		}
+		&:after{
+			content:"";
+			position:absolute;
+			top:0;
+			left:0;
+			height:100%;
+			width:100%;
+			z-index:-1;
+			background-image:url('../images/shape-13.png');
+			background-repeat: no-repeat;
+			background-position: right top;
+		}
+	}
+	@include custommq ($max:1199px){
+		.dz-media{
+			padding-bottom:0;
+			padding-left:0;
+			&:after{
+				left:50px;
+			}
+		}
+	}
+	@include custommq ($max:1024px){
+		.dz-media{
+			&:after{
+				left:0px;
+			}
+		}
+	}
+}
+
+@keyframes animationupdown {
+	0% {
+		transform: translateZ(0)
+	}
+	to {
+		transform: translate3d(0, -3%, 0)
+	}
+}

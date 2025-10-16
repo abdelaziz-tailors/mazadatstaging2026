@@ -1,0 +1,106 @@
+// Site Footer
+.site-footer{
+	&.style-2{
+		position:relative;
+		z-index:1;
+		margin-top: 58px;
+		&:after{
+			z-index: -1;
+			content: "";
+			position: absolute;
+			height: 100%;
+			width: 100%;
+			left: 0;
+			top: 0;
+			background-image: url('../images/background/pattern4.png');
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: 100%;
+		}
+		&:before{
+			content:"";
+			height:100%;
+			width:100%;
+			position:absolute;
+			top:0;
+			left:0;
+			z-index:-1;
+			background-image:url('../images/shape-10.png');
+			background-repeat: no-repeat;
+			background-position: top;
+			background-size: 100%;
+		}
+		.footer-box{
+			position: relative;
+			text-align:center;
+			z-index:1;
+			padding: 113px 170px 120px;
+			top:-58px;
+			margin-bottom: -58px;
+			.title{
+				color:#fff;
+				font-size:40px;
+			}
+			.bg-img{
+				position:absolute;
+				height:100%;
+				width:100%;
+				left:0;
+				top:0;
+				z-index: -1;
+			}
+			img{
+			    -webkit-mask-image: url(../images/shape.svg);
+				mask-image: url(../images/shape.svg);
+				-webkit-mask-position: center center;
+				mask-position: center center;
+				-webkit-mask-repeat: no-repeat;
+				mask-repeat: no-repeat;
+				-webkit-mask-size: 90%;
+				mask-size: 90%;
+				transform: rotateY(180deg);
+				background:var(--gradient);
+				background-repeat: no-repeat;
+				border: 3px solid transparent;
+			}
+			
+		}
+		@include custommq ($max:1200px){
+			.footer-box{
+				padding: 77px 170px 77px;
+			}
+		}
+		@include respond ('tab-port'){
+			.footer-box{
+				padding:62px 100px 62px;
+				.title{
+					font-size:30px;
+				}
+				img{
+					-webkit-mask-size: 100%;
+					mask-size: 100%;
+				}
+			}
+		}
+		@include respond ('phone-land'){
+			.footer-box{
+				padding:30px 50px 45px;
+				.title{
+					font-size:24px;
+				}
+			}
+		}
+		@include respond ('phone'){
+			.footer-box{
+				.title{
+					font-size:18px;
+				}
+			}
+		}
+		@include custommq ($max:400px){
+			.footer-box{
+				padding:25px 30px 0px;
+			}
+		}
+	}
+}
