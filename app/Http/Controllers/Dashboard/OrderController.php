@@ -133,7 +133,7 @@ class OrderController extends Controller
         $request->validate([
             // 'title' => 'required',
             // 'title_ar' => 'required',
-            'user_id' => 'required',
+            'user_id' => 'required|exists:users,id',
             // 'category_id' => 'required',
             // 'information' => 'required',
             // 'information_ar' => 'required',

@@ -170,7 +170,7 @@ class ProductController extends Controller
         $request->validate([
             // 'title' => 'required',
             // 'title_ar' => 'required',
-            'user_id' => 'required',
+            'user_id' => 'required|exists:users,id',
             // 'category_id' => 'required',
             // 'information' => 'required',
             // 'information_ar' => 'required',
@@ -310,6 +310,12 @@ class ProductController extends Controller
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
 
+        // Validate user_id if it's being updated
+        if ($request->has('user_id')) {
+            $request->validate([
+                'user_id' => 'required|exists:users,id',
+            ]);
+        }
 
         $live_video->update([
             'title' => $request->title,

@@ -38,7 +38,7 @@ class RegisterController extends Controller
                 'phone' => $request->phone,
                 'user_name' => $request->user_name,
                 // 'account_type' => $request->account_type,
-                'user_type' => $request->user_type,
+                'user_type' => $request->user_type ?? 'buyer',
                 'password' => bcrypt($request->password),
                 'otp' => $numbers,
                 'expire_at' => $expire_at,
@@ -64,6 +64,7 @@ class RegisterController extends Controller
          
         } catch (\Throwable $th) {
             DB::rollBack();
+         
             return $this->failed_response(TranslationHelper::translate('Something went wrong'),);
         }
     }

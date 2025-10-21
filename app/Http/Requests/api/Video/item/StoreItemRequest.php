@@ -33,6 +33,7 @@ class StoreItemRequest extends FormRequest
             'information' => 'required',
             'category_id'=>'required',
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
+            'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'weight' => 'required', // Assuming weight should be a number
             'weight.*' => 'numeric', // Assuming weight should be a number
             'age' => 'required', // Assuming age is an integer
@@ -68,6 +69,8 @@ class StoreItemRequest extends FormRequest
             'category_id.*.required' => TranslationHelper::translate('Each category_id field is required.'),
             'category_id.*.integer' => TranslationHelper::translate('Each category_id must be a number.'),
             'category_id.*.exists' => TranslationHelper::translate('Each category_id must exist in the system.'),
+            'partner_id.*.integer' => TranslationHelper::translate('Each partner_id must be a number.'),
+            'partner_id.*.exists' => TranslationHelper::translate('The selected partner does not exist in the system.'),
             'weight.*.required' => TranslationHelper::translate('Each weight field is required.'),
             'weight.*.numeric' => TranslationHelper::translate('Each weight must be a number.'),
             'age.*.required' => TranslationHelper::translate('Each age field is required.'),

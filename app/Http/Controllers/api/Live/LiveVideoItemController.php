@@ -80,7 +80,7 @@ class LiveVideoItemController extends Controller
                 'title' => $title,
                 'title_ar'=>$request->lineage_title_ar[$index],
                 'status'=>'pending',
-                'user_id' =>$request->partner_id[$index] ?? $liveVideo->partner_id,
+                'user_id' => auth('api')->user()->id ?? null,
                 'health_certificate' => $healthCertificatePath ?? null,
                 'video' => $videoPath ?? null,
                 'address'=>$request->address[$index],

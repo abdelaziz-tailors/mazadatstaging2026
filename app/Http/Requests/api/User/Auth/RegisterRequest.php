@@ -35,8 +35,8 @@ class RegisterRequest extends FormRequest
 
             'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL',
             // 'account_type' => 'required',
-            'user_type' => 'required',
-            'password' => 'required|min:6|max:8|confirmed',
+            'user_type' => 'nullable',
+            'password' => 'required|min:6|confirmed',
         ];
     }
 
@@ -75,7 +75,7 @@ class RegisterRequest extends FormRequest
         throw new HttpResponseException(response()->json([
             'code' => 422,
             'success'   => false,
-            'message'   => $validator->errors()->first()
+            'message'   => $validator->errors()
         ]));
     }
 }

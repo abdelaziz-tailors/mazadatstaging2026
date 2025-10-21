@@ -34,6 +34,7 @@ class updateItemRequest extends FormRequest
             'information' => 'required',
             'information_ar' => 'required',
             'category_id' => 'required|integer|exists:categories,id', // Assuming category_id references a table
+            'partner_id' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'weight' => 'required|numeric', // Assuming weight should be a number
             'age' => 'required|integer', // Assuming age is an integer
             'age_type' => 'required', // Assuming age is an integer
@@ -61,6 +62,8 @@ class updateItemRequest extends FormRequest
             'category_id.required' => TranslationHelper::translate('category_id field is required.'),
             'category_id.integer' => TranslationHelper::translate('category_id must be a number.'),
             'category_id.exists' => TranslationHelper::translate('category_id must exist in the system.'),
+            'partner_id.integer' => TranslationHelper::translate('partner_id must be a number.'),
+            'partner_id.exists' => TranslationHelper::translate('The selected partner does not exist in the system.'),
             'weight.required' => TranslationHelper::translate('weight field is required.'),
             'weight.numeric' => TranslationHelper::translate('weight must be a number.'),
             'age.required' => TranslationHelper::translate('age field is required.'),
