@@ -2,6 +2,12 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+use RtcTokenBuilder2;
+
+// Include official Agora token builder
+require_once app_path('Libraries/Agora/RtcTokenBuilder2.php');
+
 class AgoraService
 {
     private $appId;
@@ -13,62 +19,60 @@ class AgoraService
         $this->appCertificate = env('AGORA_APP_CERTIFICATE');
     }
 
-    /**
-     * Generate Agora RTC Token
-     * 
-     * @param string $channelName - Unique channel name for the live stream
-     * @param int $uid - User ID (0 for any user)
-     * @param string $role - 'publisher' or 'subscriber'
-     * @param int $privilegeExpiredTs - Token expiration time (default 24 hours)
-     * @return string|null
-     */
-    public function generateToken($channelName, $uid = 0, $role = 'publisher', $privilegeExpiredTs = 0)
+  
+    public function generateToken($channelName, $uid = 0, $role = 'publisher', $tokenExpireSeconds = 0)
     {
         if (!$this->appId || !$this->appCertificate) {
+            Log::error('Agora credentials missing', [
+                'app_id_exists' => !empty($this->appId),
+                'certificate_exists' => !empty($this->appCertificate)
+            ]);
             return null;
         }
 
-        // Set token expiration time (default 24 hours from now)
-        if ($privilegeExpiredTs == 0) {
-            $privilegeExpiredTs = time() + 86400; // 24 hours
+        // Set token expiration time (default 24 hours = 86400 seconds)
+        if ($tokenExpireSeconds == 0) {
+            $tokenExpireSeconds = 86400; // 24 hours in seconds
         }
 
-        // Role: 1 for publisher (broadcaster), 2 for subscriber (audience)
-        $roleNum = ($role === 'publisher') ? 1 : 2;
-
-        $token = $this->buildToken($channelName, $uid, $roleNum, $privilegeExpiredTs);
-        
-        return $token;
+      
+        $rtcRole = RtcTokenBuilder2::ROLE_SUBSCRIBER;
+            if ($role === 'publisher') {
+                $rtcRole = RtcTokenBuilder2::ROLE_PUBLISHER;
+            }
+        // Use official Agora token builder
+        try {
+            $token =  RtcTokenBuilder2::buildTokenWithUid(
+                $this->appId,
+                $this->appCertificate,
+                $channelName,
+                (string)$uid, // Convert to string for compatibility
+                $rtcRole,
+                $tokenExpireSeconds,
+                $tokenExpireSeconds // Privilege expiration same as token expiration
+            );
+            
+            if (empty($token)) {
+                Log::error('Failed to generate Agora token using official SDK', [
+                    'channel_name' => $channelName,
+                    'uid' => $uid,
+                    'role' => $role
+                ]);
+                return null;
+            }
+            
+            return $token;
+        } catch (\Exception $e) {
+            Log::error('Exception while generating Agora token', [
+                'error' => $e->getMessage(),
+                'channel_name' => $channelName,
+                'uid' => $uid,
+                'role' => $role
+            ]);
+            return null;
+        }
     }
 
-    /**
-     * Build Agora Token using the algorithm
-     */
-    private function buildToken($channelName, $uid, $role, $privilegeExpiredTs)
-    {
-        // Agora Token Building Algorithm
-        $version = '006';
-        $randomInt = rand(100000000, 999999999);
-        $salt = time();
-        
-        $message = $this->appId . $channelName . $uid . $salt . $privilegeExpiredTs;
-        $signature = hash_hmac('sha256', $message, $this->appCertificate);
-        
-        $content = [
-            'version' => $version,
-            'app_id' => $this->appId,
-            'channel_name' => $channelName,
-            'uid' => $uid,
-            'salt' => $salt,
-            'privilege_expired_ts' => $privilegeExpiredTs,
-            'role' => $role,
-            'signature' => $signature
-        ];
-        
-        $token = $version . base64_encode(json_encode($content));
-        
-        return $token;
-    }
 
     /**
      * Generate a unique channel name for live video
@@ -86,20 +90,6 @@ class AgoraService
         return $this->appId;
     }
 
-    /**
-     * Generate tokens for both broadcaster and audience
-     * Returns array with all necessary Agora credentials
-     */
-    public function generateLiveStreamCredentials($channelName, $userId)
-    {
-        return [
-            'app_id' => $this->getAppId(),
-            'channel_name' => $channelName,
-            'token_publisher' => $this->generateToken($channelName, $userId, 'publisher'),
-            'token_subscriber' => $this->generateToken($channelName, 0, 'subscriber'),
-            'uid' => $userId,
-            'expiration_time' => time() + 86400, // 24 hours
-        ];
-    }
+
 }
 

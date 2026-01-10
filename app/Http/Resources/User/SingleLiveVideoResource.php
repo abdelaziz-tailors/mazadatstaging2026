@@ -70,9 +70,9 @@ class SingleLiveVideoResource extends JsonResource
             'agora' => [
                 'app_id' => $this->agora_app_id ?? null,
                 'channel_name' => $this->agora_channel_name ?? null,
-                'token_publisher' => $this->agora_token_publisher ?? null,
-                'token_subscriber' => $this->agora_token_subscriber ?? null,
+                'token' => $this->agora_token ?? null,
                 'uid' => $this->user_id ?? 0,
+              
             ],
 
         ];

@@ -80,6 +80,14 @@ class HomeVideoResource extends JsonResource
             'city'=> New CitiesResource($this->city),
             'video_items'=> VideoItemResource::collection($this->video_items),
             'user'=> New UserDataResource($this->user_Video),
+            
+              // Agora Live Streaming Configuration
+              'agora' => [
+                'app_id' => $this->agora_app_id ?? null,
+                'channel_name' => $this->agora_channel_name ?? null,
+                'token' => $this->agora_token ?? null,
+                'uid' => $this->user_id ?? 0,
+            ],
 
 
         ];
