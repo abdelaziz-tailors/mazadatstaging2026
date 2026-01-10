@@ -71,14 +71,12 @@ class LiveVideoController extends Controller
 
             // Generate Agora channel and tokens for live streaming
             $agoraService = new AgoraService();
-            $userId = auth('api')->user()->id;
-            
+           
            
             // Generate channel name (will be updated with video ID after creation)
             $channelName = $agoraService->generateChannelName(time());
 
-            $agoraToken = $agoraService->generateToken($channelName, $userId);
-            
+            $agoraToken = $agoraService->generateToken($channelName);
       
 
             $data = LiveVideo::create([

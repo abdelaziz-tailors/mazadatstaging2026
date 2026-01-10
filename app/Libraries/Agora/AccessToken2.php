@@ -1,7 +1,8 @@
 <?php
 
-require_once "Util.php";
+namespace App\Libraries\Agora;
 
+use App\Libraries\Agora\Util;
 class Service
 {
     public $type;
