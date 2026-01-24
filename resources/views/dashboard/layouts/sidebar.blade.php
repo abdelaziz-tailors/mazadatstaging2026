@@ -1,4 +1,3 @@
-'
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner slimscroll">
         <div id="sidebar-menu" class="sidebar-menu">
@@ -115,6 +114,33 @@
                     </li>
 
             @endif
+
+                @if (Auth::guard('admin')->user()->canAny(['view packages', 'user-subscriptions.view']))
+                    <li class="submenu">
+                        <a href="#"><i class="fa-solid fa-box"></i> <span>
+                            {{ TranslationHelper::translate('Subscriptions') }}</span> <span
+                            class="menu-arrow"></span></a>
+                        <ul>
+                            @if (Auth::guard('admin')->user()->can('view packages'))
+                                <li>
+                                    <a class="{{ Request::is(app()->getLocale() . '/admin/packages*') ? 'active' : '' }}"
+                                       href="{{ route('admin.packages.index') }}">
+                                        {{ TranslationHelper::translate('Packages') }}
+                                    </a>
+                                </li>
+                            @endif
+
+                            {{-- @if (Auth::guard('admin')->user()->can('view user subscriptions')) --}}
+                                <li>
+                                    <a class="{{ Request::is(app()->getLocale() . '/admin/user-subscriptions*') ? 'active' : '' }}"
+                                       href="{{ route('admin.user-subscriptions.index') }}">
+                                        {{ TranslationHelper::translate('User Subscriptions') }}
+                                    </a>
+                                </li>
+                            {{-- @endif --}}
+                        </ul>
+                    </li>
+                @endif
 
                     <li>
                         <a class="{{ (Request::is(app()->getLocale() . '/admin/colors*') ) ? 'active' : '' }}"

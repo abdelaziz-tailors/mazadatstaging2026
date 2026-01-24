@@ -35,9 +35,24 @@ class PackageController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Package::select('id', 'coin','price','name->'.app()->getLocale().' as name', 'is_active')
+        $packages = Package::select('id', 'coin','price','name->'.app()->getLocale().' as name', 'is_active', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price')
          ->get();
         return Datatables::of($packages)
+            ->editColumn('subscription_type', function(Package $item) {
+                if ($item->subscription_type) {
+                    return $item->subscription_type == 'monthly' ? TranslationHelper::translate('Monthly') : TranslationHelper::translate('Annual');
+                }
+                return '-';
+            })
+            ->editColumn('auctions_limit', function(Package $item) {
+                return $item->auctions_limit ?? '-';
+            })
+            ->editColumn('monthly_price', function(Package $item) {
+                return $item->monthly_price ? number_format($item->monthly_price, 2) : '-';
+            })
+            ->editColumn('annual_price', function(Package $item) {
+                return $item->annual_price ? number_format($item->annual_price, 2) : '-';
+            })
             ->editColumn('is_active', function(Package $item) {
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.packages.active_toogler', $item->id)]);
@@ -46,7 +61,7 @@ class PackageController extends Controller
                 return view('dashboard.pages.packages.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name','coin','price', 'is_active', 'action'])
+            ->rawColumns(['id', 'name','coin','price', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price', 'is_active', 'action'])
             ->make(true);
     }
 
@@ -75,6 +90,10 @@ class PackageController extends Controller
             'description' => json_encode($request->description),
             'coin'=>$request->coin,
             'price'=>$request->price,
+            'subscription_type' => $request->subscription_type,
+            'auctions_limit' => $request->auctions_limit ?? 0,
+            'monthly_price' => $request->monthly_price,
+            'annual_price' => $request->annual_price,
             'image' => ($request->hasFile('image_png')) ? Storage::disk('public')->putFile('packages', $request->file('image_png')) : 'admins/default.png',
             'is_active' => (request()->has('is_active')) ? true : false]);
 
@@ -112,6 +131,10 @@ class PackageController extends Controller
             'description' => json_encode($request->description),
             'coin'=>$request->coin,
             'price'=>$request->price,
+            'subscription_type' => $request->subscription_type,
+            'auctions_limit' => $request->auctions_limit ?? 0,
+            'monthly_price' => $request->monthly_price,
+            'annual_price' => $request->annual_price,
             'image' => ($request->hasFile('image_png')) ? Storage::disk('public')->putFile('packages', $request->file('image_png')) : $packages->image,
             'is_active' => (request()->has('is_active')) ? true : false]);
 

@@ -45,14 +45,34 @@
 
 
 
-                    <div class="col-lg-6 form-group">
+                    {{-- <div class="col-lg-6 form-group">
                         {!! Form::label('coin', TranslationHelper::translate('Coin'), ['class'=>'form-label']) !!}
-                        {!! Form::number('coin', NULL, ['class' => 'form-control']) !!}
+                        {!! Form::number('coin', isset($packages) ? $packages->coin : NULL, ['class' => 'form-control', 'step' => '0.01']) !!}
+                    </div> --}}
+
+                    {{-- <div class="col-lg-6 form-group">
+                        {!! Form::label('price', TranslationHelper::translate('Price'), ['class'=>'form-label']) !!}
+                        {!! Form::number('price', isset($packages) ? $packages->price : NULL, ['class' => 'form-control', 'step' => '0.01']) !!}
+                    </div> --}}
+
+                    {{-- <div class="col-lg-6 form-group">
+                        {!! Form::label('subscription_type', TranslationHelper::translate('Subscription Type'), ['class'=>'form-label']) !!}
+                        {!! Form::select('subscription_type', ['' => TranslationHelper::translate('Select Type'), 'monthly' => TranslationHelper::translate('Monthly'), 'annual' => TranslationHelper::translate('Annual')], isset($packages) ? $packages->subscription_type : NULL, ['class' => 'form-control']) !!}
+                    </div> --}}
+
+                    <div class="col-lg-6 form-group">
+                        {!! Form::label('auctions_limit', TranslationHelper::translate('Auctions Limit'), ['class'=>'form-label']) !!}
+                        {!! Form::number('auctions_limit', isset($packages) ? $packages->auctions_limit : NULL, ['class' => 'form-control', 'min' => '0']) !!}
                     </div>
 
                     <div class="col-lg-6 form-group">
-                        {!! Form::label('price', TranslationHelper::translate('Price'), ['class'=>'form-label']) !!}
-                        {!! Form::number('price', NULL, ['class' => 'form-control']) !!}
+                        {!! Form::label('monthly_price', TranslationHelper::translate('Monthly Price'), ['class'=>'form-label']) !!}
+                        {!! Form::number('monthly_price', isset($packages) ? $packages->monthly_price : NULL, ['class' => 'form-control', 'step' => '0.01', 'min' => '0']) !!}
+                    </div>
+
+                    <div class="col-lg-6 form-group">
+                        {!! Form::label('annual_price', TranslationHelper::translate('Annual Price'), ['class'=>'form-label']) !!}
+                        {!! Form::number('annual_price', isset($packages) ? $packages->annual_price : NULL, ['class' => 'form-control', 'step' => '0.01', 'min' => '0']) !!}
                     </div>
 
                     <div class="form-group @if (isset($packages)) col-lg-5 @else col-lg-6 @endif ">

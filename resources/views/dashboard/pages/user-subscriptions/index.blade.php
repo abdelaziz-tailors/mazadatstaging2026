@@ -1,6 +1,6 @@
 @extends('dashboard.layouts.app')
 
-@section('title') {{ TranslationHelper::translate('Packages') }} @endsection
+@section('title') {{ TranslationHelper::translate('User Subscriptions') }} @endsection
 
 @push('css')
 <!--begin::Page Vendor Stylesheets(used by this page)-->
@@ -14,15 +14,12 @@
     <div class="row">
         <div class="col">
             <h3 class="page-title" >
-                {{TranslationHelper::translate('Packages') }}
-                @if(Auth::guard('admin')->user()->can('add package'))
-                    <a href='{{ route('admin.packages.create') }}' class='btn btn-primary float-end'><i class="fas fa-plus"></i> {{ TranslationHelper::translate('Package') }}</a>
-                @endif
+                {{TranslationHelper::translate('User Subscriptions') }}
             </h3>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{route('admin.dashboard.index')}}">{{ TranslationHelper::translate('dashboard') }}</a></li>
 
-                <li class="breadcrumb-item active">{{ TranslationHelper::translate('Package') }}</li>
+                <li class="breadcrumb-item active">{{ TranslationHelper::translate('User Subscriptions') }}</li>
             </ul>
         </div>
     </div>
@@ -35,14 +32,16 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>{{ TranslationHelper::translate('name') }}</th>
-                        {{-- <th>{{ TranslationHelper::translate('Coin') }}</th>
-                        <th>{{ TranslationHelper::translate('Price') }}</th> --}}
+                        <th>{{ TranslationHelper::translate('User') }}</th>
+                        <th>{{ TranslationHelper::translate('Package') }}</th>
                         <th>{{ TranslationHelper::translate('Subscription Type') }}</th>
                         <th>{{ TranslationHelper::translate('Auctions Limit') }}</th>
-                        <th>{{ TranslationHelper::translate('Monthly Price') }}</th>
-                        <th>{{ TranslationHelper::translate('Annual Price') }}</th>
-                        <th>{{ TranslationHelper::translate('is_active') }}</th>
+                        <th>{{ TranslationHelper::translate('Remaining Auctions') }}</th>
+                        <th>{{ TranslationHelper::translate('Price') }}</th>
+                        <th>{{ TranslationHelper::translate('Expires At') }}</th>
+                        <th>{{ TranslationHelper::translate('Approval Status') }}</th>
+                        <th>{{ TranslationHelper::translate('Status') }}</th>
+                        <th>{{ TranslationHelper::translate('Created At') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>
                 </thead>
@@ -69,21 +68,23 @@
             "smart": true
         },
         ajax: {
-            url : "{!! route('admin.packages.getData') !!}",
+            url : "{!! route('admin.user-subscriptions.getData') !!}",
             data: {},
             type: "POST",
             dataType: "JSON"
         },
         columns: [
             {data: 'id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'name', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            // {data: 'coin', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            // {data: 'price', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'user_id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'package_id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'subscription_type', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'auctions_limit', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'monthly_price', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'annual_price', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'remaining_auctions', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'price', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'expires_at', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'status', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'is_active', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'created_at', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
         ],
         language: {
@@ -103,3 +104,4 @@
     });
 </script>
 @endsection
+

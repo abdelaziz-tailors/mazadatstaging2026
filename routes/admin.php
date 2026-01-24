@@ -24,6 +24,7 @@ use App\Http\Controllers\Dashboard\PartnerController;
 use App\Http\Controllers\Dashboard\AuctionController;
 use App\Http\Controllers\Dashboard\OrderController;
 use App\Http\Controllers\Dashboard\SettingController;
+use App\Http\Controllers\Dashboard\UserSubscriptionController;
 
 Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
     Route::group(['prefix' => 'admin', 'as'=>'admin.'], function () {
@@ -123,6 +124,12 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'l
             Route::post('packages/active_toogler/{id}', [PackageController::class, 'active_toogler'])->name('packages.active_toogler');
             Route::post('packages/getData', [PackageController::class, 'get_data'])->name('packages.getData');
             // packages
+            // user-subscriptions
+            Route::resource('/user-subscriptions', UserSubscriptionController::class)->except(['create', 'store', 'edit', 'update']);
+            Route::post('user-subscriptions/getData', [UserSubscriptionController::class, 'get_data'])->name('user-subscriptions.getData');
+            Route::post('user-subscriptions/{id}/approve', [UserSubscriptionController::class, 'approve'])->name('user-subscriptions.approve');
+            Route::post('user-subscriptions/{id}/reject', [UserSubscriptionController::class, 'reject'])->name('user-subscriptions.reject');
+            // user-subscriptions
             // categories
             Route::resource('/categories', CategoryController::class)->except(['show']);
             Route::post('categories/active_toogler/{id}', [CategoryController::class, 'active_toogler'])->name('categories.active_toogler');
