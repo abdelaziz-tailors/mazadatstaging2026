@@ -19,6 +19,7 @@ use App\Http\Resources\User\UserResource;
 use App\Http\Resources\User\UserViewVideoResource;
 use App\Http\Resources\User\VideoCommentResource;
 use App\Jobs\SendFCMNotification;
+use App\Services\FCMService;
 use App\Models\Gift;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoLike;
@@ -39,6 +40,7 @@ use Illuminate\Http\JsonResponse;
 
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class LiveVideoController extends Controller
 {
@@ -61,7 +63,7 @@ class LiveVideoController extends Controller
             }
         }
 
-        if (auth('api')->user()->admin->partner == 'partner' ? true : false) {
+        if (is_null(auth('api')->user()->admin) ||(auth('api')->user()->admin->partner == 'partner' ? true : false) ) {
             return $this->failed_response('هذه الخاصية غير متاحة لك لانك ليست شريك', '422');
         } else {
 
@@ -69,9 +71,13 @@ class LiveVideoController extends Controller
 
             // Generate Agora channel and tokens for live streaming
             $agoraService = new AgoraService();
+           
+           
+            // Generate channel name (will be updated with video ID after creation)
             $channelName = $agoraService->generateChannelName(time());
-            $userId = auth('api')->user()->id;
-            $agoraCredentials = $agoraService->generateLiveStreamCredentials($channelName, $userId);
+
+            $agoraToken = $agoraService->generateToken($channelName);
+      
 
             $data = LiveVideo::create([
                 'user_id' => auth('api')->user()->id,
@@ -93,10 +99,12 @@ class LiveVideoController extends Controller
                 'type' => $request->video_type ?? 'live',
                 'partners_type' => 'single',
                 'agora_channel_name' => $channelName,
-                'agora_token_publisher' => $agoraCredentials['token_publisher'],
-                'agora_token_subscriber' => $agoraCredentials['token_subscriber'],
-                'agora_app_id' => $agoraCredentials['app_id'],
+                'agora_token' => $agoraToken,
+                'agora_app_id' => $agoraService->getAppId(),
             ]);
+            
+        
+            }
             try {
                 $firebase = new FirebaseController();
                 $firebase->create($data);
@@ -106,30 +114,44 @@ class LiveVideoController extends Controller
 
             $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
             $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
+            
             $notification_record = [
                 'title_en' => 'New Auction: ' . $data->title,
                 'title_ar' => 'مزاد جديد: ' . $data->title_ar,
                 'body_en'  => 'Auction "' . $data->title . '" will be held on ' . $data->date_start_at . ' at ' . $data->time_start_at,
                 'body_ar'  => 'سيقام المزاد "' . $data->title . '" في ' . $data->date_start_at . ' في ' . $data->time_start_at,
             ];
-            // Send using job queue
-            dispatch(new SendFCMNotification(
-                $tokens_en,
-                $notification_record['title_en'],
-                $notification_record['body_en'],
-            ));
-            // Send using job queue
-            dispatch(new SendFCMNotification(
-                $tokens_ar,
-                $notification_record['title_ar'],
-                $notification_record['body_ar'],
-            ));
+            
+            // Send FCM notifications directly
+            try {
+                $fcmService = new FCMService();
+                
+                if (!empty($tokens_en)) {
+                    $result_en = $fcmService->sendToMultipleDevices(
+                        $tokens_en,
+                        $notification_record['title_en'],
+                        $notification_record['body_en']
+                    );
+                    Log::info('Auction Add - EN notification result', $result_en);
+                }
+                
+                if (!empty($tokens_ar)) {
+                    $result_ar = $fcmService->sendToMultipleDevices(
+                        $tokens_ar,
+                        $notification_record['title_ar'],
+                        $notification_record['body_ar']
+                    );
+                    Log::info('Auction Add - AR notification result', $result_ar);
+                }
+            } catch (\Exception $e) {
+                Log::error('Auction Add - FCM error: ' . $e->getMessage());
+            }
 
 
             $data = new MyLiveVideoResource($data);
             return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
         }
-    }
+    
     public function update(UpdateVideoRequest $request, $id): JsonResponse
     {
         if (!auth('api')->user()) {
@@ -224,6 +246,7 @@ class LiveVideoController extends Controller
 
     public function start($id): JsonResponse
     {
+       
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
@@ -247,18 +270,31 @@ class LiveVideoController extends Controller
             'body_en'  => 'Auction "' . $data->title . '" has started on ' . $data->date_start_at . ' at ' . $data->time_start_at,
             'body_ar'  => 'بدأ المزاد "' . $data->title . '" بتاريخ ' . $data->date_start_at . ' في ' . $data->time_start_at,
         ];
-        // Send using job queue
-        dispatch(new SendFCMNotification(
-            $tokens_en,
-            $notification_record['title_en'],
-            $notification_record['body_en'],
-        ));
-        // Send using job queue
-        dispatch(new SendFCMNotification(
-            $tokens_ar,
-            $notification_record['title_ar'],
-            $notification_record['body_ar'],
-        ));
+        
+        // Send FCM notifications directly
+        try {
+            $fcmService = new FCMService();
+            
+            if (!empty($tokens_en)) {
+                $result_en = $fcmService->sendToMultipleDevices(
+                    $tokens_en,
+                    $notification_record['title_en'],
+                    $notification_record['body_en']
+                );
+                Log::info('Auction Start - EN notification result', $result_en);
+            }
+            
+            if (!empty($tokens_ar)) {
+                $result_ar = $fcmService->sendToMultipleDevices(
+                    $tokens_ar,
+                    $notification_record['title_ar'],
+                    $notification_record['body_ar']
+                );
+                Log::info('Auction Start - AR notification result', $result_ar);
+            }
+        } catch (\Exception $e) {
+            Log::error('Auction Start - FCM error: ' . $e->getMessage());
+        }
 
 
 
@@ -295,18 +331,31 @@ class LiveVideoController extends Controller
             'body_en'  => 'Auction "' . $data->title . '" has ended on ' . $data->date_end_at . ' at ' . $data->time_end_at,
             'body_ar'  => 'انتهى المزاد "' . $data->title . '" بتاريخ ' . $data->date_end_at . ' في ' . $data->time_end_at,
         ];
-        // Send using job queue
-        dispatch(new SendFCMNotification(
-            $tokens_en,
-            $notification_record['title_en'],
-            $notification_record['body_en'],
-        ));
-        // Send using job queue
-        dispatch(new SendFCMNotification(
-            $tokens_ar,
-            $notification_record['title_ar'],
-            $notification_record['body_ar'],
-        ));
+        
+        // Send FCM notifications directly
+        try {
+            $fcmService = new FCMService();
+            
+            if (!empty($tokens_en)) {
+                $result_en = $fcmService->sendToMultipleDevices(
+                    $tokens_en,
+                    $notification_record['title_en'],
+                    $notification_record['body_en']
+                );
+                Log::info('Auction End - EN notification result', $result_en);
+            }
+            
+            if (!empty($tokens_ar)) {
+                $result_ar = $fcmService->sendToMultipleDevices(
+                    $tokens_ar,
+                    $notification_record['title_ar'],
+                    $notification_record['body_ar']
+                );
+                Log::info('Auction End - AR notification result', $result_ar);
+            }
+        } catch (\Exception $e) {
+            Log::error('Auction End - FCM error: ' . $e->getMessage());
+        }
 
 
 
@@ -346,6 +395,15 @@ class LiveVideoController extends Controller
         }
 
         $data = LiveVideo::find($id);
+        
+        if (!$data) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+        }
+
+       
+       
+        
+    
         $data = new SingleLiveVideoResource($data);
 
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
@@ -389,23 +447,100 @@ class LiveVideoController extends Controller
         // Generate new tokens
         $agoraService = new AgoraService();
         $userId = auth('api')->user()->id;
-        $agoraCredentials = $agoraService->generateLiveStreamCredentials($liveVideo->agora_channel_name, $userId);
+        
+        // Ensure channel name exists
+        if (empty($liveVideo->agora_channel_name)) {
+            $channelName = $agoraService->generateChannelName($liveVideo->id);
+            $liveVideo->update(['agora_channel_name' => $channelName]);
+        } else {
+            $channelName = $liveVideo->agora_channel_name;
+        }
+        
+        $agoraCredentials = $agoraService->generateLiveStreamCredentials($channelName, $userId);
 
         // Update tokens in database
         $liveVideo->update([
             'agora_token_publisher' => $agoraCredentials['token_publisher'],
             'agora_token_subscriber' => $agoraCredentials['token_subscriber'],
+            'agora_channel_name' => $channelName,
+            'agora_app_id' => $agoraCredentials['app_id'],
         ]);
 
         return $this->success_response(
             TranslationHelper::translate('Token Refreshed Successfully'),
             [
                 'agora_app_id' => $agoraCredentials['app_id'],
-                'channel_name' => $liveVideo->agora_channel_name,
+                'channel_name' => $channelName,
                 'token_publisher' => $agoraCredentials['token_publisher'],
                 'token_subscriber' => $agoraCredentials['token_subscriber'],
                 'uid' => $userId,
+                'token_verified' => $agoraCredentials['token_verified'] ?? ['publisher' => false, 'subscriber' => false],
             ]
         );
+    }
+
+    /**
+     * Verify Agora token for a live video
+     * 
+     * @param int $id - Live video ID
+     * @param Request $request - Request containing token_type (publisher/subscriber)
+     * @return JsonResponse
+     */
+    public function verifyAgoraToken($id, Request $request): JsonResponse
+    {
+       
+        if (!auth('api')->user()) {
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $liveVideo = LiveVideo::find($id);
+        if (!$liveVideo) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+        }
+
+        $tokenType = $request->input('token_type', 'publisher'); // 'publisher' or 'subscriber'
+        $token = $tokenType === 'publisher' 
+            ? $liveVideo->agora_token_publisher 
+            : $liveVideo->agora_token_subscriber;
+
+        if (empty($token)) {
+            return $this->failed_response('Token not found for this live video');
+        }
+
+        if (empty($liveVideo->agora_channel_name)) {
+            return $this->failed_response('Channel name not found for this live video');
+        }
+
+        $agoraService = new AgoraService();
+        $uid = $tokenType === 'publisher' ? $liveVideo->user_id : 0;
+        
+        $verification = $agoraService->verifyToken(
+            $token, 
+            $liveVideo->agora_channel_name, 
+            $uid
+        );
+
+        if ($verification['valid']) {
+            return $this->success_response(
+                'Token is valid',
+                [
+                    'valid' => true,
+                    'token_type' => $tokenType,
+                    'channel_name' => $verification['channel_name'],
+                    'uid' => $verification['uid'],
+                    'expires_at' => $verification['expires_at'],
+                    'privileges' => $verification['privileges'] ?? [],
+                ]
+            );
+        } else {
+            return $this->failed_response(
+                'Token verification failed: ' . ($verification['error'] ?? 'Unknown error'),
+                [
+                    'valid' => false,
+                    'token_type' => $tokenType,
+                    'error' => $verification['error'] ?? 'Unknown error',
+                ]
+            );
+        }
     }
 }
