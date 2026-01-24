@@ -1267,4 +1267,5 @@
   'هذه_الخاصية_غير_متاحة_لك_لانك_ليست_شريك' => 'هذه الخاصية غير متاحة لك لانك ليست شريك',
   'the_selected_partner_does_not_exist_in_the_system_' => 'The selected partner does not exist in the system ',
   'each_partner_id_must_be_a_number_' => 'Each partner_id must be a number ',
+  'live_video_not_found' => 'Live Video Not Found',
 );

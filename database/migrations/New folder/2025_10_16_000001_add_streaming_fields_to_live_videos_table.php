@@ -15,8 +15,7 @@ class AddStreamingFieldsToLiveVideosTable extends Migration
     {
         Schema::table('live_videos', function (Blueprint $table) {
             $table->string('agora_channel_name')->nullable()->unique()->comment('Agora channel name');
-            $table->text('agora_token_publisher')->nullable()->comment('Agora token for broadcaster');
-            $table->text('agora_token_subscriber')->nullable()->comment('Agora token for viewers');
+            $table->text('agora_token')->nullable()->comment('Agora token for broadcaster');
             $table->string('agora_app_id')->nullable()->comment('Agora App ID');
         });
     }
