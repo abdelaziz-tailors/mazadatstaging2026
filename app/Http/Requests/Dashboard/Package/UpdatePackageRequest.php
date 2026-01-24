@@ -31,8 +31,12 @@ class UpdatePackageRequest extends FormRequest
             $rules['name.'.$localeCode] = 'required';
         }
 //        $rules['image_svg'] = 'sometimes|mimes:svg';
-        $rules['coin'] = 'required';
-        $rules['price'] = 'required';
+        $rules['coin'] = 'nullable';
+        $rules['price'] = 'nullable';
+        $rules['subscription_type'] = 'nullable|in:monthly,annual';
+        $rules['auctions_limit'] = 'nullable|integer|min:0';
+        $rules['monthly_price'] = 'nullable|numeric|min:0';
+        $rules['annual_price'] = 'nullable|numeric|min:0';
         return $rules;
     }
 

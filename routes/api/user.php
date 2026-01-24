@@ -66,6 +66,9 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::post('subscription', 'UserCoinController@subscription');
         Route::get('subscription-list', 'UserCoinController@subscriptionList');
 
+        // Auction Subscriptions - Public endpoint for plans
+        Route::get('auction-subscription-plans', 'AuctionSubscriptionController@getPlans');
+
         Route::get('notifications', 'UserProfileController@notifications');
 
 
@@ -109,6 +112,13 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
 Route::group(['middleware' => ['auth:api']], function() {
 
         Route::group(['prefix' => 'user','namespace' => 'User'], function(){
+
+            Route::group(['namespace' => 'Profile'], function(){
+                // Auction Subscriptions - Protected routes
+                Route::get('auction-subscription-status', 'AuctionSubscriptionController@getStatus');
+                Route::get('auction-subscription-history', 'AuctionSubscriptionController@getHistory');
+                Route::post('auction-subscription', 'AuctionSubscriptionController@subscribe');
+            });
 
             Route::group(['prefix' => 'follow'], function(){
                 Route::get('list', 'FollowUserController@list');

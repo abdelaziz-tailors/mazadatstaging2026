@@ -10,4 +10,9 @@ class Package extends Model
 {
     use HasFactory,SoftDeletes;
     protected $guarded=['id'];
+
+    public function subscriptions()
+    {
+        return $this->hasMany(UserSubscription::class, 'package_id');
+    }
 }

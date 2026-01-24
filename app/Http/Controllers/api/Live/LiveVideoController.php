@@ -63,21 +63,39 @@ class LiveVideoController extends Controller
             }
         }
 
-        if (is_null(auth('api')->user()->admin) ||(auth('api')->user()->admin->partner == 'partner' ? true : false) ) {
+        if (is_null(auth('api')->user()->admin) || (auth('api')->user()->admin->partner == 'partner' ? true : false) ) {
             return $this->failed_response('هذه الخاصية غير متاحة لك لانك ليست شريك', '422');
         } else {
+
+            // Check if user has active subscription with available auctions
+            $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
+
+
+            if (!$activeSubscription) {
+                return $this->failed_response(
+                    TranslationHelper::translate('You need to subscribe to create auctions. Please subscribe to continue.'),
+                    '422'
+                );
+            }
+
+            if ($activeSubscription->remaining_auctions <= 0) {
+                return $this->failed_response(
+                    TranslationHelper::translate('You have no remaining auctions. Please renew your subscription.'),
+                    '422'
+                );
+            }
 
             $admin_id = auth('api')->user()->admin->id ?? null;
 
             // Generate Agora channel and tokens for live streaming
             $agoraService = new AgoraService();
-           
-           
+
+
             // Generate channel name (will be updated with video ID after creation)
             $channelName = $agoraService->generateChannelName(time());
 
             $agoraToken = $agoraService->generateToken($channelName);
-      
+
 
             $data = LiveVideo::create([
                 'user_id' => auth('api')->user()->id,
@@ -102,8 +120,11 @@ class LiveVideoController extends Controller
                 'agora_token' => $agoraToken,
                 'agora_app_id' => $agoraService->getAppId(),
             ]);
-            
-        
+
+            // Decrement remaining auctions from subscription
+            $activeSubscription->decrementAuctions();
+
+
             }
             try {
                 $firebase = new FirebaseController();
@@ -114,18 +135,18 @@ class LiveVideoController extends Controller
 
             $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
             $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
-            
+
             $notification_record = [
                 'title_en' => 'New Auction: ' . $data->title,
                 'title_ar' => 'مزاد جديد: ' . $data->title_ar,
                 'body_en'  => 'Auction "' . $data->title . '" will be held on ' . $data->date_start_at . ' at ' . $data->time_start_at,
                 'body_ar'  => 'سيقام المزاد "' . $data->title . '" في ' . $data->date_start_at . ' في ' . $data->time_start_at,
             ];
-            
+
             // Send FCM notifications directly
             try {
                 $fcmService = new FCMService();
-                
+
                 if (!empty($tokens_en)) {
                     $result_en = $fcmService->sendToMultipleDevices(
                         $tokens_en,
@@ -134,7 +155,7 @@ class LiveVideoController extends Controller
                     );
                     Log::info('Auction Add - EN notification result', $result_en);
                 }
-                
+
                 if (!empty($tokens_ar)) {
                     $result_ar = $fcmService->sendToMultipleDevices(
                         $tokens_ar,
@@ -151,7 +172,7 @@ class LiveVideoController extends Controller
             $data = new MyLiveVideoResource($data);
             return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
         }
-    
+
     public function update(UpdateVideoRequest $request, $id): JsonResponse
     {
         if (!auth('api')->user()) {
@@ -246,7 +267,7 @@ class LiveVideoController extends Controller
 
     public function start($id): JsonResponse
     {
-       
+
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
@@ -270,11 +291,11 @@ class LiveVideoController extends Controller
             'body_en'  => 'Auction "' . $data->title . '" has started on ' . $data->date_start_at . ' at ' . $data->time_start_at,
             'body_ar'  => 'بدأ المزاد "' . $data->title . '" بتاريخ ' . $data->date_start_at . ' في ' . $data->time_start_at,
         ];
-        
+
         // Send FCM notifications directly
         try {
             $fcmService = new FCMService();
-            
+
             if (!empty($tokens_en)) {
                 $result_en = $fcmService->sendToMultipleDevices(
                     $tokens_en,
@@ -283,7 +304,7 @@ class LiveVideoController extends Controller
                 );
                 Log::info('Auction Start - EN notification result', $result_en);
             }
-            
+
             if (!empty($tokens_ar)) {
                 $result_ar = $fcmService->sendToMultipleDevices(
                     $tokens_ar,
@@ -331,11 +352,11 @@ class LiveVideoController extends Controller
             'body_en'  => 'Auction "' . $data->title . '" has ended on ' . $data->date_end_at . ' at ' . $data->time_end_at,
             'body_ar'  => 'انتهى المزاد "' . $data->title . '" بتاريخ ' . $data->date_end_at . ' في ' . $data->time_end_at,
         ];
-        
+
         // Send FCM notifications directly
         try {
             $fcmService = new FCMService();
-            
+
             if (!empty($tokens_en)) {
                 $result_en = $fcmService->sendToMultipleDevices(
                     $tokens_en,
@@ -344,7 +365,7 @@ class LiveVideoController extends Controller
                 );
                 Log::info('Auction End - EN notification result', $result_en);
             }
-            
+
             if (!empty($tokens_ar)) {
                 $result_ar = $fcmService->sendToMultipleDevices(
                     $tokens_ar,
@@ -395,15 +416,15 @@ class LiveVideoController extends Controller
         }
 
         $data = LiveVideo::find($id);
-        
+
         if (!$data) {
             return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
         }
 
-       
-       
-        
-    
+
+
+
+
         $data = new SingleLiveVideoResource($data);
 
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
@@ -447,7 +468,7 @@ class LiveVideoController extends Controller
         // Generate new tokens
         $agoraService = new AgoraService();
         $userId = auth('api')->user()->id;
-        
+
         // Ensure channel name exists
         if (empty($liveVideo->agora_channel_name)) {
             $channelName = $agoraService->generateChannelName($liveVideo->id);
@@ -455,7 +476,7 @@ class LiveVideoController extends Controller
         } else {
             $channelName = $liveVideo->agora_channel_name;
         }
-        
+
         $agoraCredentials = $agoraService->generateLiveStreamCredentials($channelName, $userId);
 
         // Update tokens in database
@@ -481,14 +502,14 @@ class LiveVideoController extends Controller
 
     /**
      * Verify Agora token for a live video
-     * 
+     *
      * @param int $id - Live video ID
      * @param Request $request - Request containing token_type (publisher/subscriber)
      * @return JsonResponse
      */
     public function verifyAgoraToken($id, Request $request): JsonResponse
     {
-       
+
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
@@ -499,8 +520,8 @@ class LiveVideoController extends Controller
         }
 
         $tokenType = $request->input('token_type', 'publisher'); // 'publisher' or 'subscriber'
-        $token = $tokenType === 'publisher' 
-            ? $liveVideo->agora_token_publisher 
+        $token = $tokenType === 'publisher'
+            ? $liveVideo->agora_token_publisher
             : $liveVideo->agora_token_subscriber;
 
         if (empty($token)) {
@@ -513,10 +534,10 @@ class LiveVideoController extends Controller
 
         $agoraService = new AgoraService();
         $uid = $tokenType === 'publisher' ? $liveVideo->user_id : 0;
-        
+
         $verification = $agoraService->verifyToken(
-            $token, 
-            $liveVideo->agora_channel_name, 
+            $token,
+            $liveVideo->agora_channel_name,
             $uid
         );
 

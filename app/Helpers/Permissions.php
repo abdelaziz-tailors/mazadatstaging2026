@@ -136,6 +136,15 @@ class Permissions {
 //                'delete sound' => 'delete',
 //            ]
 //        ],
+        [
+            'name' => 'packages',
+            'permissions' => [
+                'view packages' => 'view',
+                'add package' => 'add',
+                'edit package' => 'edit',
+                'delete package' => 'delete',
+            ]
+        ],
     ];
 
     public function get_permissions() {
