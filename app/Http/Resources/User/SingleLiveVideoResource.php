@@ -67,12 +67,16 @@ class SingleLiveVideoResource extends JsonResource
             'user'=> New UserDataResource($this->user_Video),
 
             // Agora Live Streaming Configuration
+            // Token is generated on-demand in the controller based on user role
+            // - Publisher token: for video owner (uid = user_id)
+            // - Subscriber token: for viewers (uid = 0)
             'agora' => [
                 'app_id' => $this->agora_app_id ?? null,
                 'channel_name' => $this->agora_channel_name ?? null,
                 'token' => $this->agora_token ?? null,
-                'uid' => $this->user_id ?? 0,
-              
+                'uid' => $this->user_id ?? 0, // Publisher UID (owner of the video)
+                // Note: For subscribers (viewers), UID should be 0
+                // The controller generates appropriate tokens based on user role
             ],
 
         ];
