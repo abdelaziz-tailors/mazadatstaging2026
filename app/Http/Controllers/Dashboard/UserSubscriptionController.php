@@ -8,6 +8,7 @@ use App\Models\User\User;
 use App\Models\Package;
 use Illuminate\Http\Request;
 use App\Helpers\TranslationHelper;
+use App\Models\Admin;
 use Yajra\DataTables\DataTables;
 use App\Traits\AuthorizeTrait;
 use App\Traits\ActionTrait;
@@ -138,6 +139,21 @@ class UserSubscriptionController extends Controller
         $subscription->update([
             'status' => 'approved',
             'rejection_reason' => null,
+        ]);
+
+        $subscription->user->update([
+            'user_type' => 'partner',
+            'is_verified' => 1,
+        ]);
+
+        $admin = Admin::create([
+            'name' => $subscription->user->name,
+            'email' => $subscription->user->email,
+            'phone' => $subscription->user->phone,
+            'type' => 'partner',
+            'user_id' => $subscription->user_id,
+            'password' => bcrypt($subscription->user->password ?? '123456789'),
+            'image' => $subscription->user?->image,
         ]);
 
         Toastr::success(TranslationHelper::translate('Subscription Approved Successfully'));
