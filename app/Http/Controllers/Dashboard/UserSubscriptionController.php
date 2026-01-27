@@ -14,7 +14,7 @@ use App\Traits\AuthorizeTrait;
 use App\Traits\ActionTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
-
+use Illuminate\Support\Facades\DB;
 class UserSubscriptionController extends Controller
 {
     use AuthorizeTrait, ActionTrait;
@@ -135,27 +135,34 @@ class UserSubscriptionController extends Controller
             Toastr::warning(TranslationHelper::translate('Subscription is already approved'));
             return redirect()->back();
         }
+        DB::beginTransaction();
+        try {
+            $subscription->update([
+                'status' => 'approved',
+                'rejection_reason' => null,
+            ]);
 
-        $subscription->update([
-            'status' => 'approved',
-            'rejection_reason' => null,
-        ]);
+            $subscription->user->update([
+                'user_type' => 'vendor',
+                'is_verified' => 1,
+            ]);
 
-        $subscription->user->update([
-            'user_type' => 'partner',
-            'is_verified' => 1,
-        ]);
+            $admin = Admin::create([
+                'name' => $subscription->user->name,
+                'email' => $subscription->user->email,
+                'phone' => $subscription->user->phone,
+                'type' => 'partner',
+                'user_id' => $subscription->user_id,
+                'password' => bcrypt($subscription->user->password ?? '123456789'),
+                'image' => $subscription->user->image ?? 'partners/default.png',
+            ]);
 
-        $admin = Admin::create([
-            'name' => $subscription->user->name,
-            'email' => $subscription->user->email,
-            'phone' => $subscription->user->phone,
-            'type' => 'partner',
-            'user_id' => $subscription->user_id,
-            'password' => bcrypt($subscription->user->password ?? '123456789'),
-            'image' => $subscription->user?->image,
-        ]);
-
+            DB::commit();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Toastr::error(TranslationHelper::translate('Failed to approve subscription'));
+            return redirect()->back();
+        }
         Toastr::success(TranslationHelper::translate('Subscription Approved Successfully'));
         return redirect()->back();
     }
