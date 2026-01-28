@@ -257,7 +257,7 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {
+    {   
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
 
