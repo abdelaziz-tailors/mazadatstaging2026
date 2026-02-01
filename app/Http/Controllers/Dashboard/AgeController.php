@@ -31,8 +31,8 @@ class AgeController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Age::select('id','name->'.app()->getLocale().' as name', 'is_active')
-            ->where('admin_id',Auth::guard('admin')->user()->id);
+        $packages = Age::select('id','name->'.app()->getLocale().' as name', 'is_active');
+            // ->where('admin_id',Auth::guard('admin')->user()->id);
         return Datatables::of($packages)
             ->editColumn('is_active', function(Age $item) {
                 return view('dashboard.partials.actions.is_active')
@@ -89,9 +89,9 @@ class AgeController extends Controller
     {
         //$this->authorizable('edit age');
         $data = Age::findorfail($id);
-        if ($data->admin_id !== Auth::guard('admin')->user()->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        // if ($data->admin_id !== Auth::guard('admin')->user()->id) {
+        //     abort(403, 'Unauthorized access.');
+        // }
 
         return view('dashboard.pages.ages.edit', compact(['data']));
     }
@@ -107,9 +107,9 @@ class AgeController extends Controller
     {
         //$this->authorizable('edit age');
         $data = Age::findorfail($id);
-        if ($data->admin_id !== Auth::guard('admin')->user()->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        // if ($data->admin_id !== Auth::guard('admin')->user()->id) {
+        //     abort(403, 'Unauthorized access.');
+        // }
 
         $data->update([
             'name' => json_encode($request->name),

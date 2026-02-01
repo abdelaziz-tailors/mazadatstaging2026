@@ -235,18 +235,12 @@
 
 
                     {{--                                                @endif--}}
-                    {{--                                                @if (Auth::guard('admin')->user()->canAny('view ages'))--}}
-
-
-                    {{--                                                    <li>--}}
-                    {{--                                                        <a class="{{ (Request::is(app()->getLocale() . '/admin/ages*') ) ? 'active' : '' }}"--}}
-                    {{--                                                           href="{{ route('admin.ages.index') }}">--}}
-                    {{--                                                            <i class="fe fe-plus"></i> <span>{{ TranslationHelper::translate('Ages') }}</span>--}}
-                    {{--                                                        </a>--}}
-                    {{--                                                    </li>--}}
-
-
-                    {{--                                                @endif--}}
+                    <li>
+                        <a class="{{ (Request::is(app()->getLocale() . '/admin/ages*') ) ? 'active' : '' }}"
+                           href="{{ route('admin.ages.index') }}">
+                            <i class="fe fe-plus"></i> <span>{{ TranslationHelper::translate('Ages') }}</span>
+                        </a>
+                    </li>
                     {{--                                                @if (Auth::guard('admin')->user()->canAny('view animal_pens'))--}}
 
 

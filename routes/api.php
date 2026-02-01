@@ -32,6 +32,7 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
         Route::get('category', 'CategoryController');
         Route::get('partners', 'PartnerController');
         Route::get('colors', 'ColorController');
+        Route::get('ages', 'AgeController');
         Route::get('bank-payment', 'SettingController@paymentMethods');
         Route::get('contact', 'SettingController@contact');
 

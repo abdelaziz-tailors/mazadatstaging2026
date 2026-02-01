@@ -25,7 +25,7 @@
                         <div class="col-6 form-group">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
-                                       @if(isset($city)) @if($city->is_active == 1) checked @endif @else checked @endif>
+                                       @if(isset($data)) @if($data->is_active == 1) checked @endif @else checked @endif>
                                 <label class="form-check-label" for="is_active">  {{ TranslationHelper::translate('Is Active') }}</label>
                             </div>
                         </div>

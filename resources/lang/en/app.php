@@ -1291,4 +1291,5 @@
   'subscription_created_successfully__waiting_for_admin_approval_' => 'Subscription created successfully  Waiting for admin approval ',
   'subscription_approved_successfully' => 'Subscription Approved Successfully',
   'your_subscription_is_active' => 'Your subscription is active',
+  'age_updated_successfully' => 'age Updated Successfully',
 );
