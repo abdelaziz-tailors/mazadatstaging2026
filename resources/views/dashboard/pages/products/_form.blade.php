@@ -75,8 +75,15 @@
 
 
                             <div class="col-lg-4 form-group">
-                                {!! Form::label('age', TranslationHelper::translate('age'), ['class'=>'form-label']) !!}
-                                {!! Form::number('age', NULL, ['step'=>"0.01","class" => 'form-control']) !!}
+                                <label class="form-label">{{ TranslationHelper::translate('Age') }}</label>
+                                <select class="form-control" id="age_id" name="age">
+                                <option value="">{{ TranslationHelper::translate('Select Age') }}</option>
+                                @forelse($ages as $age)
+                                    <option @if (isset($data)) @if($age->id ==$data->age?? 0) selected @endif @endif value="{{ $age->id }}">{{ $age->name }}</option>
+
+                                @empty
+                                @endforelse
+                                </select>
                             </div>
 
                             <div class="col-lg-4 form-group">

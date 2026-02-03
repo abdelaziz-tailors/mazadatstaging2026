@@ -37,7 +37,7 @@ class StoreItemRequest extends FormRequest
             'weight' => 'required', // Assuming weight should be a number
             'weight.*' => 'numeric', // Assuming weight should be a number
             'age' => 'required', // Assuming age is an integer
-            'age.*' => 'integer', // Assuming age is an integer
+            'age.*' => 'string', // Assuming age is an integer
             'start_price' => 'required', // Assuming price is a number
             'start_price.*' => 'numeric', // Assuming price is a number
             'bidding' => 'required', // Assuming bidding is a true/false field
