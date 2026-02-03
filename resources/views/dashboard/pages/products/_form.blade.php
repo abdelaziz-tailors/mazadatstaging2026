@@ -79,7 +79,7 @@
                                 <select class="form-control" id="age_id" name="age">
                                 <option value="">{{ TranslationHelper::translate('Select Age') }}</option>
                                 @forelse($ages as $age)
-                                    <option @if (isset($data)) @if($age->id ==$data->age?? 0) selected @endif @endif value="{{ $age->id }}">{{ $age->name }}</option>
+                                    <option @if (isset($data)) @if($age->name ==$data->age) selected @endif @endif value="{{ $age->name }}">{{ $age->name }}</option>
 
                                 @empty
                                 @endforelse
