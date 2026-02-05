@@ -170,7 +170,7 @@ class ProductController extends Controller
         $request->validate([
             // 'title' => 'required',
             // 'title_ar' => 'required',
-            'user_id' => 'required|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
             // 'category_id' => 'required',
             // 'information' => 'required',
             // 'information_ar' => 'required',
@@ -190,6 +190,7 @@ class ProductController extends Controller
             // 'terms_ar' => 'required',
             // 'bidding' => 'required',
             'health_certificate' => 'sometimes|file|mimes:pdf,jpg,jpeg,png',
+            'quantity' => 'nullable',
         ]);
 
 
@@ -231,7 +232,7 @@ class ProductController extends Controller
             'title' => $request->title,
             'title_ar' => $request->title_ar,
             'status'=>'pending',
-            'user_id' =>$request->user_id,
+            'user_id' =>2,
             'image' => json_encode($file),
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
@@ -251,6 +252,7 @@ class ProductController extends Controller
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
+            'quantity'=>$request->quantity ?? 0,
         ]);
 
 
@@ -337,7 +339,7 @@ class ProductController extends Controller
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
-
+            'quantity'=>$request->quantity ?? 0,
         ]);
         try {
             $firebase = new FirebaseController();

@@ -67,6 +67,9 @@ class VideoItemResource extends JsonResource
             'user_take_auction'=> New UserDataResource($this->user_auction),
             'health_certificate' => Storage::disk('public')->exists($this->health_certificate) ? Storage::disk('public')->url($this->health_certificate) : null,
             'video'=>Storage::disk('public')->exists($this->video) ? Storage::disk('public')->url($this->video) : null,
+            'quantity'=>$this['quantity'],
+            'user'=> New UserDataResource($this->user),
+            
         ];
 
         return $data;

@@ -97,6 +97,7 @@ class LiveVideoItemController extends Controller
                 'terms'=>$request->terms[$index],
                 'color_id'=>$request->color_id[$index],
                 'terms_ar'=>$request->terms_ar[$index],
+                'quantity'=>$request->quantity[$index] ?? 0,
             ]);
 
 
@@ -202,7 +203,7 @@ class LiveVideoItemController extends Controller
         'start_price' => $request->start_price ?? 0,
         'bidding' => $request->bidding ?? 0,
         'color_id'=>$request->color_id,
-
+        'quantity'=>$request->quantity ?? 0,
     ]);
 
         if($request->hasfile('image')) {

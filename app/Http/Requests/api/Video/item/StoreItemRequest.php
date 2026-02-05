@@ -44,6 +44,8 @@ class StoreItemRequest extends FormRequest
             'image' => 'required', // Each image in a nested array
             'image.*.*' => 'required|image|mimes:jpeg,jpg,png|max:20000', // Each image in a nested array
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
+            'quantity' => 'nullable',
+            'quantity.*' => 'numeric',
         ];
     }
 
@@ -86,6 +88,8 @@ class StoreItemRequest extends FormRequest
             'video.*.required' => TranslationHelper::translate('Each video is required.'),
             'video.*.mimes' => TranslationHelper::translate('Only MP4, AVI, WMV, and FLV formats are allowed.'),
             'video.*.max' => TranslationHelper::translate('Each video must not exceed 20MB.'),
+            'quantity.*.required' => TranslationHelper::translate('Each quantity field is required.'),
+            'quantity.*.numeric' => TranslationHelper::translate('Each quantity must be a number.'),
         ];
     }
 

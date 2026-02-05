@@ -40,7 +40,8 @@ class updateItemRequest extends FormRequest
             'age_type' => 'required', // Assuming age is an integer
             'start_price' => 'required|numeric', // Assuming price is a number
             'bidding' => 'required', // Assuming bidding is a true/false field
-            // 'quantity' => 'required|integer|min:1', // Assuming quantity is a positive integer
+            'quantity' => 'nullable',
+            'quantity.*' => 'numeric',
             'color_id' => 'required|integer|exists:colors,id', // Assuming category_id references a table
             'video'=>'nullable|file|mimes:mp4,mov,avi,wmv,flv|max:20480'
         ];
@@ -72,9 +73,8 @@ class updateItemRequest extends FormRequest
             'start_price.numeric' => TranslationHelper::translate('start price must be a number.'),
             'bidding.required' => TranslationHelper::translate('bidding field is required.'),
             'bidding.boolean' => TranslationHelper::translate('bidding must be true or false.'),
-            'quantity.required' => TranslationHelper::translate('quantity field is required.'),
-            'quantity.integer' => TranslationHelper::translate('quantity must be a number.'),
-            'quantity.min' => TranslationHelper::translate('quantity must be at least 1.'),
+            'quantity.*.required' => TranslationHelper::translate('Each quantity field is required.'),
+            'quantity.*.numeric' => TranslationHelper::translate('Each quantity must be a number.'),
             'image.*.required' => TranslationHelper::translate('image is required.'),
             'image.*.image' => TranslationHelper::translate('file must be an image.'),
             'image.*.mimes' => TranslationHelper::translate('Only JPEG, JPG, and PNG formats are allowed.'),

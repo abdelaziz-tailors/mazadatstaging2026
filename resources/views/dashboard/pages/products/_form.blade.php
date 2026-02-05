@@ -132,6 +132,10 @@
                                 </select>
                             </div>
 
+                            <div class="col-lg-4 form-group">
+                                <label class="form-label">{{ TranslationHelper::translate('quantity') }}</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" value="{{ $data->quantity ?? 0 }}">
+                            </div> 
 
                             <div class="col-lg-6 form-group">
                                 {!! Form::label('title', TranslationHelper::translate('lineage title'), ['class'=>'form-label']) !!}
