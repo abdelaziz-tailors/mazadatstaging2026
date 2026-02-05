@@ -145,10 +145,10 @@
                                 {!! Form::label('date_barth', TranslationHelper::translate('date of  barth'), ['class'=>'form-label']) !!}
                                 {!! Form::date('date_barth', NULL, ['class' => 'form-control']) !!}
                             </div> --}}
-                            <div class="col-lg-4 form-group">
+                            {{-- <div class="col-lg-4 form-group">
                                 {!! Form::label('weight', TranslationHelper::translate('weight'), ['class'=>'form-label']) !!}
                                 {!! Form::number('weight', NULL, [ 'step'=>"0.01",'class' => 'form-control']) !!}
-                            </div>
+                            </div> --}}
                             <div class="col-lg-4 form-group">
                                 {!! Form::label('start_price', TranslationHelper::translate('start price'), ['class'=>'form-label']) !!}
                                 {!! Form::number('start_price', NULL, ['step'=>"0.01",'class' => 'form-control']) !!}

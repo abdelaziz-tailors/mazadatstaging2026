@@ -174,7 +174,7 @@ class ProductController extends Controller
             // 'category_id' => 'required',
             // 'information' => 'required',
             // 'information_ar' => 'required',
-            'weight' => 'required',
+            'weight' => 'nullable',
             'age' => 'required',
             // 'color_id' => 'required',
             // 'type' => 'required',
