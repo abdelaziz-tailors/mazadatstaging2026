@@ -38,5 +38,9 @@ class LiveVideoItem extends Model
     {
         return $this->hasOne(ShappingAddress::class,'live_video_item_id');
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
 }

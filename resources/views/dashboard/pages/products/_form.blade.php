@@ -43,7 +43,14 @@
                             </div>
                         @endif
 
-
+                            <div class="col-lg-12 form-group">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show_partner_name" name="show_partner_name" value="1" @if(isset($data) && $data->show_partner_name) checked @endif>
+                                    <label class="form-check-label" for="show_partner_name">
+                                        {{ TranslationHelper::translate('Show Partner Name') }}
+                                    </label>
+                                </div>
+                            </div>
 
                             {{-- <div class="col-lg-6 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('Color') }}</label>

@@ -232,7 +232,7 @@ class ProductController extends Controller
             'title' => $request->title,
             'title_ar' => $request->title_ar,
             'status'=>'pending',
-            'user_id' =>2,
+            'user_id' => $request->user_id ?? null,
             'image' => json_encode($file),
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
@@ -253,6 +253,7 @@ class ProductController extends Controller
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
             'quantity'=>$request->quantity ?? 0,
+            'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
 
 
@@ -340,6 +341,7 @@ class ProductController extends Controller
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
             'quantity'=>$request->quantity ?? 0,
+            'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
         try {
             $firebase = new FirebaseController();

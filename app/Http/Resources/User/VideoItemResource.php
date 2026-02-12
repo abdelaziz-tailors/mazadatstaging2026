@@ -69,6 +69,7 @@ class VideoItemResource extends JsonResource
             'video'=>Storage::disk('public')->exists($this->video) ? Storage::disk('public')->url($this->video) : null,
             'quantity'=>$this['quantity'],
             'user'=> New UserDataResource($this->user),
+            'show_partner_name'=>$this['show_partner_name'],
             
         ];
 

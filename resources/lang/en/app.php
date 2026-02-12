@@ -1292,4 +1292,5 @@
   'subscription_approved_successfully' => 'Subscription Approved Successfully',
   'your_subscription_is_active' => 'Your subscription is active',
   'age_updated_successfully' => 'age Updated Successfully',
+  'show_partner_name' => 'Show Partner Name',
 );
