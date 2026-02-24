@@ -68,9 +68,12 @@ class VideoItemResource extends JsonResource
             'health_certificate' => Storage::disk('public')->exists($this->health_certificate) ? Storage::disk('public')->url($this->health_certificate) : null,
             'video'=>Storage::disk('public')->exists($this->video) ? Storage::disk('public')->url($this->video) : null,
             'quantity'=>$this['quantity'],
+            'piece_multiplier_number' => $this->piece_multiplier_number ?? '',
+            'identifier' => $this->identifier ?? '',
+            'baham_count' => $this->baham_count ?? '',
             'user'=> New UserDataResource($this->user),
             'show_partner_name'=>$this['show_partner_name'],
-            
+
         ];
 
         return $data;

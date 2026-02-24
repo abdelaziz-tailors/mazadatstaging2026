@@ -253,6 +253,9 @@ class ProductController extends Controller
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
             'quantity'=>$request->quantity ?? 0,
+            'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
+            'identifier' => $request->identifier ?? null,
+            'baham_count' => $request->baham_count ?? null,
             'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
 
@@ -341,6 +344,9 @@ class ProductController extends Controller
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
             'quantity'=>$request->quantity ?? 0,
+            'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
+            'identifier' => $request->identifier ?? null,
+            'baham_count' => $request->baham_count ?? null,
             'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
         try {
