@@ -142,7 +142,20 @@
                             <div class="col-lg-4 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('quantity') }}</label>
                                 <input type="number" class="form-control" id="quantity" name="quantity" value="{{ $data->quantity ?? 0 }}">
-                            </div> 
+                            </div>
+
+                            <div class="col-lg-4 form-group">
+                                <label class="form-label">{{ TranslationHelper::translate('piece_multiplier_number') }}</label>
+                                <input type="text" class="form-control" id="piece_multiplier_number" name="piece_multiplier_number" value="{{ $data->piece_multiplier_number ?? '' }}" placeholder="">
+                            </div>
+                            <div class="col-lg-4 form-group">
+                                <label class="form-label">{{ TranslationHelper::translate('identifier') }}</label>
+                                <input type="text" class="form-control" id="identifier" name="identifier" value="{{ $data->identifier ?? '' }}" placeholder="">
+                            </div>
+                            <div class="col-lg-4 form-group">
+                                <label class="form-label">{{ TranslationHelper::translate('baham_count') }}</label>
+                                <input type="text" class="form-control" id="baham_count" name="baham_count" value="{{ $data->baham_count ?? '' }}" placeholder="">
+                            </div>
 
                             <div class="col-lg-6 form-group">
                                 {!! Form::label('title', TranslationHelper::translate('lineage title'), ['class'=>'form-label']) !!}

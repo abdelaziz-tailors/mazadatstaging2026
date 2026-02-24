@@ -42,6 +42,9 @@ class updateItemRequest extends FormRequest
             'bidding' => 'required', // Assuming bidding is a true/false field
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
+            'piece_multiplier_number' => 'nullable|string|max:255',
+            'identifier' => 'nullable|string|max:255',
+            'baham_count' => 'nullable|string|max:255',
             'color_id' => 'required|integer|exists:colors,id', // Assuming category_id references a table
             'video'=>'nullable|file|mimes:mp4,mov,avi,wmv,flv|max:20480'
         ];

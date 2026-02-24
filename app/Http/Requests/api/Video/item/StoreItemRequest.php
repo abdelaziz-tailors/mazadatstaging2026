@@ -46,6 +46,12 @@ class StoreItemRequest extends FormRequest
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
+            'piece_multiplier_number' => 'nullable',
+            'piece_multiplier_number.*' => 'nullable|string|max:255',
+            'identifier' => 'nullable',
+            'identifier.*' => 'nullable|string|max:255',
+            'baham_count' => 'nullable',
+            'baham_count.*' => 'nullable|string|max:255',
         ];
     }
 

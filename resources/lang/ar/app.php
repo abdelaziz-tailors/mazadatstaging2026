@@ -1295,4 +1295,7 @@
   'your_subscription_is_active' => 'Your subscription is active',
   'age_updated_successfully' => 'age Updated Successfully',
   'show_partner_name' => 'Show Partner Name',
+  'baham_count' => 'عدد للبهم',
+  'piece_multiplier_number' => 'رقم مضاعفه القطعه',
+  'identifier' => 'التعريف',
 );
