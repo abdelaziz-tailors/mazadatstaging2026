@@ -56,7 +56,7 @@ class CartItemResource extends JsonResource
             'finished_price'=>$this['finished_price'],
             'user'=> New UserDataResource($this->videoLive->user_Video),
             'user_take_auction'=> New UserDataResource($this->user_auction),
-            // 'address'=> New ShippingAddressResource($this->addressData ?? ''),
+            // 'address'=> New ShippingAddressResource($this->addressData ?? ''),         
         ];
 
         return $data;
