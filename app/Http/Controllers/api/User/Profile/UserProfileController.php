@@ -12,8 +12,10 @@ use App\Http\Resources\User\CartItemResource;
 use App\Http\Resources\User\HomeVideoResource;
 use App\Http\Resources\User\NotificationResource;
 use App\Http\Resources\User\ProfileResource;
+use App\Http\Resources\User\UserCartAuctionResource;
 use App\Http\Resources\User\UserResource;
 use App\Http\Resources\User\VideoItemResource;
+use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\Notification;
 use App\Models\User\User;
@@ -54,11 +56,25 @@ class UserProfileController extends Controller
 
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
+      
+        // $data = LiveVideoItem::with('videoLive')->where('user_finished_id', auth('api')->user()->id)
+        //         ->orderBy('id', 'desc')
+        //         ->get();
 
-        $data=LiveVideoItem::where('user_finished_id', auth('api')->user()->id)-> orderBy('id', 'desc')->get();
-        $data =  CartItemResource::collection($data);
+        // $total_price = $data->sum('finished_price');
 
-        return $this->success_response(NULL, $data);
+        // return $this->success_response(null, [
+        //     'items' => CartItemResource::collection($data),
+        //     'total_price' => $total_price,
+        // ]);
+
+        $data = LiveVideo::whereHas('video_items', function($query) {
+            $query->where('user_finished_id', auth('api')->user()->id);
+        })
+                ->orderBy('id', 'desc')
+                ->get();
+
+        return $this->success_response(null, UserCartAuctionResource::collection($data));
     }
 
     public function addAddress(AddShippingAddress $request) {
