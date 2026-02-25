@@ -19,8 +19,8 @@ class UserCartAuctionResource extends JsonResource
         $data = [
             'id' => $this->id ??'',
             'title' => $this->title ??'',
-            'items_cart'=> CartItemResource::collection($this->video_items),
-            'total_price' => $this->video_items->sum('finished_price'),
+            'items_cart'=> CartItemResource::collection($this->user_finished_items),
+            'total_price' => $this->user_finished_items->sum('finished_price'),
         ];
         return $data;
     }
