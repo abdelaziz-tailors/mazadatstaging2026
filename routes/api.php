@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NafathController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -42,4 +43,16 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
     include('api/user.php');
     // 2. Provider App
     // 3. Driver App
+
+
+
+});
+// Nafath
+Route::prefix('nafath')->group(function () {
+    Route::post('request', [NafathController::class, 'sendRequest']);
+    Route::post('request/status', [NafathController::class, 'getStatus']);
+
+    // Nafath callback
+    Route::post('callback', [NafathController::class, 'callback']);
+
 });
