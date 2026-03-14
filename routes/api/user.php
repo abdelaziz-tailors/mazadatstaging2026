@@ -134,6 +134,7 @@ Route::group(['middleware' => ['auth:api']], function() {
 
                 Route::get('user-invoice', 'UserAuctionController@list');
                 Route::get('user-invoice/{id}', 'UserAuctionController@Iteam');
+                Route::post('upload-win-video/{id}', 'UserAuctionController@uploadWinVideo');
             });
 
             Route::group(['prefix' => 'friend','namespace' => 'Friend'], function(){

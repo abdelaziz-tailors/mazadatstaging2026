@@ -1296,4 +1296,8 @@
   'baham_count' => 'baham count',
   'piece_multiplier_number' => 'piece multiplier number',
   'identifier' => 'identifier',
+  'video_max_size_100_mb' => 'Video max size 100 MB',
+  'invalid_file_upload' => 'Invalid file upload',
+  'please_choose_a_video' => 'Please choose a video',
+  'video_uploaded_successfully' => 'Video uploaded successfully',
 );

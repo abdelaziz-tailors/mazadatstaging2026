@@ -39,7 +39,7 @@ class NafathService
     {
         try {
             $http = new Client();
-
+            
             $response = $http->request(
                 $this->request_method,
                 $this->request_url,
@@ -130,11 +130,9 @@ class NafathService
      * requestId: unique identifier for the callback (UUID); generated if not provided.
      * local: "ar" or "en" for JWT preferred language.
      */
-    public function sendMfaRequest(
-        string $nationalId,
-        string $service = self::SERVICE_LOGIN,
-        string $locale = 'ar',    ): array {
-        $requestId = (string) Str::uuid();
+    public function sendMfaRequest(string $nationalId,string $service = self::SERVICE_LOGIN,string $locale = 'ar'): array
+        {
+            $requestId = (string) Str::uuid();
 
         $this->setData(
             'POST',

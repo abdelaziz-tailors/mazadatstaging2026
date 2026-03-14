@@ -13,6 +13,7 @@ use App\Models\FollowUser;
 use App\Models\Friend;
 use App\Models\Gender;
 use App\Models\LiveVideo;
+use App\Models\LiveVideoItem;
 use App\Models\ProviderDay;
 use App\Models\Rate;
 use App\Models\Store;
@@ -152,6 +153,13 @@ class User extends Authenticatable
     public function user_live_video(): HasOne
     {
         return $this->hasOne(LiveVideo::class, 'user_id')->whereNull('status')->latest();
+    }
+
+    public function wonAuctionItemsWithVideos(): HasMany
+    {
+        return $this->hasMany(LiveVideoItem::class, 'user_finished_id')
+            ->whereNotNull('winner_video')
+            ->orderBy('id', 'desc');
     }
 
     public function user_live_video_gifts(): HasMany
