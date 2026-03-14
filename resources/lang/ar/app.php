@@ -1298,4 +1298,8 @@
   'baham_count' => 'عدد للبهم',
   'piece_multiplier_number' => 'رقم مضاعفه القطعه',
   'identifier' => 'التعريف',
+  'video_max_size_100_mb' => 'Video max size 100 MB',
+  'invalid_file_upload' => 'Invalid file upload',
+  'please_choose_a_video' => 'Please choose a video',
+  'video_uploaded_successfully' => 'Video uploaded successfully',
 );

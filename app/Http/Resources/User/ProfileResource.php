@@ -49,6 +49,7 @@ class ProfileResource extends JsonResource
             'favorites_video'=> (optional($this->user_Favorites) != NULL) ? UserVideoFavoriteResource::collection(optional($this->user_Favorites)) : NULL,
             'follow'=>$follow,
             'follower_count'=>count($this->followers),
+            'auction_win_videos'=> (optional($this->wonAuctionItemsWithVideos) != null) ? AuctionWinVideoResource::collection($this->wonAuctionItemsWithVideos) : [],
 //            'follower'=>ProfileResource::collection($this->followers)
             // 'friend_status'=>$this->user_friend_received->type ?? $this->user_friend_send->type ?? null,
             // 'coin'=>$this->user_coin->coin ?? 0,
