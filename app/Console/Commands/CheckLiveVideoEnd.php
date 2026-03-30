@@ -44,11 +44,14 @@ class CheckLiveVideoEnd extends Command
      */
     public function handle()
     {
-        $videos = LiveVideo::where('date_end_at', '<=', Carbon::today())
-        ->where('time_end_at', '<=', Carbon::now()->format('H:i:s'))
-        ->where('status','!=','end')
-        ->get();
+        $now = Carbon::now()->format('Y-m-d H:i:s');
 
+        $videos = LiveVideo::query()
+            ->where('status', '!=', 'end')
+            ->whereNotNull('date_end_at')
+            ->whereNotNull('time_end_at')
+            ->whereRaw("CONCAT(date_end_at, ' ', time_end_at) <= ?", [$now])
+            ->get();
 
 
         foreach ($videos as $video) {
