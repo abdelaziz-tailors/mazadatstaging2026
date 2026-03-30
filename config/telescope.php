@@ -62,7 +62,12 @@ return [
     |
     */
 
-    'enabled' => env('TELESCOPE_ENABLED', true),
+    // Default off unless APP_ENV=local; set TELESCOPE_ENABLED=true to override.
+    // Avoids DB errors when telescope_* migrations were never run (e.g. production mis-set to local).
+    'enabled' => filter_var(
+        env('TELESCOPE_ENABLED', env('APP_ENV') === 'local'),
+        FILTER_VALIDATE_BOOLEAN
+    ),
 
     /*
     |--------------------------------------------------------------------------
