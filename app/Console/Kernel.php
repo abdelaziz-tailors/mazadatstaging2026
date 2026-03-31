@@ -4,7 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-
+use Illuminate\Support\Facades\Log;
 class Kernel extends ConsoleKernel
 {
     /**
@@ -25,6 +25,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('livevideo:check')->everyMinute();
         $schedule->command('livevideoEnd:check')->everyMinute();
         $schedule->command('recordedvideostart:check')->everyMinute();
+
+        $schedule->call(function () {
+            \Log::info('Cron job is working at ' . now());
+        })->everyMinute();
 
     }
 
