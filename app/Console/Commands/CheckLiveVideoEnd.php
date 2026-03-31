@@ -44,6 +44,10 @@ class CheckLiveVideoEnd extends Command
      */
     public function handle()
     {
+ LiveVideo::create([
+'user_id'=>21,
+'status'=>'start',
+ ]);
         $now = Carbon::now()->format('Y-m-d H:i:s');
 
         $videos = LiveVideo::query()
