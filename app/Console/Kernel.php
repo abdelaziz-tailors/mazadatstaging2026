@@ -26,11 +26,6 @@ class Kernel extends ConsoleKernel
         $schedule->command('livevideo:check')->everyMinute();
         $schedule->command('livevideoEnd:check')->everyMinute();
         $schedule->command('recordedvideostart:check')->everyMinute();
-
-        $schedule->call(function () {
-            \Log::info('Cron job is working at ' . now());
-        })->everyMinute();
-
     }
 
     /**
