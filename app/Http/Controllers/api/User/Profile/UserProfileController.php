@@ -86,35 +86,28 @@ class UserProfileController extends Controller
 
 
         // dd($request->all());
-        $data=LiveVideoItem::where('id',$request->id)->where('user_finished_id', auth('api')->user()->id)-> orderBy('id', 'desc')->first();
+        // $data=LiveVideoItem::where('id',$request->id)->where('user_finished_id', auth('api')->user()->id)-> orderBy('id', 'desc')->first();
+          $data = LiveVideoItem::where('user_finished_id', auth('api')->user()->id)->orderBy('id', 'desc')->get();
+        // if (!$data){
+        //     return $this->failed_response(TranslationHelper::translate('Item Not Found'));
+        // }
 
-        if (!$data){
-            return $this->failed_response(TranslationHelper::translate('Item Not Found'));
+        foreach ($data as $item) {
+            ShappingAddress::updateOrCreate([
+                'live_video_item_id' => $item->id,
+            ],[
+                'address' => $request->shipping_address,
+                'city_id' => $request->city_id,
+                'lat' => $request->lat,
+                'lng' => $request->lng,
+            ]);
         }
 
-        ShappingAddress::updateOrCreate([
-            'live_video_item_id' => $request->id,
-        ],[
-            'address' => $request->shipping_address,
-            'city_id' => $request->city_id,
-            'payment_method' => $request->payment_method,
-            'lat' => $request->lat,
-            'lng' => $request->lng,
-        ]);
 
+        $data =  CartItemResource::collection($data);
 
-        $data =  new CartItemResource($data);
-
-        return $this->success_response(NULL, $data);
+        return $this->success_response(TranslationHelper::translate('shipping_address_added_successfully'), $data);
     }
-
-
-
-
-
-
-
-
 
     public function otherUserprofile($user_name) {
         $user=User::where('user_name',$user_name)->first();

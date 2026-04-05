@@ -1308,4 +1308,5 @@
   'payment_proof' => 'Payment proof',
   'no_payment_proof_yet' => 'No payment proof uploaded yet',
   'view_payment_proof' => 'View payment proof',
+  'shipping_address_added_successfully' => 'Shipping Address Added Successfully',
 );

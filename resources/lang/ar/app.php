@@ -1310,4 +1310,5 @@
   'payment_proof' => 'إثبات الدفع',
   'no_payment_proof_yet' => 'لم يتم رفع إثبات الدفع بعد',
   'view_payment_proof' => 'عرض إثبات الدفع',
+  'shipping_address_added_successfully' => 'Shipping Address Added Successfully',
 );
