@@ -86,12 +86,15 @@ class OrderController extends Controller
             ->addColumn('buyer', function(LiveVideoItem $item) {
                 return $item->user_auction->name ?? '';
             })
+            ->addColumn('payment_proof', function(LiveVideoItem $item) {
+                return view('dashboard.pages.orders.payment_proof_column')->with(['item' => $item]);
+            })
 
             ->addColumn('action', function(LiveVideoItem $item) {
                 return view('dashboard.pages.orders.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'phone','email', 'status', 'action'])
+            ->rawColumns(['id', 'name', 'phone','email', 'status', 'payment_proof', 'action'])
             ->startsWithSearch()
             -> make(true);
     }

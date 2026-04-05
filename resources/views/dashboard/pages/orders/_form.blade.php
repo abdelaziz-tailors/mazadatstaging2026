@@ -185,6 +185,30 @@
                                 </div>
                             </div>
 
+                            @if (isset($data))
+                            <div class="col-12 form-group">
+                                <label class="form-label">{{ TranslationHelper::translate('payment_proof') }}</label>
+                                @if (!empty($data->payment_proof) && file_exists(public_path($data->payment_proof)))
+                                    @php
+                                        $proofExt = strtolower(pathinfo($data->payment_proof, PATHINFO_EXTENSION));
+                                    @endphp
+                                    <div class="border rounded p-3 bg-light">
+                                        @if (in_array($proofExt, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true))
+                                            <a href="{{ asset($data->payment_proof) }}" target="_blank" rel="noopener">
+                                                <img src="{{ asset($data->payment_proof) }}" alt="" class="img-fluid rounded" style="max-height: 360px;">
+                                            </a>
+                                        @else
+                                            <a href="{{ asset($data->payment_proof) }}" target="_blank" rel="noopener" class="btn btn-primary">
+                                                <i class="fa fa-file-pdf"></i> {{ TranslationHelper::translate('view_payment_proof') }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                @else
+                                    <p class="text-muted mb-0">{{ TranslationHelper::translate('no_payment_proof_yet') }}</p>
+                                @endif
+                            </div>
+                            @endif
+
 
 
 

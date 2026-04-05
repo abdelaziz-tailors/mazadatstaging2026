@@ -1300,4 +1300,12 @@
   'invalid_file_upload' => 'Invalid file upload',
   'please_choose_a_video' => 'Please choose a video',
   'video_uploaded_successfully' => 'Video uploaded successfully',
+  'payment_proof_max_size_10_mb' => 'Payment proof max size 10 MB',
+  'payment_proof_must_be_jpeg__png__webp_or_pdf' => 'Payment proof must be jpeg  png  webp or pdf',
+  'payment_proof_uploaded_successfully' => 'Payment proof uploaded successfully',
+  'app_payment_proof_uploaded_successfully' => 'app payment_proof_uploaded_successfully',
+  'please_choose_an_image_or_pdf_for_payment_proof' => 'Please choose an image or PDF for payment proof',
+  'payment_proof' => 'Payment proof',
+  'no_payment_proof_yet' => 'No payment proof uploaded yet',
+  'view_payment_proof' => 'View payment proof',
 );

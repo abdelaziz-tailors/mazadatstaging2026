@@ -43,6 +43,7 @@
                         <th>{{ TranslationHelper::translate('City') }}</th>
                         <th>{{ TranslationHelper::translate('End price') }}</th>
                         <th>{{ TranslationHelper::translate('Buyer') }}</th>
+                        <th>{{ TranslationHelper::translate('payment_proof') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
 
                     </tr>
@@ -86,6 +87,7 @@
             {data: 'city', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'finished_price', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'buyer', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'payment_proof', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
 
         ],

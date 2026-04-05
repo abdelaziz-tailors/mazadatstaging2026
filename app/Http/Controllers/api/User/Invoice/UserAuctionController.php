@@ -5,7 +5,10 @@ namespace App\Http\Controllers\api\User\Invoice;
 use App\Helpers\TranslationHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Profile\UploadAuctionWinVideoRequest;
+use App\Http\Requests\api\User\Profile\UploadCartPaymentProofRequest;
+use App\Http\Requests\api\User\Profile\UploadPaymentProofRequest;
 use App\Http\Resources\User\AuctionWinVideoResource;
+use App\Http\Resources\User\PaymentProofResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceResource;
 use App\Models\LiveVideo;
@@ -13,30 +16,34 @@ use App\Models\LiveVideoItem;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 
 class UserAuctionController extends Controller
 {
     use ResponseTrait;
 
-    public function list(Request $request)  {
-        $live=LiveVideo::whereHas('video_items',function($q) use ($request){
-            $q->where('user_finished_id',auth('api')->user()->id);
-            if($request->data_from){
+    public function list(Request $request)
+    {
+        $live = LiveVideo::whereHas('video_items', function ($q) use ($request) {
+            $q->where('user_finished_id', auth('api')->user()->id);
+            if ($request->data_from) {
                 $q->where('end_at', '>=', $request->data_from);
             }
-            if($request->data_to){
+            if ($request->data_to) {
                 $q->where('end_at', '<=', $request->data_to);
             }
-
         })->get();
-        $data =  UserInvoiceResource::collection ($live);
-        return $this->success_response(NULL, $data);
+        $data = UserInvoiceResource::collection($live);
+
+        return $this->success_response(null, $data);
     }
+
     public function Iteam($id)
     {
         $live = LiveVideoItem::where('user_finished_id', auth('api')->user()->id)->get();
         $data = UserInvoiceItemResource::collection($live);
-        return $this->success_response(NULL, $data);
+
+        return $this->success_response(null, $data);
     }
 
     /**
@@ -74,5 +81,51 @@ class UserAuctionController extends Controller
         $item->update(['winner_video' => $relativePath]);
 
         return $this->success_response(TranslationHelper::translate('Video uploaded successfully'), new AuctionWinVideoResource($item->fresh()));
+    }
+
+    /**
+     * One receipt for all items the user won in a live stream (same cart as my-cart).
+     * Body: live_video_id + proof file.
+     */
+    public function uploadPaymentProof(UploadCartPaymentProofRequest $request): JsonResponse
+    {
+        $userId = auth('api')->user()->id;
+
+        $items = LiveVideoItem::where('user_finished_id', $userId)
+            ->get();
+        if ($items->isEmpty()) {
+            return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
+        }
+
+        $relativePath = $this->savePaymentProofFile($request->file('proof'));
+        foreach ($items as $item) {
+            $item->update([
+                'payment_proof' => $relativePath
+            ]);
+        }
+
+        $updated = LiveVideoItem::where('user_finished_id', $userId)
+            ->get();
+
+        return $this->success_response(
+            TranslationHelper::translate('payment_proof_uploaded_successfully'),
+            PaymentProofResource::collection($updated)
+        );
+    }
+
+    /**
+     * Store proof under public/ like winner videos; path is relative to public for asset().
+     */
+    private function savePaymentProofFile(UploadedFile $file): string
+    {
+        $dir = public_path('payment_proofs');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $ext = strtolower($file->getClientOriginalExtension());
+        $fileName = time() . '_' . uniqid('', true) . '.' . $ext;
+        $file->move($dir, $fileName);
+
+        return 'payment_proofs/' . $fileName;
     }
 }

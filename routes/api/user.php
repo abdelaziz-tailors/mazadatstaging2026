@@ -28,7 +28,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::post('social-login', 'LoginController');
         Route::post('social-register', 'RegisterController');
 
-        
+
         });
     });
 
@@ -135,6 +135,7 @@ Route::group(['middleware' => ['auth:api']], function() {
                 Route::get('user-invoice', 'UserAuctionController@list');
                 Route::get('user-invoice/{id}', 'UserAuctionController@Iteam');
                 Route::post('upload-win-video/{id}', 'UserAuctionController@uploadWinVideo');
+                Route::post('upload-payment-proof', 'UserAuctionController@uploadPaymentProof');
             });
 
             Route::group(['prefix' => 'friend','namespace' => 'Friend'], function(){
