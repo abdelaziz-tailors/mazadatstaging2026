@@ -164,7 +164,7 @@
         <button type="submit" name="action" value="save" class="btn btn-primary">
                 {{ TranslationHelper::translate('save') }}
             </button>
-            @if (!isset($data))
+            @if (isset($data))
             <button type="submit" name="action" value="add_product" class="btn btn-secondary">
                 {{ TranslationHelper::translate('add Product') }}
             </button>
