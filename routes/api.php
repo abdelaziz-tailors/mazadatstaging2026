@@ -37,6 +37,9 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
         Route::get('bank-payment', 'SettingController@paymentMethods');
         Route::get('contact', 'SettingController@contact');
 
+        // Roles
+        Route::apiResource('roles', 'RoleController');
+
     });
 
     // 1. User App
