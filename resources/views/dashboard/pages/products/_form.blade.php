@@ -68,7 +68,7 @@
                             </div> --}}
                                 <input type="hidden" name="video_id" value="{{$id ?? $data->live_video_id }}">
 
-                            <div class="col-lg-6 form-group">
+                            {{-- <div class="col-lg-6 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('Category') }}</label>
                                 <select class="form-control" id="category_id" name="category_id">
                                     <option value="">{{ TranslationHelper::translate('Select Category') }}</option>
@@ -78,7 +78,7 @@
                                     @empty
                                     @endforelse
                                 </select>
-                            </div>
+                            </div> --}}
 
 
                             <div class="col-lg-4 form-group">
@@ -93,7 +93,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-lg-4 form-group">
+                            {{-- <div class="col-lg-4 form-group">
                                 {!! Form::label('age_type', TranslationHelper::translate('age type'), ['class'=>'form-label']) !!}
 
                                 <select class="form-control" id="age_type" name="age_type">
@@ -101,7 +101,7 @@
                                     <option @if (isset($data)) @if('year' ==$data->age_type?? 0) selected @endif @endif value="year">{{ TranslationHelper::translate('year') }}</option>
                                     <option @if (isset($data)) @if('month' ==$data->age_type?? 0) selected @endif @endif value="month">{{ TranslationHelper::translate('month') }}</option>
                                 </select>
-                            </div>
+                            </div> --}}
 
 
 
@@ -129,7 +129,7 @@
                             </div>
                                 --}}
 
-                            <div class="col-lg-4 form-group">
+                            {{-- <div class="col-lg-4 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('Type') }}</label>
                                 <select class="form-control" id="type" name="type">
                                     <option value="">{{ TranslationHelper::translate('Select Type') }}</option>
@@ -137,7 +137,7 @@
                                     <option @if (isset($data)) @if('female' ==$data->type?? 0) selected @endif @endif value="female">{{ TranslationHelper::translate('female') }}</option>
 
                                 </select>
-                            </div>
+                            </div> --}}
 
                             <div class="col-lg-4 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('quantity') }}</label>
