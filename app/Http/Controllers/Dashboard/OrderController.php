@@ -55,7 +55,7 @@ class OrderController extends Controller
         return Datatables::of($providers)
 
             ->editColumn('title', function(LiveVideoItem $item) {
-                return $item->title;
+                return app()->getLocale() === 'ar' ? $item->title_ar : $item->title;
             })
             ->editColumn('title_ar', function(LiveVideoItem $item) {
                 return $item->title_ar;
