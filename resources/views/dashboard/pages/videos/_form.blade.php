@@ -79,21 +79,21 @@
                             </div>
 
                             <div class="col-6 form-group">
-                                <label class="form-label">{{ TranslationHelper::translate('Video Type') }}</label>
+                                <label class="form-label">{{ TranslationHelper::translate('video_type') }}</label>
                                 <div class="form-check">
                                     {!! Form::radio('type', 'live', isset($data) ? $data->type === 'live' : true, ['class' => 'form-check-input', 'id' => 'type_live']) !!}
-                                    <label class="form-check-label" for="type_live">{{ TranslationHelper::translate('Live') }}</label>
+                                    <label class="form-check-label" for="type_live">{{ TranslationHelper::translate('live') }}</label>
                                 </div>
                                 <div class="form-check">
                                     {!! Form::radio('type', 'recorded', isset($data) ? $data->type === 'recorded' : false, ['class' => 'form-check-input', 'id' => 'type_recorded']) !!}
-                                    <label class="form-check-label" for="type_recorded">{{ TranslationHelper::translate('Recorded') }}</label>
+                                    <label class="form-check-label" for="type_recorded">{{ TranslationHelper::translate('recorded') }}</label>
                                 </div>
                             </div>
 
 
                             <!-- Partners Type Radio -->
                             <div class="col-6 form-group mt-4">
-                                <label class="form-label">{{ TranslationHelper::translate('Partners Type') }}</label>
+                                <label class="form-label">{{ TranslationHelper::translate('partners_type') }}</label>
                                 <div class="form-check">
                                     {!! Form::radio('partners_type', 'single', isset($data) ? $data->partners_type === 'single' : true, ['class' => 'form-check-input', 'id' => 'partners_type_single']) !!}
                                     <label class="form-check-label" for="partners_type_single">{{ TranslationHelper::translate('Single Partner') }}</label>
