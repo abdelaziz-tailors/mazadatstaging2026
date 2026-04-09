@@ -1,6 +1,6 @@
 @extends('dashboard.layouts.app')
 
-@section('title') {{ TranslationHelper::translate('Providers') }} @endsection
+@section('title') {{ TranslationHelper::translate('Users') }} @endsection
 
 @push('css')
 <!--begin::Page Vendor Stylesheets(used by this page)-->
@@ -8,11 +8,15 @@
 <!--end::Page Vendor Stylesheets-->
     <style>
 
-        .dt-buttons{
-            margin-top: -166px;
-            z-index: 100000;
-            position: absolute;
-            left: 868px;
+        .dataTables_wrapper .dt-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .dataTables_wrapper .dt-buttons .btn {
+            margin: 0 !important;
         }
     </style>
 @endpush
@@ -177,18 +181,18 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex justify-content-between"<l><B><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>',
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3"<l><f><B>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>',
         buttons: [
 
             {
                 extend:    'excel',
-                text:      '<i class="fa fa-table"></i>  Export as Excel  ',
+                text:      '<i class="fa fa-table"></i> {{ TranslationHelper::translate("export_as_excel_") }}',
                 titleAttr: 'Excel',
                 className: 'btn btn-success  btn-md mr-2 btn-excel'
             },
             {
                 extend:    'pdf',
-                text:      '<i class="fas fa-file-pdf"></i>  Export as  PDF',
+                text:      '<i class="fas fa-file-pdf"></i> {{ TranslationHelper::translate("export_as_pdf_") }}',
                 titleAttr: 'PDF',
                 className: 'btn btn-danger btn-md mr-2 btn-pdf'
             },
