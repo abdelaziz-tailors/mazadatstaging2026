@@ -72,18 +72,21 @@
                 </li>
                 <li class="nav-item dropdown has-arrow">
                     <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
-                        <span class="user-img">
-                            <img class="rounded-circle" src="{{ Storage::disk('public')->url(Auth::guard('admin')->user()->image) }}" width="31" alt="{{ Auth::guard('admin')->user()->name }}">
+                        <span class="user-img d-inline-flex align-items-center justify-content-center rounded-circle bg-light" style="width:31px;height:31px;">
+                            <i class="fa fa-user text-secondary"></i>
+                        </span>
+                        <span class="ms-2 d-none d-lg-inline text-dark fw-semibold">
+                            {{ Auth::guard('admin')->user()->name }}
                         </span>
                     </a>
                     <div class="dropdown-menu">
                         <div class="user-header">
-                            <div class="avatar avatar-sm">
-                                <img src="{{ Storage::disk('public')->url(Auth::guard('admin')->user()->image) }}" alt="{{ Auth::guard('admin')->user()->name }}" class="avatar-img rounded-circle" />
+                            <div class="avatar avatar-sm d-inline-flex align-items-center justify-content-center rounded-circle bg-light">
+                                <i class="fa fa-user text-secondary"></i>
                             </div>
                             <div class="user-text">
-                                <h6>{{ Auth::guard('admin')->user()->name }}</h6>
-                                <p class="text-muted mb-0">{{ Auth::guard('admin')->user()->role }}</p>
+                                <h6 class="mb-1">{{ Auth::guard('admin')->user()->name }}</h6>
+                                <p class="text-muted mb-0">{{ ucfirst(Auth::guard('admin')->user()->role) }}</p>
                             </div>
                         </div>
                         <a class="dropdown-item" href="{{ route('admin.my-profile') }}">{{ TranslationHelper::translate('my_profile') }}</a>
