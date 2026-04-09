@@ -38,10 +38,10 @@
                         <th>{{ TranslationHelper::translate('name') }}</th>
                         {{-- <th>{{ TranslationHelper::translate('Coin') }}</th>
                         <th>{{ TranslationHelper::translate('Price') }}</th> --}}
-                        <th>{{ TranslationHelper::translate('Subscription Type') }}</th>
-                        <th>{{ TranslationHelper::translate('Auctions Limit') }}</th>
-                        <th>{{ TranslationHelper::translate('Monthly Price') }}</th>
-                        <th>{{ TranslationHelper::translate('Annual Price') }}</th>
+                        <th>{{ TranslationHelper::translate('subscription_type') }}</th>
+                        <th>{{ TranslationHelper::translate('auctions_limit') }}</th>
+                        <th>{{ TranslationHelper::translate('monthly_price') }}</th>
+                        <th>{{ TranslationHelper::translate('annual_price') }}</th>
                         <th>{{ TranslationHelper::translate('is_active') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>

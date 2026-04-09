@@ -34,13 +34,13 @@
         {!! Form::email('email', NULL, ['class' => 'form-control']) !!}
     </div> --}}
 
-    <div class="col-6 form-group">
+    {{-- <div class="col-6 form-group">
         <div class="form-check form-switch mt-4">
             <input class="form-check-input" type="checkbox" id="is_verified" name="is_verified"
             @if(isset($admin)) @if($admin->user->is_verified == 1) checked @endif @else checked @endif>
             <label class="form-check-label" for="is_verified">  {{ TranslationHelper::translate('Is Verified') }}</label>
         </div>
-    </div>
+    </div> --}}
 
 
 

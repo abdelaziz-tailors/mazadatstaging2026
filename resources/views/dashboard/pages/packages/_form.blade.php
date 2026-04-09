@@ -66,12 +66,12 @@
                     </div>
 
                     <div class="col-lg-6 form-group">
-                        {!! Form::label('monthly_price', TranslationHelper::translate('Monthly Price'), ['class'=>'form-label']) !!}
+                        {!! Form::label('monthly_price', TranslationHelper::translate('monthly_price'), ['class'=>'form-label']) !!}
                         {!! Form::number('monthly_price', isset($packages) ? $packages->monthly_price : NULL, ['class' => 'form-control', 'step' => '0.01', 'min' => '0']) !!}
                     </div>
 
                     <div class="col-lg-6 form-group">
-                        {!! Form::label('annual_price', TranslationHelper::translate('Annual Price'), ['class'=>'form-label']) !!}
+                        {!! Form::label('annual_price', TranslationHelper::translate('annual_price'), ['class'=>'form-label']) !!}
                         {!! Form::number('annual_price', isset($packages) ? $packages->annual_price : NULL, ['class' => 'form-control', 'step' => '0.01', 'min' => '0']) !!}
                     </div>
 

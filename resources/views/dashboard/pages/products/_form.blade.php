@@ -58,7 +58,7 @@
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="show_partner_name" name="show_partner_name" value="1" @if(isset($data) && $data->show_partner_name) checked @endif>
                                     <label class="form-check-label" for="show_partner_name">
-                                        {{ TranslationHelper::translate('Show Partner Name') }}
+                                        {{ TranslationHelper::translate('show_partner_name') }}
                                     </label>
                                 </div>
                             </div>

@@ -32,16 +32,16 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>{{ TranslationHelper::translate('User') }}</th>
-                        <th>{{ TranslationHelper::translate('Package') }}</th>
-                        <th>{{ TranslationHelper::translate('Subscription Type') }}</th>
-                        <th>{{ TranslationHelper::translate('Auctions Limit') }}</th>
-                        <th>{{ TranslationHelper::translate('Remaining Auctions') }}</th>
-                        <th>{{ TranslationHelper::translate('Price') }}</th>
-                        <th>{{ TranslationHelper::translate('Expires At') }}</th>
-                        <th>{{ TranslationHelper::translate('Approval Status') }}</th>
-                        <th>{{ TranslationHelper::translate('Status') }}</th>
-                        <th>{{ TranslationHelper::translate('Created At') }}</th>
+                        <th>{{ TranslationHelper::translate('user') }}</th>
+                        <th>{{ TranslationHelper::translate('package') }}</th>
+                        <th>{{ TranslationHelper::translate('subscription_type') }}</th>
+                        <th>{{ TranslationHelper::translate('auctions_limit') }}</th>
+                        <th>{{ TranslationHelper::translate('remaining_auctions') }}</th>
+                        <th>{{ TranslationHelper::translate('price') }}</th>
+                        <th>{{ TranslationHelper::translate('expires_at') }}</th>
+                        <th>{{ TranslationHelper::translate('approval_status') }}</th>
+                        <th>{{ TranslationHelper::translate('status') }}</th>
+                        <th>{{ TranslationHelper::translate('created_at') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>
                 </thead>

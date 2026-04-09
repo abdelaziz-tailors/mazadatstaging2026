@@ -118,7 +118,7 @@
                 @if (Auth::guard('admin')->user()->canAny(['view packages', 'user-subscriptions.view']))
                     <li class="submenu">
                         <a href="#"><i class="fa-solid fa-box"></i> <span>
-                            {{ TranslationHelper::translate('Subscriptions') }}</span> <span
+                            {{ TranslationHelper::translate('subscriptions') }}</span> <span
                             class="menu-arrow"></span></a>
                         <ul>
                             @if (Auth::guard('admin')->user()->can('view packages'))
@@ -134,7 +134,7 @@
                                 <li>
                                     <a class="{{ Request::is(app()->getLocale() . '/admin/user-subscriptions*') ? 'active' : '' }}"
                                        href="{{ route('admin.user-subscriptions.index') }}">
-                                        {{ TranslationHelper::translate('User Subscriptions') }}
+                                        {{ TranslationHelper::translate('user_subscriptions') }}
                                     </a>
                                 </li>
                             {{-- @endif --}}

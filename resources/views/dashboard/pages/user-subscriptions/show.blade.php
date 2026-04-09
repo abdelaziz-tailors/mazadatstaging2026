@@ -165,7 +165,7 @@
                             $status = $subscription->status ?? 'pending';
                         @endphp
                         @if($status === 'pending')
-                            <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('Are you sure you want to approve this subscription?') }}')">
+                            <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
                                 {{ csrf_field() }}
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
@@ -179,7 +179,7 @@
                                 <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
                             </button>
                         @elseif($status === 'rejected')
-                            <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('Are you sure you want to approve this subscription?') }}')">
+                            <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
                                 {{ csrf_field() }}
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
