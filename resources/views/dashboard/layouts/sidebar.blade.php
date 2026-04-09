@@ -61,14 +61,14 @@
 
 
                     @if (Auth::guard('admin')->user()->canAny(['view partners', 'delete partner','update partner', 'add partner']))
-                        <li class="submenu">
+                        <li class="submenu ">
                             <a href="#"><i class="fa-solid fa-user-tie"></i> <span>
                                 {{ TranslationHelper::translate('Partners') }}</span> <span
                                     class="menu-arrow"></span></a>
                             <ul>
                                 @if (Auth::guard('admin')->user()->canAny(['view partners', 'delete partner','update partner']))
                                     <li>
-                                        <a class="{{ Request::is(app()->getLocale() . '/admin/admins*') ? 'active' : '' }}"
+                                        <a class="{{ Request::is(app()->getLocale() . '/admin/partners*') ? 'active' : '' }}"
                                            href="{{ route('admin.partners.index') }}">
                                             {{ TranslationHelper::translate('View partners') }}
                                         </a>
@@ -77,7 +77,7 @@
 
                                 @if (Auth::guard('admin')->user()->can('add partner'))
                                     <li>
-                                        <a class="{{ Request::is(app()->getLocale() . '/admin/roles*') ? 'active' : '' }}"
+                                        <a class="{{ Request::is(app()->getLocale() . '/admin/partners/create*') ? 'active' : '' }}"
                                            href="{{ route('admin.partners.create') }}">
                                             {{ TranslationHelper::translate('add partner') }}
                                         </a>
