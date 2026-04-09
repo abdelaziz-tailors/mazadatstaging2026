@@ -87,9 +87,9 @@ class ProductController extends Controller
                     ->with(['item' => $item]);
 
             })
-            // ->addColumn('shipping_address', function(LiveVideoItem $item) {
-            //     return $item->addressData->address ?? '';
-            // })
+            ->addColumn('shipping_address', function(LiveVideoItem $item) {
+                return $item->addressData->address ?? $item->address ?? '';
+            })
             ->addColumn('finished_price', function(LiveVideoItem $item) {
                 return  $item->finished_price;
             })
@@ -165,33 +165,35 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        $live_video = LiveVideo::find($request->video_id);
 
+        $rules = [
+            'user_id'                => 'nullable|exists:users,id',
+            'title'                  => 'required|string|max:255',
+            'title_ar'               => 'required|string|max:255',
+            'age'                    => 'required',
+            'start_price'            => 'required|numeric|min:0',
+            'bidding'                => 'required|numeric|min:0',
+            'quantity'               => 'nullable|integer|min:0',
+            'piece_multiplier_number'=> 'nullable|string|max:100',
+            'identifier'             => 'nullable|string|max:100',
+            'baham_count'            => 'nullable|string|max:100',
+            'address'                => 'nullable|string',
+            'information'            => 'nullable|string',
+            'information_ar'         => 'nullable|string',
+            'terms'                  => 'nullable|string',
+            'terms_ar'               => 'nullable|string',
+            'health_certificate'     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'image'                  => 'nullable|array',
+            'image.*'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'video'                  => 'nullable|file|mimes:mp4,avi,wmv,flv|max:204800',
+        ];
 
-        $request->validate([
-            // 'title' => 'required',
-            // 'title_ar' => 'required',
-            'user_id' => 'nullable|exists:users,id',
-            // 'category_id' => 'required',
-            // 'information' => 'required',
-            // 'information_ar' => 'required',
-            'weight' => 'nullable',
-            'age' => 'required',
-            // 'color_id' => 'required',
-            // 'type' => 'required',
-            // 'date_barth' => 'required',
-            // 'animal_pen_id' => 'required',
-            // 'start_price' => 'required',
-            // 'health_certificate' => 'required',
-            'video' => 'sometimes|file|mimes:mp4,avi,wmv,flv',
-            // 'address' => 'required',
-            // 'age' => 'required',
-            // 'age_type' => 'required',
-            // 'terms' => 'required',
-            // 'terms_ar' => 'required',
-            // 'bidding' => 'required',
-            'health_certificate' => 'sometimes|file|mimes:pdf,jpg,jpeg,png',
-            'quantity' => 'nullable',
-        ]);
+        if ($live_video && $live_video->type === 'recorded') {
+            $rules['video'] = 'required|file|mimes:mp4,avi,wmv,flv|max:204800';
+        }
+
+        $request->validate($rules);
 
 
 
