@@ -62,7 +62,15 @@
             dataType: "JSON"
         },
         columns: [
-            {data: 'id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {
+                data: null,
+                searchable: false,
+                orderable: false,
+                render: function (data, type, row, meta) {
+                    var info = new $.fn.dataTable.Api(meta.settings).page.info();
+                    return info.start + meta.row + 1;
+                }
+            },
             {data: 'name', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'email', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'role', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
