@@ -15,6 +15,10 @@
         {!! Form::label('phone', TranslationHelper::translate('phone'), ['class'=>'form-label']) !!}
         {!! Form::text('phone', NULL, ['class' => 'form-control']) !!}
     </div>
+    <div class="col-lg-6 form-group">
+        {!! Form::label('national_id', TranslationHelper::translate('national_identity'), ['class'=>'form-label']) !!}
+        {!! Form::text('national_id', isset($admin) ? $admin->national_id : null, ['class' => 'form-control', 'dir' => 'ltr', 'autocomplete' => 'off']) !!}
+    </div>
     @if (isset($admin))
         <div class="col-lg-5 form-group">
     @else

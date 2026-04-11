@@ -34,6 +34,7 @@ class UpdatePartnerRequest extends FormRequest
             'email' => 'required|email|unique:admins,email,'.request()->route('partner').',id,deleted_at,NULL',
             'user_name' => 'required|string|unique:users,user_name,'.$admin->user_id,
             'phone' => 'required',
+            'national_id' => 'nullable|string|max:32',
             'image' => 'sometimes|required|mimes:png,jpg,jpeg',
         ];
     }

@@ -1175,6 +1175,7 @@
   'partner_password_changed_successfully' => 'Partner Password Changed Successfully',
   'new_vendor' => 'new vendor',
   'partner_phone' => 'Partner Phone',
+  'national_identity' => 'National ID',
   'suctions' => 'Suctions',
   'auctions_product' => 'Auctions Product',
   'sales' => 'Sales',

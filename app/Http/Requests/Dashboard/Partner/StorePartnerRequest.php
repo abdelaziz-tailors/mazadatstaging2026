@@ -29,6 +29,7 @@ class StorePartnerRequest extends FormRequest
             'email' => 'required|email|unique:admins,email,NULL,id,deleted_at,NULL',
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
             'phone' => 'required',
+            'national_id' => 'nullable|string|max:32',
             'password' => 'required|confirmed',
             'image' => 'sometimes|required|mimes:png,jpg,jpeg'
         ];

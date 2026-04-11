@@ -1177,6 +1177,7 @@
   'partner_password_changed_successfully' => 'تم تغيير كلمة مرور المشترك بنجاح',
   'new_vendor' => 'بائع جديد',
   'partner_phone' => 'هاتف المشترك',
+  'national_identity' => 'الهوية الوطنية',
   'suctions' => 'المزادات',
   'auctions_product' => 'منتج المزادات',
   'sales' => 'المبيعات',

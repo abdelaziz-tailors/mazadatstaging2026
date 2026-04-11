@@ -44,7 +44,7 @@ class PartnerController extends Controller
                 return view('dashboard.pages.partners.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'email' ,'role', 'action'])
+            ->rawColumns(['id', 'name', 'email', 'national_id', 'action'])
             ->make(true);
     }
 
@@ -73,6 +73,7 @@ class PartnerController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'national_id' => $request->national_id,
             'user_name' => $request->user_name,
             'user_type' => 'vendor',
             'password' => bcrypt($request->password),
@@ -97,6 +98,7 @@ class PartnerController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'national_id' => $request->national_id,
             'type' => 'partner',
             'user_id'=>$user->id,
             'password' => bcrypt($request->password),
@@ -141,6 +143,7 @@ class PartnerController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'national_id' => $request->national_id,
 
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $admin->image
         ]);
@@ -152,6 +155,7 @@ class PartnerController extends Controller
             'email' => $request->email,
             'user_name' => $request->user_name,
             'phone' => $request->phone,
+            'national_id' => $request->national_id,
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $user->image
         ]);
         if ($request->is_verified == 'on') {
