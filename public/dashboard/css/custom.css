@@ -964,6 +964,14 @@ textarea.form-control {
   background: #b27a27;
 }
 
+/* Light strip inside user dropdown (BS5 RTL inherits --bs-dropdown-link-color on all children). */
+.user-menu .dropdown-menu .user-header h6 {
+  color: #212529 !important;
+}
+.user-menu .dropdown-menu .user-header .text-muted {
+  color: #6c757d !important;
+}
+
 .user-img {
   display: inline-block;
   margin-right: 3px;
@@ -1923,7 +1931,16 @@ a.bg-danger:focus, a.bg-danger:hover, button.bg-danger:focus, button.bg-danger:h
   transform-origin: left top 0;
   -webkit-transform-origin: left top 0;
   -ms-transform-origin: left top 0;
-    color: white !important;
+  color: white !important;
+  /* BS5 (especially bootstrap.rtl): .dropdown-item uses these vars, not inherited color */
+  --bs-dropdown-color: #dee2e6;
+  --bs-dropdown-link-color: #ffffff;
+  --bs-dropdown-link-hover-color: #ffffff;
+  --bs-dropdown-link-hover-bg: rgba(255, 255, 255, 0.12);
+  --bs-dropdown-link-active-color: #ffffff;
+  --bs-dropdown-link-active-bg: #0de0fe;
+  --bs-dropdown-link-disabled-color: rgba(255, 255, 255, 0.45);
+  --bs-dropdown-header-color: rgba(255, 255, 255, 0.75);
 }
 
 .dropdown-item.active, .dropdown-item:active {
