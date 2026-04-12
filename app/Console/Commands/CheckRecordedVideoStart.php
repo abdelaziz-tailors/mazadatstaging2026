@@ -8,7 +8,7 @@ use App\Models\LiveVideo;
 use App\Models\User\User;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-
+use Illuminate\Support\Facades\DB;
 class CheckRecordedVideoStart extends Command
 {
     /**
@@ -43,10 +43,24 @@ class CheckRecordedVideoStart extends Command
      */
     public function handle()
     {
-        $videos = LiveVideo::where('date_start_at', '=', Carbon::today())
-        ->where('time_start_at', '<=', Carbon::now()->format('H:i:s'))
-        ->where('type','recorded')
-        ->where('status','!=','end')
+        $videos = LiveVideo::whereDate('date_start_at', '<=', today())
+        ->whereDate('date_end_at', '>=', today())
+        ->where(function ($q) {
+            $q->where(function ($q2) {
+                // الحالة الطبيعية (نفس اليوم)
+                $q2->whereTime('time_start_at', '<=', now())
+                   ->whereTime('time_end_at', '>=', now());
+            })
+            ->orWhere(function ($q2) {
+                // الحالة اللي بتعدي نص الليل
+                $q2->whereTime('time_start_at', '>', DB::raw('time_end_at'))
+                   ->where(function ($q3) {
+                       $q3->whereTime('time_start_at', '<=', now())
+                          ->orWhereTime('time_end_at', '>=', now());
+                   });
+            });
+        })
+        ->where('status', '!=', 'end')
         ->get();
 
 
