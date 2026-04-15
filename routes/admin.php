@@ -25,6 +25,7 @@ use App\Http\Controllers\Dashboard\AuctionController;
 use App\Http\Controllers\Dashboard\OrderController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
+use App\Http\Controllers\Dashboard\SellerSubmissionController;
 
 Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
     Route::group(['prefix' => 'admin', 'as'=>'admin.'], function () {
@@ -130,6 +131,13 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'l
             Route::post('user-subscriptions/{id}/approve', [UserSubscriptionController::class, 'approve'])->name('user-subscriptions.approve');
             Route::post('user-subscriptions/{id}/reject', [UserSubscriptionController::class, 'reject'])->name('user-subscriptions.reject');
             // user-subscriptions
+            // seller-submissions
+            Route::resource('/seller-submissions', SellerSubmissionController::class)->only(['index', 'show']);
+            Route::post('seller-submissions/getData', [SellerSubmissionController::class, 'get_data'])->name('seller-submissions.getData');
+            Route::post('seller-submissions/{id}/approve', [SellerSubmissionController::class, 'approve'])->name('seller-submissions.approve');
+            Route::post('seller-submissions/{id}/reject', [SellerSubmissionController::class, 'reject'])->name('seller-submissions.reject');
+            Route::post('seller-submissions/{id}/request-edit', [SellerSubmissionController::class, 'request_edit'])->name('seller-submissions.request-edit');
+            // seller-submissions
             // categories
             Route::resource('/categories', CategoryController::class)->except(['show']);
             Route::post('categories/active_toogler/{id}', [CategoryController::class, 'active_toogler'])->name('categories.active_toogler');

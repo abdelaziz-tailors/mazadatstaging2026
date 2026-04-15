@@ -142,6 +142,16 @@
                     </li>
                 @endif
 
+                {{-- @if (Auth::guard('admin')->user()->canAny(['view videos'])) --}}
+                    <li>
+                        <a class="{{ Request::is(app()->getLocale() . '/admin/seller-submissions*') ? 'active' : '' }}"
+                           href="{{ route('admin.seller-submissions.index') }}">
+                            <i class="fe fe-file-text"></i>
+                            <span>{{ TranslationHelper::translate('seller_submissions') }}</span>
+                        </a>
+                    </li>
+                {{-- @endif --}}
+
                     <li>
                         <a class="{{ (Request::is(app()->getLocale() . '/admin/colors*') ) ? 'active' : '' }}"
                            href="{{ route('admin.colors.index') }}">
