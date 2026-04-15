@@ -32,6 +32,8 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         });
     });
 
+    Route::get('partners', 'PartnerController@index');
+
 
 
 
@@ -73,6 +75,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
 
 
     });
+        Route::post('seller-submissions', 'SellerSubmissionController@store');
 
 //    });
 
@@ -84,6 +87,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
             Route::get('list/{id}', 'AuctionVideoController@list');
             Route::get('replay-list/{id}', 'AuctionVideoController@listReplay');
         });
+
     });
 
 
@@ -119,6 +123,9 @@ Route::group(['middleware' => ['auth:api']], function() {
                 Route::get('auction-subscription-history', 'AuctionSubscriptionController@getHistory');
                 Route::post('auction-subscription', 'AuctionSubscriptionController@subscribe');
             });
+
+            Route::get('seller-submissions/my-list', 'SellerSubmissionController@myList');
+            Route::get('seller-submissions/{id}', 'SellerSubmissionController@show');
 
             Route::group(['prefix' => 'follow'], function(){
                 Route::get('list', 'FollowUserController@list');
