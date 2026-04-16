@@ -1328,4 +1328,8 @@
   'seller_submission_deleted_successfully' => 'تم حذف طلب البيع بنجاح',
   'seller_submission_not_found' => 'طلب البيع غير موجود',
   'approved_successfully' => 'Approved Successfully',
+  'sheep_type' => 'نوع الأغنام',
+  'auction_video_id' => 'معرف الفيديو المزاد',
+  'details' => 'التفاصيل',
+  'seller_submission_details' => 'تفاصيل طلب البيع',
 );

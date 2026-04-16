@@ -22,9 +22,6 @@ class SellerSubmissionController extends Controller
         $submission = SellerSubmission::create([
             'user_id' => auth('api')->id(),
             'partner_id' => $request->partner_id,
-            'name' => $request->name,
-            'phone' => $request->phone,
-            'city_id' => $request->city_id,
             'sheep_type' => $request->sheep_type,
             'age' => $request->age,
             'expected_price' => $request->expected_price,
@@ -60,7 +57,7 @@ class SellerSubmissionController extends Controller
 
         return $this->success_response(
             TranslationHelper::translate(' Added Successfully '),
-            new SellerSubmissionResource($submission->load(['media', 'partner:id,name,phone', 'city']))
+            new SellerSubmissionResource($submission->load(['media', 'partner:id,name,phone']))
         );
     }
 

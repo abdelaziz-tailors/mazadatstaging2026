@@ -11,9 +11,6 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('partner_id')->constrained('users')->cascadeOnDelete();
-            $table->string('name');
-            $table->string('phone');
-            $table->string('city')->nullable();
             $table->string('sheep_type');
             $table->string('age');
             $table->decimal('expected_price', 12, 2);

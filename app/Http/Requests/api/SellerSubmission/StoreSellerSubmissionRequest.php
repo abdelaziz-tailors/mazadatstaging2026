@@ -22,9 +22,6 @@ class StoreSellerSubmissionRequest extends FormRequest
                     $query->where('user_type', 'vendor');
                 }),
             ],
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:30',
-            'city' => 'nullable|string|max:255',
             'sheep_type' => 'required|string|max:255',
             'age' => 'required|string|max:255',
             'expected_price' => 'required|numeric|min:0',
