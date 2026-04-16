@@ -33,9 +33,6 @@ class SellerSubmissionResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'phone' => $this->phone,
-            'city' => $this->city,
             'partner_id' => $this->partner_id,
             'partner_name' => optional($this->partner)->name ?? null,
             'sheep_type' => $this->sheep_type,

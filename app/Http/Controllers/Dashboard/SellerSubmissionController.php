@@ -26,17 +26,20 @@ class SellerSubmissionController extends Controller
 
     public function get_data(Request $request)
     {
-        $items = SellerSubmission::with(['partner'])->select('seller_submissions.*');
+        $items = SellerSubmission::with(['partner', 'user'])->select('seller_submissions.*');
 
         return Datatables::of($items)
             ->editColumn('name', function (SellerSubmission $item) {
-                return $item->name;
+                return $item->user->name ?? '-';
+            })
+            ->editColumn('phone', function (SellerSubmission $item) {
+                return $item->user->phone ?? '-';
+            })
+            ->addColumn('sheep_type', function (SellerSubmission $item) {
+                return $item->sheep_type;
             })
             ->addColumn('partner', function (SellerSubmission $item) {
                 return $item->partner->name ?? '-';
-            })
-            ->addColumn('city', function (SellerSubmission $item) {
-                return $item->city->name ?? '-';
             })
             ->addColumn('status_badge', function (SellerSubmission $item) {
                 $badge = match ($item->status) {

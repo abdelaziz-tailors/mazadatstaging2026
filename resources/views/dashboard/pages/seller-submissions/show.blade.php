@@ -20,16 +20,13 @@
     <div class="card-body">
         <table class="table table-bordered">
             <tr><th>ID</th><td>{{ $submission->id }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('name') }}</th><td>{{ $submission->name }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('phone') }}</th><td>{{ $submission->phone }}</td></tr>
+            <tr><th>{{ TranslationHelper::translate('name') }}</th><td>{{ $submission->user->name ?? '-' }}</td></tr>
+            <tr><th>{{ TranslationHelper::translate('phone') }}</th><td>{{ $submission->user->phone ?? '-' }}</td></tr>
+            <tr><th>{{ TranslationHelper::translate('sheep_type') }}</th><td>{{ $submission->sheep_type }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('partner') }}</th><td>{{ $submission->partner->name ?? '-' }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('city') }}</th><td>{{ $submission->city->name ?? '-' }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('description') }}</th><td>{{ $submission->description ?? '-' }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('notes') }}</th><td>{{ $submission->notes ?? '-' }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('status') }}</th><td>{{ $submission->status }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('review_note') }}</th><td>{{ $submission->review_note ?? '-' }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('auction_video_id') }}</th><td>{{ $submission->auction_video_id ?? '-' }}</td></tr>
-            <tr><th>{{ TranslationHelper::translate('auction_item_id') }}</th><td>{{ $submission->auction_item_id ?? '-' }}</td></tr>
         </table>
 
         @if($submission->media->count())

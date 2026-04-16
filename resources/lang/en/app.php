@@ -1323,4 +1323,10 @@
   'media' => 'Media',
   'auction_item_id' => 'auction_item_id',
   'approved_successfully' => 'Approved Successfully',
+  'sheep_type' => 'Sheep Type',
+  'auction_video_id' => 'Auction Video ID',
+  'details' => 'Details',
+  'seller_submission_details' => 'Seller Submission Details',
+  'name' => 'Name',
+  'phone' => 'Phone',
 );

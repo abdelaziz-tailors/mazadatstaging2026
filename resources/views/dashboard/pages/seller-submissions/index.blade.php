@@ -28,8 +28,8 @@
                     <th>#</th>
                     <th>{{ TranslationHelper::translate('name') }}</th>
                     <th>{{ TranslationHelper::translate('phone') }}</th>
+                    <th>{{ TranslationHelper::translate('sheep_type') }}</th>
                     <th>{{ TranslationHelper::translate('partner') }}</th>
-                    <th>{{ TranslationHelper::translate('city') }}</th>
                     <th>{{ TranslationHelper::translate('status') }}</th>
                     <th>{{ TranslationHelper::translate('created_at') }}</th>
                     <th>{{ TranslationHelper::translate('actions') }}</th>
@@ -53,13 +53,14 @@
             type: "POST",
             dataType: "JSON"
         },
+        order: [[0, 'desc']],
         columns: [
             {data: 'id'},
-            {data: 'name'},
-            {data: 'phone'},
-            {data: 'partner'},
-            {data: 'city'},
-            {data: 'status_badge'},
+            {data: 'name', orderable: false, searchable: false},
+            {data: 'phone', orderable: false, searchable: false},
+            {data: 'sheep_type'},
+            {data: 'partner', orderable: false, searchable: false},
+            {data: 'status_badge', orderable: false, searchable: false},
             {data: 'created_at'},
             {data: 'action', orderable: false, searchable: false}
         ]
