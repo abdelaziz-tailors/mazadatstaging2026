@@ -1189,6 +1189,7 @@
   'please_add_valid_license' => 'Please Add Valid License',
   '_license_max_size_10_mb_' => ' License max Size 10 MB ',
   'please_add_valid_commercial_register' => 'Please Add Valid Commercial Register',
+  'commercial_register_required_for_vendor' => 'Commercial register is required for vendor registration.',
   '_commercial_register_max_size_10_mb_' => ' Commercial Register max Size 10 MB ',
   'only_vendor_can_update_files' => 'only vendor can update files',
   'video_type' => 'Video Type',
@@ -1327,6 +1328,7 @@
   'auction_video_id' => 'Auction Video ID',
   'details' => 'Details',
   'seller_submission_details' => 'Seller Submission Details',
-  'name' => 'Name',
-  'phone' => 'Phone',
+  'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
+  'please_enter_user__type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
+  'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
 );

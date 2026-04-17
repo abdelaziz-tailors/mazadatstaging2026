@@ -32,6 +32,13 @@ class RegisterController extends Controller
             $numbers =  mt_rand(1000, 9999);
             $expire_at = Carbon::now()->addMinutes(10);
 
+            $commercialRegisterName = null;
+            if (($request->user_type ?? 'buyer') === 'vendor' && $request->hasFile('commercial_register')) {
+                $file = $request->file('commercial_register');
+                $commercialRegisterName = 'vendor-commercial-files/'. mt_rand(11111, 99999).'_'.$file->getClientOriginalName();
+                $file->move(public_path('../storage/app/public/vendor-commercial-files'), $commercialRegisterName);
+            }
+
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -39,6 +46,7 @@ class RegisterController extends Controller
                 'user_name' => $request->user_name,
                 // 'account_type' => $request->account_type,
                 'user_type' => $request->user_type ?? 'buyer',
+                'commercial_register' => $commercialRegisterName,
                 'password' => bcrypt($request->password),
                 'otp' => $numbers,
                 'expire_at' => $expire_at,
@@ -61,10 +69,10 @@ class RegisterController extends Controller
 
             DB::commit();
             return $this->success_response(TranslationHelper::translate(' Account Registered Successfully '), new UserResource($user));
-         
+
         } catch (\Throwable $th) {
             DB::rollBack();
-         
+
             return $this->failed_response(TranslationHelper::translate('Something went wrong'),);
         }
     }

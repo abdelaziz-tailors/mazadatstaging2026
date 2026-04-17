@@ -35,7 +35,8 @@ class RegisterRequest extends FormRequest
 
             'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL',
             // 'account_type' => 'required',
-            'user_type' => 'nullable',
+            'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
+            'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'password' => 'required|min:6|confirmed',
         ];
     }
@@ -46,6 +47,11 @@ class RegisterRequest extends FormRequest
             'name.required' => TranslationHelper::translate('please_enter_full_name'),
             'account_type.required' => TranslationHelper::translate('please enter account type'),
             'user_type.required' => TranslationHelper::translate('please enter user type'),
+            'user_type.in' => TranslationHelper::translate('please enter user  type (buyer, vendor, buyer_vendor, seller)'),
+            'commercial_register.required' => TranslationHelper::translate('commercial_register_required_for_vendor'),
+            'commercial_register.file' => TranslationHelper::translate('please_add_valid_commercial_register'),
+            'commercial_register.mimes' => TranslationHelper::translate('please_add_valid_commercial_register'),
+            'commercial_register.max' => TranslationHelper::translate('_commercial_register_max_size_10_mb_'),
             'name.regex' => TranslationHelper::translate('Name Must to be alphabetic'),
             'name.min' => TranslationHelper::translate('Name min 3 liter'),
             'email.required' => TranslationHelper::translate('please_enter_email_address'),
