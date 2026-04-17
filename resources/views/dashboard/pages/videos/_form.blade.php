@@ -119,6 +119,10 @@
                                     {!! Form::radio('type', 'recorded', isset($data) ? $data->type === 'recorded' : false, ['class' => 'form-check-input', 'id' => 'type_recorded']) !!}
                                     <label class="form-check-label" for="type_recorded">{{ TranslationHelper::translate('recorded') }}</label>
                                 </div>
+                                <div class="form-check">
+                                    {!! Form::radio('type', 'photo', isset($data) ? $data->type === 'photo' : false, ['class' => 'form-check-input', 'id' => 'type_photo']) !!}
+                                    <label class="form-check-label" for="type_photo">{{ TranslationHelper::translate('photo_auction') }}</label>
+                                </div>
                                 @error('type')
                                     <span class="text-danger small d-block mt-1">{{ $message }}</span>
                                 @enderror

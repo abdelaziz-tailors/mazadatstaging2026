@@ -80,8 +80,8 @@ class RegisterRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'code' => 422,
-            'success'   => false,
-            'message'   => $validator->errors()
-        ]));
+            'success' => false,
+            'message' => $validator->errors()->first(),
+        ], 422));
     }
 }

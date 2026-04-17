@@ -114,7 +114,7 @@ class VideoController extends Controller
             'date_end_at'         => 'required|date|after_or_equal:date_start_at',
             'time_start_at'       => 'required',
             'time_end_at'         => 'required',
-            'type'                => 'required|in:live,recorded',
+            'type'                => 'required|in:live,recorded,photo',
             'partners_type'       => 'required|in:single,multiple',
             'partner_id'          => 'nullable|exists:users,id',
             'city_id'             => 'nullable|exists:cities,id',
@@ -254,7 +254,24 @@ class VideoController extends Controller
         //     abort(403, 'Unauthorized access.');
         // }
 
-
+        $request->validate([
+            'title'               => 'required|string|max:255',
+            'title_ar'            => 'required|string|max:255',
+            'date_start_at'       => 'required|date',
+            'date_end_at'         => 'required|date|after_or_equal:date_start_at',
+            'time_start_at'       => 'required',
+            'time_end_at'         => 'required',
+            'type'                => 'required|in:live,recorded,photo',
+            'partners_type'       => 'required|in:single,multiple',
+            'partner_id'          => 'nullable|exists:users,id',
+            'city_id'             => 'nullable|exists:cities,id',
+            'information'         => 'nullable|string',
+            'information_ar'      => 'nullable|string',
+            'terms_conditions'    => 'nullable|string',
+            'terms_conditions_ar' => 'nullable|string',
+            'image'               => 'nullable|array',
+            'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+        ]);
 
 
 

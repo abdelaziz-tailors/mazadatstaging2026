@@ -38,7 +38,7 @@ class UpdateVideoRequest extends FormRequest
             'terms_conditions' => 'required|string|max:255',
             'terms_conditions_ar' => 'required|string|max:255',
             'partner_id' => 'requiredif:partners_type,single',
-            'video_type' => 'required',
+            'video_type' => 'required|in:live,recorded,photo',
             'partners_type' => 'required',
         ];
     }

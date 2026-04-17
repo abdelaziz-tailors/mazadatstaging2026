@@ -1197,6 +1197,7 @@
   'video_type' => 'نوع الفيديو',
   'live' => 'مباشر',
   'recorded' => 'مسجل',
+  'photo_auction' => 'مزادات الصور',
   'upload_video' => 'رفع فيديو',
   'partners_type' => 'نوع الشركاء',
   'single_partner' => 'شريك واحد',
@@ -1336,4 +1337,6 @@
   'please_enter_user__type_(buyer__vendor__buyer_vendor__seller)' => 'يرجى إدخال نوع المستخدم (بائع, شريك, بائع وشريك, بائع منفصل)',
   'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)',
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
+  'you_need_to_subscribe_to_create_auctions__please_subscribe_to_continue_' => 'You need to subscribe to create auctions  Please subscribe to continue ',
+  'please_enter_partner_id_' => 'please enter partner id ',
 );

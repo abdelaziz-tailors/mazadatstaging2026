@@ -37,7 +37,7 @@ class AddVideoRequest extends FormRequest
             'time_end_at' => 'required|date_format:H:i',
             // 'city_id' => 'required',
             'terms_conditions' => 'required|string|max:255',
-            'video_type'=>'nullable',
+            'video_type' => 'nullable|in:live,recorded,photo',
             'partners_type'=>'nullable',
             'partner_id'=>'nullable',
             // 'image'=> 'required',

@@ -87,15 +87,17 @@ class LiveVideoController extends Controller
 
             $admin_id = auth('api')->user()->admin->id ?? null;
 
-            // Generate Agora channel and tokens for live streaming
-            $agoraService = new AgoraService();
+            $videoType = $request->video_type ?? 'live';
 
-
-            // Generate channel name (will be updated with video ID after creation)
-            $channelName = $agoraService->generateChannelName(time());
-
-            $agoraToken = $agoraService->generateToken($channelName);
-
+            $channelName = null;
+            $agoraToken = null;
+            $agoraAppId = null;
+            if ($videoType !== 'photo') {
+                $agoraService = new AgoraService();
+                $channelName = $agoraService->generateChannelName(time());
+                $agoraToken = $agoraService->generateToken($channelName);
+                $agoraAppId = $agoraService->getAppId();
+            }
 
             $data = LiveVideo::create([
                 'user_id' => auth('api')->user()->id,
@@ -114,11 +116,11 @@ class LiveVideoController extends Controller
                 'city_id' => $request->city_id ?? null,
                 'admin_id' => $admin_id,
                 'partner_id' => auth('api')->user()->admin->id ?? null,
-                'type' => $request->video_type ?? 'live',
+                'type' => $videoType,
                 'partners_type' => 'single',
                 'agora_channel_name' => $channelName,
                 'agora_token' => $agoraToken,
-                'agora_app_id' => $agoraService->getAppId(),
+                'agora_app_id' => $agoraAppId,
             ]);
 
             // Decrement remaining auctions from subscription

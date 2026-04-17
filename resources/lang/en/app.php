@@ -1195,6 +1195,7 @@
   'video_type' => 'Video Type',
   'live' => 'Live',
   'recorded' => 'Recorded',
+  'photo_auction' => 'Photo auction',
   'upload_video' => 'Upload Video',
   'partners_type' => 'Partners Type',
   'single_partner' => 'Single Partner',
@@ -1331,4 +1332,5 @@
   'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
   'please_enter_user__type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
+  'you_need_to_subscribe_to_create_auctions__please_subscribe_to_continue_' => 'You need to subscribe to create auctions  Please subscribe to continue ',
 );
