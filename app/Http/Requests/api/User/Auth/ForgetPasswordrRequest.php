@@ -27,24 +27,23 @@ class ForgetPasswordrRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email',
+            'phone' => 'required',
         ];
     }
 
     public function messages()
     {
         return [
-            'email.required' => TranslationHelper::translate('please_enter_email_address'),
-            'email.email' => TranslationHelper::translate('please_enter_valid_email'),
+            'phone.required' => TranslationHelper::translate('please Enter phone'),
         ];
     }
 
     public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
-            'code' => 200,
+            'code' => 422,
             'success'   => false,
             'message'   => $validator->errors()->first()
-        ]));
+        ], 422));
     }
 }

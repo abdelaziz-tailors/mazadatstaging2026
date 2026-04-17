@@ -35,9 +35,10 @@ class NewPasswordEmail extends Mailable
     {
 
 
-        return $this->subject("New Password!")->with([
-            'name'=>$this->email_data['name'],
-            'password'=>$this->email_data['password'] ?? '',
+        return $this->subject("Password reset")->with([
+            'name' => $this->email_data['name'],
+            'password' => $this->email_data['password'] ?? '',
+            'code' => $this->email_data['code'] ?? null,
 
         ])->view('email.email-password');
     }

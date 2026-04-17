@@ -22,6 +22,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::post('register', 'RegisterController');
         // Login
         Route::post('forgot-password', 'RegisterController@forgetPassword');
+        Route::post('reset-password', 'ResetPasswordController');
 
         Route::post('login', 'LoginController');
         Route::group(['namespace' => 'Social'], function () {

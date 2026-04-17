@@ -8,7 +8,6 @@ use App\Http\Requests\api\User\Auth\RegisterRequest;
 use App\Helpers\TranslationHelper;
 
 use App\Http\Resources\User\UserResource;
-use App\Mail\NewPasswordEmail;
 use App\Models\Admin;
 use App\Models\Patient;
 use App\Models\User\User;
@@ -17,8 +16,10 @@ use App\Models\User\User;
 use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
@@ -86,29 +87,41 @@ class RegisterController extends Controller
     public function forgetPassword(ForgetPasswordrRequest $request)
     {
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('phone', $request->phone)->first();
 
         if (empty($user)) {
-            return $this->failed_response(TranslationHelper::translate('That mail not exist'),);
+            return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
         }
 
-        // reset password and send email
-        $newPassword = round(99999, 100000);
-        $user->password = bcrypt($newPassword);
+        $otp = $this->generate_password_otp();
+        $user->password_otp = $otp;
         $user->save();
 
-        $password = [
-            'name' => $user->name,
-            'password' => $newPassword,
-
-        ];
-
         try {
-            \Mail::to($request->email)->send(new NewPasswordEmail($password));
-        } catch (\Exception $e) {
-            //dd($e);
+            $mobile = '2'.$request->phone;
+            $uuid = Str::uuid();
+            $client_sms = new Client();
+            $headers = [
+                'Content-Type' => 'application/json',
+            ];
+            $body = '{
+              "UserName": "DacktraAPI",
+              "Password": "rsDdr|u:&&",
+              "SMSText": "Your password reset code is: '.$otp.'",
+              "SMSLang": "e",
+              "SMSSender": "Dacktra",
+              "SMSReceiver": "'.$mobile.'",
+              "SMSID": "'.$uuid.'"
+            }';
+            $smsRequest = new \GuzzleHttp\Psr7\Request('POST', 'https://smsvas.vlserv.com/VLSMSPlatformResellerAPI/NewSendingAPI/api/SMSSender/SendSMS', $headers, $body);
+            $client_sms->sendAsync($smsRequest)->wait();
+        } catch (\Throwable $e) {
+            $user->password_otp = null;
+            $user->save();
+
+            return $this->failed_response(TranslationHelper::translate('Something went wrong'));
         }
 
-        return $this->success_response(TranslationHelper::translate('New Password Send to Your Email'), '');
+        return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), $otp  );
     }
 }

@@ -27,23 +27,29 @@ class ResetPasswordRequest extends FormRequest
     public function rules()
     {
         return [
-            'otp' => 'required',
+            'phone' => 'required',
+            'otp' => 'required|string',
+            'password' => 'required|min:6|confirmed',
         ];
     }
 
     public function messages()
     {
         return [
+            'phone.required' => TranslationHelper::translate('please Enter phone'),
             'otp.required' => TranslationHelper::translate('please_enter_otp'),
+            'password.required' => TranslationHelper::translate('please_enter_password'),
+            'password.min' => TranslationHelper::translate('password_should_have_at_least_6_characters'),
+            'password.confirmed' => TranslationHelper::translate('password_confirmation_not_matching'),
         ];
     }
 
     public function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
-            'code' => 200,
+            'code' => 422,
             'success'   => false,
             'message'   => $validator->errors()->first()
-        ]));
+        ], 422));
     }
 }
