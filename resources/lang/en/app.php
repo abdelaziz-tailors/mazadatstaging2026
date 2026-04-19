@@ -1334,4 +1334,6 @@
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
   'you_need_to_subscribe_to_create_auctions__please_subscribe_to_continue_' => 'You need to subscribe to create auctions  Please subscribe to continue ',
   'please_enter_current_password' => 'please enter current password',
+  'your_message_was_sent_successfully' => 'Your message was sent successfully',
+  'please_enter_your_message' => 'Please enter your message',
 );

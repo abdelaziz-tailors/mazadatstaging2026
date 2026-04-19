@@ -36,6 +36,7 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
         Route::get('ages', 'AgeController');
         Route::get('bank-payment', 'SettingController@paymentMethods');
         Route::get('contact', 'SettingController@contact');
+        Route::post('contact', 'ContactController@store');
 
         // Roles
         Route::apiResource('roles', 'RoleController');
