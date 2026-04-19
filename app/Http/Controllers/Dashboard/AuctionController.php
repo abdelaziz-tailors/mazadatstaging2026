@@ -29,6 +29,7 @@ use Yajra\DataTables\DataTables;
 
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
+use App\Support\PartnerDashboardScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -59,7 +60,7 @@ class AuctionController extends Controller
 
 
         $providers = LiveVideo::query();
-
+        PartnerDashboardScope::scopeLiveVideos($providers);
 
         return Datatables::of($providers)
 
@@ -100,13 +101,15 @@ class AuctionController extends Controller
             -> make(true);
     }
     function show($id){
-        $video=LiveVideo::find($id);
+        $video = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($video);
         return view('dashboard.pages.auctions.show',compact('video'));
 
     }
     public function active_toogler ($id, Request $request) {
         //$this->authorizable('view cities');
         $item = LiveVideo::findorfail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($item);
         $this->trait_active_toogler($item);
     }
 

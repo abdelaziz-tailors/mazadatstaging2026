@@ -220,4 +220,8 @@ class User extends Authenticatable
      *
      * @return array
      */
+    public function isVendor(): bool
+    {
+        return $this->user_type === 'vendor';
+    }
 }

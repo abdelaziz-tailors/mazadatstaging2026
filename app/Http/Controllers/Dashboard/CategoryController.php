@@ -22,6 +22,7 @@ use App\Traits\AuthorizeTrait;
 use App\Traits\ActionTrait;
 use App\Models\Department;
 use App\Models\Category;
+use App\Support\PartnerDashboardScope;
 
 use App\Http\Requests\Dashboard\Category\StoreCategoryRequest;
 use App\Http\Requests\Dashboard\Category\UpdateCategoryRequest;
@@ -36,8 +37,8 @@ class CategoryController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Category::select('id','name->'.app()->getLocale().' as name', 'is_active')
-       ;
+        $packages = Category::query()->select('id','name->'.app()->getLocale().' as name', 'is_active');
+        PartnerDashboardScope::scopeCategories($packages);
         return Datatables::of($packages)
             ->editColumn('is_active', function(Category $item) {
                 return view('dashboard.partials.actions.is_active')
@@ -93,9 +94,7 @@ class CategoryController extends Controller
         //$this->authorizable('edit category');
 
         $data = Category::findorfail($id);
-        // if ($data->admin_id !== Auth::guard('admin')->user()->id) {
-        //     abort(403, 'Unauthorized access.');
-        // }
+        PartnerDashboardScope::ensureOwnCategory($data);
 
         return view('dashboard.pages.categories.edit', compact(['data']));
     }
@@ -111,9 +110,7 @@ class CategoryController extends Controller
     {
         //$this->authorizable('edit category');
         $data = Category::findorfail($id);
-        // if ($data->admin_id !== Auth::guard('admin')->user()->id) {
-        //     abort(403, 'Unauthorized access.');
-        // }
+        PartnerDashboardScope::ensureOwnCategory($data);
 
         $data->update([
             'name' => json_encode($request->name),
@@ -133,6 +130,7 @@ class CategoryController extends Controller
     {
         //$this->authorizable('delete category');
         $data = Category::findorfail($id);
+        PartnerDashboardScope::ensureOwnCategory($data);
         $data->delete();
         Toastr::success(TranslationHelper::translate('category Deleted Successfully'));
         return redirect()->back();
@@ -141,6 +139,7 @@ class CategoryController extends Controller
     public function active_toogler ($id, Request $request) {
         //$this->authorizable('view categories');
         $data = Category::findorfail($id);
+        PartnerDashboardScope::ensureOwnCategory($data);
         $this->trait_active_toogler($data);
     }
 }

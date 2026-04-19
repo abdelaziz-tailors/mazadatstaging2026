@@ -14,6 +14,7 @@ use App\Jobs\SendFCMNotification;
 use Yajra\DataTables\DataTables;
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
+use App\Support\PartnerDashboardScope;
 use Illuminate\Support\Facades\Auth;
 
 class VideoController extends Controller
@@ -33,13 +34,12 @@ class VideoController extends Controller
 
     // get index data by ajax
     public function get_data (Request $request) {
-        // dd($re/)
+        $providers = LiveVideo::query()->orderByDesc('date_start_at');
+        PartnerDashboardScope::scopeLiveVideos($providers);
 
-
-
-
-        $providers = LiveVideo::orderByDesc('date_start_at');
-
+        if ($request->boolean('archive')) {
+            $providers->where('status', 'end');
+        }
 
         return Datatables::of($providers)
 
@@ -80,7 +80,8 @@ class VideoController extends Controller
             -> make(true);
     }
     function show($id){
-        $video=LiveVideo::find($id);
+        $video = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($video);
         return view('dashboard.pages.videos.show',compact('video'));
 
     }
@@ -93,8 +94,11 @@ class VideoController extends Controller
     public function create()
     {
         $cities = City::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-        $providers = User::where('user_type','vendor')->get();
-
+        $providers = User::where('user_type', 'vendor');
+        if (PartnerDashboardScope::isPartner()) {
+            $providers->where('admin_id', Auth::guard('admin')->user()->id);
+        }
+        $providers = $providers->get();
 
         return view('dashboard.pages.videos.create', compact(['cities','providers']));
     }
@@ -229,12 +233,14 @@ class VideoController extends Controller
     public function edit($id)
     {
         $data = LiveVideo::findorfail($id);
-        // if ($data->admin_id !== Auth::guard('admin')->user()->id) {
-        //     abort(403, 'Unauthorized access.');
-        // }
+        PartnerDashboardScope::ensureOwnLiveVideo($data);
 
         $cities = City::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-        $providers = User::where('user_type','vendor')->get();
+        $providers = User::where('user_type', 'vendor');
+        if (PartnerDashboardScope::isPartner()) {
+            $providers->where('admin_id', Auth::guard('admin')->user()->id);
+        }
+        $providers = $providers->get();
 
         return view('dashboard.pages.videos.edit', compact(['data','cities','providers']));
     }
@@ -272,6 +278,7 @@ class VideoController extends Controller
             'image'               => 'nullable|array',
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ]);
+        PartnerDashboardScope::ensureOwnLiveVideo($live_video);
 
 
 
