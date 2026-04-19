@@ -24,6 +24,7 @@ use Yajra\DataTables\DataTables;
 
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
+use App\Support\PartnerDashboardScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -49,8 +50,8 @@ class OrderController extends Controller
 
 
 
-        $providers = LiveVideoItem::whereNotNull('user_finished_id');
-
+        $providers = LiveVideoItem::query()->whereNotNull('user_finished_id');
+        PartnerDashboardScope::scopeLiveVideoItems($providers);
 
         return Datatables::of($providers)
 
@@ -99,7 +100,8 @@ class OrderController extends Controller
             -> make(true);
     }
     function show($id){
-        $video=LiveVideo::find($id);
+        $video = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($video);
         return view('dashboard.pages.videos.show',compact('video'));
 
     }

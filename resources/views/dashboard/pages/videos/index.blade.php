@@ -69,7 +69,10 @@
         },
         ajax: {
             url : "{!! route('admin.videos.getData') !!}",
-            data: {},
+            data: function(d) {
+                d._token = '{{ csrf_token() }}';
+                d.archive = {{ request('archive') ? '1' : '0' }};
+            },
             type: "POST",
             dataType: "JSON"
         },

@@ -35,6 +35,7 @@ use Yajra\DataTables\DataTables;
 
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
+use App\Support\PartnerDashboardScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -47,19 +48,20 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function index(Request $request)
+    public function index($id, Request $request)
     {
-        //$this->authorizable('view videos');
-        return view('dashboard.pages.products.index',compact('request'));
+        $live = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($live);
+        $request->merge(['id' => $id]);
+
+        return view('dashboard.pages.products.index', compact('request'));
     }
 
 
     // get index data by ajax
     public function get_data ($id,Request $request) {
-        // dd($re/)
-
-
-
+        $live = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($live);
 
         $providers = LiveVideoItem::where('live_video_id',$id);
 
@@ -147,12 +149,20 @@ class ProductController extends Controller
     {
 
         //$this->authorizable('add video');
+        $live_video = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($live_video);
+
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $colors = Color::select('id','color', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-        $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
+        $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1);
+        PartnerDashboardScope::scopeCategories($categories);
+        $categories = $categories->get();
         $animal_pens = AnimalPen::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-        $providers = User::where('user_type','vendor')->get();
-        $live_video = LiveVideo::find($id);
+        $providers = User::where('user_type', 'vendor');
+        if (PartnerDashboardScope::isPartner()) {
+            $providers->where('admin_id', Auth::guard('admin')->user()->id);
+        }
+        $providers = $providers->get();
 
         return view('dashboard.pages.products.create', compact([    'providers','categories','colors','ages','id','animal_pens','live_video']));
     }
@@ -166,6 +176,9 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $live_video = LiveVideo::find($request->video_id);
+        if ($live_video) {
+            PartnerDashboardScope::ensureOwnLiveVideo($live_video);
+        }
 
         $rules = [
             'user_id'                => 'nullable|exists:users,id',

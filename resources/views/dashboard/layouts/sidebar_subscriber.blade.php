@@ -25,12 +25,12 @@
                     </a>
                 </li>
 
-                <li class="{{ request('archive') ? 'active' : '' }}">
+                {{-- <li class="{{ request('archive') ? 'active' : '' }}">
                     <a href="{{ route('admin.videos.index', ['archive' => 1]) }}">
                         <i class="fe fe-archive"></i>
                         <span>{{ TranslationHelper::translate('subscriber_dashboard_archive') }}</span>
                     </a>
-                </li>
+                </li> --}}
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin/orders*') ? 'active' : '' }}">
                     <a href="{{ route('admin.orders.index') }}">
@@ -39,7 +39,7 @@
                     </a>
                 </li>
 
-                <li class="menu-title">
+                {{-- <li class="menu-title">
                     <span>{{ TranslationHelper::translate('main') }}</span>
                 </li>
 
@@ -77,7 +77,7 @@
                     <a href="{{ route('admin.animal-pens.index') }}">
                         <i class="fe fe-grid"></i> <span>{{ TranslationHelper::translate('Animal Pens') }}</span>
                     </a>
-                </li>
+                </li> --}}
             </ul>
         </div>
     </div>

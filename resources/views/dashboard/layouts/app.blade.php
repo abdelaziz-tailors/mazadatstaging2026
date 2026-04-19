@@ -100,7 +100,7 @@
 
 
         @if(Auth::guard('admin')->user()->type=="partner")
-            @include('dashboard.layouts.sidebar_partner')
+            @include('dashboard.layouts.sidebar_subscriber')
         @else
             @include('dashboard.layouts.sidebar')
 
