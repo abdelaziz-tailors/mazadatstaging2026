@@ -27,6 +27,7 @@ class ChangePasswordRequest extends FormRequest
     public function rules()
     {
         return [
+            'current_password' => 'required',
             'password' => 'required|min:6|confirmed',
         ];
     }
@@ -34,9 +35,10 @@ class ChangePasswordRequest extends FormRequest
     public function messages()
     {
         return [
+            'current_password.required' => TranslationHelper::translate('please enter current password'),
             'password.required' => TranslationHelper::translate('please_enter_password'),
-            'passsword.min' => TranslationHelper::translate('password should have at least 6 characters'),
-            'passsword.confirmed' => TranslationHelper::translate('password_confirmation_not_matching'),
+            'password.min' => TranslationHelper::translate('password should have at least 6 characters'),
+            'password.confirmed' => TranslationHelper::translate('password_confirmation_not_matching'),
         ];
     }
 

@@ -1339,4 +1339,5 @@
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
   'you_need_to_subscribe_to_create_auctions__please_subscribe_to_continue_' => 'You need to subscribe to create auctions  Please subscribe to continue ',
   'please_enter_partner_id_' => 'please enter partner id ',
+  'please_enter_current_password' => 'please enter current password',
 );

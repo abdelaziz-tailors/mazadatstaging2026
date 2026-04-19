@@ -59,6 +59,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::post('update-bio', 'UpdateProfileController@updateBio');
         Route::post('update-image', 'UpdateProfileController@updateImage');
         Route::post('update-files', 'UpdateProfileController@updateFiles');
+        Route::post('update-password', 'ChangePasswordController');
         Route::post('profile-view/{id}', 'ProfileActionController@profileView');
         Route::get('profile-view-list', 'ProfileActionController@profileViewList');
         Route::post('block/{id}', 'ProfileActionController@block');
