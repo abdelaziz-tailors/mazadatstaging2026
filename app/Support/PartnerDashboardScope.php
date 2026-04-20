@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Category;
 use App\Models\LiveVideo;
+use App\Models\SellerSubmission;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -71,6 +72,34 @@ class PartnerDashboardScope
         }
         $ownerId = (int) Auth::guard('admin')->user()->id;
         if ((int) ($category->admin_id ?? 0) !== $ownerId) {
+            abort(403, 'Unauthorized access.');
+        }
+    }
+
+    /**
+     * Submissions addressed to this partner (partner_id is users.id linked via admins.user_id).
+     */
+    public static function scopeSellerSubmissions(Builder $query): Builder
+    {
+        if (self::isPartner()) {
+            $partnerUserId = Auth::guard('admin')->user()->user_id;
+            if (! $partnerUserId) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where('partner_id', $partnerUserId);
+            }
+        }
+
+        return $query;
+    }
+
+    public static function ensureOwnSellerSubmission(SellerSubmission $submission): void
+    {
+        if (! self::isPartner()) {
+            return;
+        }
+        $partnerUserId = Auth::guard('admin')->user()->user_id;
+        if (! $partnerUserId || (int) $submission->partner_id !== (int) $partnerUserId) {
             abort(403, 'Unauthorized access.');
         }
     }

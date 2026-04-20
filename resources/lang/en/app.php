@@ -1332,6 +1332,7 @@
   'auction_video_id' => 'Auction Video ID',
   'details' => 'Details',
   'seller_submission_details' => 'Seller Submission Details',
+  'seller_submission_media_hint' => 'Thumbnails use a fixed frame; images are cropped to fit evenly.',
   'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
   'please_enter_user__type_(buyer__vendor__buyer_vendor__seller)' => 'please enter user  type (buyer  vendor  buyer_vendor  seller)',
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',

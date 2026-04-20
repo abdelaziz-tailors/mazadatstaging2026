@@ -1337,6 +1337,7 @@
   'auction_video_id' => 'معرف الفيديو المزاد',
   'details' => 'التفاصيل',
   'seller_submission_details' => 'تفاصيل طلب البيع',
+  'seller_submission_media_hint' => 'معاينات موحّدة الحجم؛ الصور تُقص لتملأ الإطار بشكل متناسق.',
   'please_enter_user__type_(buyer__vendor__buyer_vendor__seller)' => 'يرجى إدخال نوع المستخدم (بائع, شريك, بائع وشريك, بائع منفصل)',
   'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_user_type_(buyer__vendor__buyer_vendor__seller)',
   'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)' => 'please_enter_user_type_(buyer__vendor__buyer_vendor__seller)',
