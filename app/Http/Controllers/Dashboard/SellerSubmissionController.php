@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\SellerSubmission;
+use App\Support\PartnerDashboardScope;
 use App\Traits\AuthorizeTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
@@ -21,12 +22,15 @@ class SellerSubmissionController extends Controller
 
     public function index()
     {
-        return view('dashboard.pages.seller-submissions.index');
+        return view('dashboard.pages.seller-submissions.index', [
+            'isPartnerDashboard' => PartnerDashboardScope::isPartner(),
+        ]);
     }
 
     public function get_data(Request $request)
     {
         $items = SellerSubmission::with(['partner', 'user'])->select('seller_submissions.*');
+        PartnerDashboardScope::scopeSellerSubmissions($items);
 
         return Datatables::of($items)
             ->editColumn('name', function (SellerSubmission $item) {
@@ -63,12 +67,18 @@ class SellerSubmissionController extends Controller
     public function show($id)
     {
         $submission = SellerSubmission::with(['media', 'partner'])->findOrFail($id);
-        return view('dashboard.pages.seller-submissions.show', compact('submission'));
+        PartnerDashboardScope::ensureOwnSellerSubmission($submission);
+
+        return view('dashboard.pages.seller-submissions.show', [
+            'submission' => $submission,
+            'isPartnerDashboard' => PartnerDashboardScope::isPartner(),
+        ]);
     }
 
     public function approve($id)
     {
         $submission = SellerSubmission::with('media')->findOrFail($id);
+        PartnerDashboardScope::ensureOwnSellerSubmission($submission);
 
         if ($submission->status === 'approved') {
             Toastr::warning(TranslationHelper::translate('already approved'));
@@ -132,6 +142,8 @@ class SellerSubmissionController extends Controller
     {
         $request->validate(['review_note' => 'nullable|string|max:1000']);
         $submission = SellerSubmission::findOrFail($id);
+        PartnerDashboardScope::ensureOwnSellerSubmission($submission);
+
         $submission->update([
             'status' => 'rejected',
             'review_note' => $request->review_note,
@@ -147,6 +159,8 @@ class SellerSubmissionController extends Controller
     {
         $request->validate(['review_note' => 'required|string|max:1000']);
         $submission = SellerSubmission::findOrFail($id);
+        PartnerDashboardScope::ensureOwnSellerSubmission($submission);
+
         $submission->update([
             'status' => 'needs_edit',
             'review_note' => $request->review_note,

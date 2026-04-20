@@ -29,7 +29,9 @@
                     <th>{{ TranslationHelper::translate('name') }}</th>
                     <th>{{ TranslationHelper::translate('phone') }}</th>
                     <th>{{ TranslationHelper::translate('sheep_type') }}</th>
+                    @if(!($isPartnerDashboard ?? false))
                     <th>{{ TranslationHelper::translate('partner') }}</th>
+                    @endif
                     <th>{{ TranslationHelper::translate('status') }}</th>
                     <th>{{ TranslationHelper::translate('created_at') }}</th>
                     <th>{{ TranslationHelper::translate('actions') }}</th>
@@ -43,6 +45,28 @@
 @endsection
 
 @section('scripts_lib')
+@php
+    $sellerSubmissionDtColumns = ($isPartnerDashboard ?? false)
+        ? [
+            ['data' => 'id'],
+            ['data' => 'name', 'orderable' => false, 'searchable' => false],
+            ['data' => 'phone', 'orderable' => false, 'searchable' => false],
+            ['data' => 'sheep_type'],
+            ['data' => 'status_badge', 'orderable' => false, 'searchable' => false],
+            ['data' => 'created_at'],
+            ['data' => 'action', 'orderable' => false, 'searchable' => false],
+        ]
+        : [
+            ['data' => 'id'],
+            ['data' => 'name', 'orderable' => false, 'searchable' => false],
+            ['data' => 'phone', 'orderable' => false, 'searchable' => false],
+            ['data' => 'sheep_type'],
+            ['data' => 'partner', 'orderable' => false, 'searchable' => false],
+            ['data' => 'status_badge', 'orderable' => false, 'searchable' => false],
+            ['data' => 'created_at'],
+            ['data' => 'action', 'orderable' => false, 'searchable' => false],
+        ];
+@endphp
 <script src="{{asset('dashboard/plugins/datatables/datatables.min.js')}}"></script>
 <script>
     $('#data-table').DataTable({
@@ -54,16 +78,7 @@
             dataType: "JSON"
         },
         order: [[0, 'desc']],
-        columns: [
-            {data: 'id'},
-            {data: 'name', orderable: false, searchable: false},
-            {data: 'phone', orderable: false, searchable: false},
-            {data: 'sheep_type'},
-            {data: 'partner', orderable: false, searchable: false},
-            {data: 'status_badge', orderable: false, searchable: false},
-            {data: 'created_at'},
-            {data: 'action', orderable: false, searchable: false}
-        ]
+        columns: @json($sellerSubmissionDtColumns)
     });
 </script>
 @endsection

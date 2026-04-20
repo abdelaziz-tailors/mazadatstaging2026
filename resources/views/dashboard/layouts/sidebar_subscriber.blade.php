@@ -39,6 +39,13 @@
                     </a>
                 </li>
 
+                <li class="{{ Request::is(app()->getLocale() . '/admin/seller-submissions*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.seller-submissions.index') }}">
+                        <i class="fe fe-document"></i>
+                        <span>{{ TranslationHelper::translate('seller_submissions') }}</span>
+                    </a>
+                </li>
+
                 {{-- <li class="menu-title">
                     <span>{{ TranslationHelper::translate('main') }}</span>
                 </li>
