@@ -99,8 +99,9 @@ class VideoController extends Controller
             $providers->where('admin_id', Auth::guard('admin')->user()->id);
         }
         $providers = $providers->get();
+        $isPartnerDashboard = PartnerDashboardScope::isPartner();
 
-        return view('dashboard.pages.videos.create', compact(['cities','providers']));
+        return view('dashboard.pages.videos.create', compact(['cities', 'providers', 'isPartnerDashboard']));
     }
 
     /**
@@ -111,7 +112,9 @@ class VideoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $isPartner = PartnerDashboardScope::isPartner();
+
+        $rules = [
             'title'               => 'required|string|max:255',
             'title_ar'            => 'required|string|max:255',
             'date_start_at'       => 'required|date',
@@ -119,8 +122,6 @@ class VideoController extends Controller
             'time_start_at'       => 'required',
             'time_end_at'         => 'required',
             'type'                => 'required|in:live,recorded,photo',
-            'partners_type'       => 'required|in:single,multiple',
-            'partner_id'          => 'nullable|exists:users,id',
             'city_id'             => 'nullable|exists:cities,id',
             'information'         => 'nullable|string',
             'information_ar'      => 'nullable|string',
@@ -128,7 +129,18 @@ class VideoController extends Controller
             'terms_conditions_ar' => 'nullable|string',
             'image'               => 'nullable|array',
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
-        ]);
+        ];
+        if (! $isPartner) {
+            $rules['partners_type'] = 'required|in:single,multiple';
+            $rules['partner_id'] = 'nullable|exists:users,id';
+        }
+
+        $request->validate($rules);
+
+        $partnersType = $isPartner ? 'single' : $request->partners_type;
+        $partnerId = $isPartner
+            ? Auth::guard('admin')->user()->user_id
+            : $request->partner_id;
 
         $file = [];
 
@@ -140,16 +152,6 @@ class VideoController extends Controller
                 $file[] = $name;
             }
         }
-
-        if($request->partner_id){
-            $user_id=$request->partner_id;
-        }else{
-            $user_id=23;
-        }
-
-
-        // dd($request->all());
-
 
         $data=LiveVideo::create([
             'title'=>$request->title,
@@ -167,9 +169,9 @@ class VideoController extends Controller
             'terms_conditions_ar' => $request->terms_conditions_ar,
             'city_id' => $request->city_id,
             'admin_id' => Auth::guard('admin')->user()->id,
-            'partner_id' => $request->partner_id ?? null,
+            'partner_id' => $partnerId,
             'type' => $request->type,
-            'partners_type' => $request->partners_type,
+            'partners_type' => $partnersType,
         ]);
         try {
             $firebase = new FirebaseController();
@@ -221,7 +223,7 @@ class VideoController extends Controller
 
         }
 
-        return redirect()->route('admin.auctions.index');
+        return redirect()->route('admin.videos.index');
     }
 
     /**
@@ -241,8 +243,9 @@ class VideoController extends Controller
             $providers->where('admin_id', Auth::guard('admin')->user()->id);
         }
         $providers = $providers->get();
+        $isPartnerDashboard = PartnerDashboardScope::isPartner();
 
-        return view('dashboard.pages.videos.edit', compact(['data','cities','providers']));
+        return view('dashboard.pages.videos.edit', compact(['data', 'cities', 'providers', 'isPartnerDashboard']));
     }
 
     /**
@@ -260,7 +263,9 @@ class VideoController extends Controller
         //     abort(403, 'Unauthorized access.');
         // }
 
-        $request->validate([
+        $isPartner = PartnerDashboardScope::isPartner();
+
+        $rules = [
             'title'               => 'required|string|max:255',
             'title_ar'            => 'required|string|max:255',
             'date_start_at'       => 'required|date',
@@ -268,8 +273,6 @@ class VideoController extends Controller
             'time_start_at'       => 'required',
             'time_end_at'         => 'required',
             'type'                => 'required|in:live,recorded,photo',
-            'partners_type'       => 'required|in:single,multiple',
-            'partner_id'          => 'nullable|exists:users,id',
             'city_id'             => 'nullable|exists:cities,id',
             'information'         => 'nullable|string',
             'information_ar'      => 'nullable|string',
@@ -277,10 +280,19 @@ class VideoController extends Controller
             'terms_conditions_ar' => 'nullable|string',
             'image'               => 'nullable|array',
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
-        ]);
+        ];
+        if (! $isPartner) {
+            $rules['partners_type'] = 'required|in:single,multiple';
+            $rules['partner_id'] = 'nullable|exists:users,id';
+        }
+
+        $request->validate($rules);
         PartnerDashboardScope::ensureOwnLiveVideo($live_video);
 
-
+        $partnersType = $isPartner ? 'single' : $request->partners_type;
+        $partnerId = $isPartner
+            ? Auth::guard('admin')->user()->user_id
+            : $request->partner_id;
 
         $live_video->update([
             'title'=>$request->title,
@@ -296,9 +308,9 @@ class VideoController extends Controller
             'terms_conditions' => $request->terms_conditions,
             'terms_conditions_ar' => $request->terms_conditions_ar,
             'city_id' => $request->city_id,
-            'partner_id' => $request->partner_id ?? null,
+            'partner_id' => $partnerId,
             'type' => $request->type,
-            'partners_type' => $request->partners_type,
+            'partners_type' => $partnersType,
         ]);
 
 
@@ -320,7 +332,7 @@ class VideoController extends Controller
 
 
         Toastr::success(TranslationHelper::translate('Data Updated Successfully'));
-        return redirect()->route('admin.auctions.index');
+        return redirect()->route('admin.videos.index');
     }
 
     /**

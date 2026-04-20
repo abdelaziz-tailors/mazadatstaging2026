@@ -128,6 +128,7 @@
                                 @enderror
                             </div>
 
+                            @if (!($isPartnerDashboard ?? false))
                             <!-- Partners Type Radio -->
                             <div class="col-6 form-group mt-4">
                                 <label class="form-label">{{ TranslationHelper::translate('partners_type') }} <span class="text-danger">*</span></label>
@@ -157,6 +158,7 @@
                                     <span class="text-danger small d-block mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
+                            @endif
 
                             <div class="form-group col-lg-6">
                                 {!! Form::label('image', TranslationHelper::translate('PNG Images'), ['class' => 'form-label']) !!}
@@ -198,6 +200,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
 
+@if (!($isPartnerDashboard ?? false))
 <script>
    $(document).ready(function () {
     $('input[name="partners_type"]').change(function() {
@@ -212,6 +215,7 @@
     $('input[name="partners_type"]:checked').trigger('change');
 });
 </script>
+@endif
 
 
 
