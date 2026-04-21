@@ -37,7 +37,7 @@ class UpdateVideoRequest extends FormRequest
             'time_end_at' => 'sometimes|date_format:H:i',
             'terms_conditions' => 'sometimes|string|max:255',
             'terms_conditions_ar' => 'sometimes|string|max:255',
-            'partner_id' => 'sometimesif:partners_type,single',
+            'partner_id' => 'sometimes|nullable|required_if:partners_type,single|exists:users,id',
             'video_type' => 'sometimes|in:live,recorded,photo',
             'partners_type' => 'sometimes',
         ];
@@ -56,7 +56,7 @@ class UpdateVideoRequest extends FormRequest
             'time_end_at.required' => TranslationHelper::translate('please  enter Time of end '),
             'terms_conditions.required' => TranslationHelper::translate('please  enter terms and conditions '),
             'terms_conditions_ar.required' => TranslationHelper::translate('please  enter terms and conditions '),
-            'partner_id.requiredif' => TranslationHelper::translate('please enter partner id '),
+            'partner_id.required_if' => TranslationHelper::translate('please enter partner id '),
             'video_type.required' => TranslationHelper::translate('please enter video type '),
             'partners_type.required' => TranslationHelper::translate('please enter partners type '),
 
