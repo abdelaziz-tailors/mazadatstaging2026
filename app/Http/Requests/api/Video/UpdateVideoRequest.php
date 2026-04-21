@@ -27,19 +27,19 @@ class UpdateVideoRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => 'required',
-            'title_ar' => 'required',
-            'information' => 'required|string|max:255',
-            'information_ar' => 'required|string|max:255',
-            'date_start_at' => 'required|date_format:Y-m-d',
-            'date_end_at' => 'required|date_format:Y-m-d',
-            'time_start_at' => 'required|date_format:H:i',
-            'time_end_at' => 'required|date_format:H:i',
-            'terms_conditions' => 'required|string|max:255',
-            'terms_conditions_ar' => 'required|string|max:255',
-            'partner_id' => 'requiredif:partners_type,single',
-            'video_type' => 'required|in:live,recorded,photo',
-            'partners_type' => 'required',
+            'title' => 'sometimes',
+            'title_ar' => 'sometimes',
+            'information' => 'sometimes|string|max:255',
+            'information_ar' => 'sometimes|string|max:255',
+            'date_start_at' => 'sometimes|date_format:Y-m-d',
+            'date_end_at' => 'sometimes|date_format:Y-m-d',
+            'time_start_at' => 'sometimes|date_format:H:i',
+            'time_end_at' => 'sometimes|date_format:H:i',
+            'terms_conditions' => 'sometimes|string|max:255',
+            'terms_conditions_ar' => 'sometimes|string|max:255',
+            'partner_id' => 'sometimesif:partners_type,single',
+            'video_type' => 'sometimes|in:live,recorded,photo',
+            'partners_type' => 'sometimes',
         ];
     }
 
