@@ -6,9 +6,8 @@ use App\Http\Controllers\FirebaseController;
 use App\Jobs\SendFCMNotification;
 use App\Models\LiveVideo;
 use App\Models\User\User;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
+
 class CheckRecordedVideoStart extends Command
 {
     /**
@@ -43,25 +42,31 @@ class CheckRecordedVideoStart extends Command
      */
     public function handle()
     {
-        $videos = LiveVideo::whereDate('date_start_at', '<=', today())
-        ->whereDate('date_end_at', '>=', today())
-        ->where(function ($q) {
-            $q->where(function ($q2) {
-                // الحالة الطبيعية (نفس اليوم)
-                $q2->whereTime('time_start_at', '<=', now())
-                   ->whereTime('time_end_at', '>=', now());
+        $now = now();
+
+        // Only pending auctions that should transition to "start": current time is within
+        // [date_start + time_start, date_end + time_end], and not already started/ended.
+        $videos = LiveVideo::query()
+            ->where('status', 'pending')
+            ->whereDate('date_start_at', '<=', $now)
+            ->whereDate('date_end_at', '>=', $now)
+            ->where(function ($q) use ($now) {
+                $q->where(function ($q2) use ($now) {
+                    // Normal: daily window does not cross midnight (time_start <= time_end)
+                    $q2->whereRaw('time_start_at <= time_end_at')
+                        ->whereRaw('TIMESTAMP(date_start_at, time_start_at) <= ?', [$now])
+                        ->whereRaw('TIMESTAMP(date_end_at, time_end_at) >= ?', [$now]);
+                })
+                    ->orWhere(function ($q2) use ($now) {
+                        // Overnight: time_start > time_end (same calendar-day pair in DB)
+                        $q2->whereRaw('time_start_at > time_end_at')
+                            ->where(function ($q3) use ($now) {
+                                $q3->whereTime('time_start_at', '<=', $now)
+                                    ->orWhereTime('time_end_at', '>=', $now);
+                            });
+                    });
             })
-            ->orWhere(function ($q2) {
-                // الحالة اللي بتعدي نص الليل
-                $q2->whereTime('time_start_at', '>', DB::raw('time_end_at'))
-                   ->where(function ($q3) {
-                       $q3->whereTime('time_start_at', '<=', now())
-                          ->orWhereTime('time_end_at', '>=', now());
-                   });
-            });
-        })
-        ->where('status', '!=', 'end')
-        ->get();
+            ->get();
 
 
 
@@ -71,7 +76,7 @@ class CheckRecordedVideoStart extends Command
 
 
 
-            if($video->status == 'pending'){
+            try {
                 $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
                 $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
                 $notification_record = [
@@ -80,24 +85,20 @@ class CheckRecordedVideoStart extends Command
                     'body_en'  => 'Auction "' . $video->title . '" has started on ' . $video->date_start_at . ' at ' . $video->time_start_at,
                     'body_ar'  => 'بدأ المزاد "' . $video->title . '" بتاريخ ' . $video->date_start_at . ' في ' . $video->time_start_at,
                 ];
-                // Send using job queue
                 dispatch(new SendFCMNotification(
                     $tokens_en,
                     $notification_record['title_en'],
                     $notification_record['body_en'],
                 ));
-                // Send using job queue
                 dispatch(new SendFCMNotification(
                     $tokens_ar,
                     $notification_record['title_ar'],
                     $notification_record['body_ar'],
                 ));
-
-
-
-
+            } catch (\Exception $t) {
             }
-                $video->update([
+
+            $video->update([
                     'status'=>'start',
                     'start_at'=>date('Y-m-d H:i:s'),
                 ]);

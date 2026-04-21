@@ -7,7 +7,6 @@ use App\Jobs\SendFCMNotification;
 use App\Models\LiveVideo;
 use App\Models\User\User;
 use App\Models\VideoComment;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class CheckLiveVideoEnd extends Command
@@ -44,13 +43,31 @@ class CheckLiveVideoEnd extends Command
      */
     public function handle()
     {
-        $now = Carbon::now()->format('Y-m-d H:i:s');
+        $now = now();
 
+        // End when the auction window is over: same date/time model as CheckRecordedVideoStart.
+        // Normal: past TIMESTAMP(date_end_at, time_end_at). Overnight: past last day or in the
+        // daytime gap after time_end_at before time_start_at on date_end_at.
         $videos = LiveVideo::query()
             ->where('status', '!=', 'end')
             ->whereNotNull('date_end_at')
             ->whereNotNull('time_end_at')
-            ->whereRaw("CONCAT(date_end_at, ' ', time_end_at) <= ?", [$now])
+            ->where(function ($q) use ($now) {
+                $q->where(function ($q2) use ($now) {
+                    $q2->whereRaw('time_start_at <= time_end_at')
+                        ->whereRaw('TIMESTAMP(date_end_at, time_end_at) < ?', [$now]);
+                })
+                    ->orWhere(function ($q2) use ($now) {
+                        $q2->whereRaw('time_start_at > time_end_at')
+                            ->where(function ($q3) use ($now) {
+                                $q3->whereDate('date_end_at', '<', $now)
+                                    ->orWhere(function ($q4) use ($now) {
+                                        $q4->whereDate('date_end_at', '=', $now)
+                                            ->whereRaw('TIME(?) > time_end_at AND TIME(?) < time_start_at', [$now, $now]);
+                                    });
+                            });
+                    });
+            })
             ->get();
 
 
