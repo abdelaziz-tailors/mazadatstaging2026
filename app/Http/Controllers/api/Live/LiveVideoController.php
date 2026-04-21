@@ -182,7 +182,6 @@ class LiveVideoController extends Controller
         }
 
 
-
         $live_video = LiveVideo::where('id', $id)->where('user_id', auth('api')->user()->id)->first();
         if (!$live_video) {
             return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));

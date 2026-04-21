@@ -180,9 +180,9 @@ class LiveVideoItemController extends Controller
         if (!$live_video){
             return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
         }
-        if ($live_video->status !='pending'){
-            return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
-        }
+        // if ($live_video->status !='pending'){
+        //     return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
+        // }
         if(!$request->partner_id && $live_video->videoLive->partners_type == 'multiple'){
             return $this->failed_response(TranslationHelper::translate('partner_id is required'));
         }
