@@ -41,6 +41,7 @@ class SellerSubmissionResource extends JsonResource
             'description' => $this->description,
             'notes' => $this->notes,
             'status' => $this->status,
+            'review_note' => $this->review_note,
             'images' => $images,
             'video' => $video,
 

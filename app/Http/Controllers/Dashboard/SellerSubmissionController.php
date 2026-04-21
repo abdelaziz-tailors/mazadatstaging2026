@@ -164,8 +164,6 @@ class SellerSubmissionController extends Controller
         $submission->update([
             'status' => 'needs edit',
             'review_note' => $request->review_note,
-            'reviewed_by' => Auth::guard('admin')->id(),
-            'reviewed_at' => now(),
         ]);
 
         Toastr::success(TranslationHelper::translate('Updated Successfully'));

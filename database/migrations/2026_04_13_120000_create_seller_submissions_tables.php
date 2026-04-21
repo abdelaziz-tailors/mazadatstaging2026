@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->text('description')->nullable();
             $table->text('notes')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected', 'needs edit'])->default('pending');
+            $table->text('review_note')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
