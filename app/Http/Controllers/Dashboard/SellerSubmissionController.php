@@ -49,7 +49,7 @@ class SellerSubmissionController extends Controller
                 $badge = match ($item->status) {
                     'approved' => 'success',
                     'rejected' => 'danger',
-                    'needs_edit' => 'warning',
+                    'needs edit' => 'warning',
                     default => 'secondary',
                 };
                 return '<span class="badge bg-' . $badge . '">' . $item->status . '</span>';
@@ -162,7 +162,7 @@ class SellerSubmissionController extends Controller
         PartnerDashboardScope::ensureOwnSellerSubmission($submission);
 
         $submission->update([
-            'status' => 'needs_edit',
+            'status' => 'needs edit',
             'review_note' => $request->review_note,
             'reviewed_by' => Auth::guard('admin')->id(),
             'reviewed_at' => now(),

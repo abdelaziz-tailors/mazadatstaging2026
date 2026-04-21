@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->decimal('expected_price', 12, 2);
             $table->text('description')->nullable();
             $table->text('notes')->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected', 'needs_edit'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'needs edit'])->default('pending');
             $table->softDeletes();
             $table->timestamps();
         });
