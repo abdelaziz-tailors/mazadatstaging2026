@@ -156,7 +156,7 @@ class VideoController extends Controller
         $data=LiveVideo::create([
             'title'=>$request->title,
             'title_ar'=>$request->title_ar,
-            'user_id' =>23,
+            'user_id' => Auth::guard('admin')->user()->user_id,
             'status' => 'pending',
             'image' => json_encode($file),
             'information' => $request->information,
@@ -297,7 +297,7 @@ class VideoController extends Controller
         $live_video->update([
             'title'=>$request->title,
             'title_ar'=>$request->title_ar,
-            'user_id' =>23,
+            'user_id' => Auth::guard('admin')->user()->user_id,
             'status' => 'pending',
             'information' => $request->information,
             'information_ar' => $request->information_ar,
