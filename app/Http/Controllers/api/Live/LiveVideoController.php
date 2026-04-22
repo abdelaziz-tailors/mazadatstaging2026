@@ -189,7 +189,7 @@ class LiveVideoController extends Controller
             return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
         }
         if ($live_video->status != 'pending') {
-            return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
+            return $this->failed_response(TranslationHelper::translate('live_video_cant_be_modified'));
         }
 
         $requestData['admin_id'] = auth('api')->user()->admin->id;

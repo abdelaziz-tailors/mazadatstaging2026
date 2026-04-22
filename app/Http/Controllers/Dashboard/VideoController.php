@@ -294,6 +294,11 @@ class VideoController extends Controller
             ? Auth::guard('admin')->user()->user_id
             : $request->partner_id;
 
+        if ($live_video->status != 'pending') {
+                Toastr::error(TranslationHelper::translate('live_video_cant_be_modified'));
+                return redirect()->back();
+            }
+
         $live_video->update([
             'title'=>$request->title,
             'title_ar'=>$request->title_ar,

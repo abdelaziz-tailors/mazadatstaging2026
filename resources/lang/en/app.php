@@ -989,7 +989,7 @@
   'please_enter_account_type' => 'please enter account type',
   'please_enter_user__type' => 'please enter user  type',
   'please_enter_user_type' => 'please enter user type',
-  'live_video_cant_be_modified' => 'Live Video Cant Be Modified',
+  'live_video_cant_be_modified' => 'Auction Cant Be Modified after it starts',
   'added_successfully_' => 'Added Successfully ',
   'buyer' => 'Buyer',
   'vendor' => 'Vendor',

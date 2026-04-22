@@ -991,7 +991,7 @@
   'please_enter_account_type' => 'يرجى إدخال نوع الحساب',
   'please_enter_user__type' => 'يرجى إدخال نوع المستخدم',
   'please_enter_user_type' => 'يرجى إدخال نوع المستخدم',
-  'live_video_cant_be_modified' => 'لا يمكن تعديل الفيديو المباشر',
+  'live_video_cant_be_modified' => 'لا يمكن تعديل المزاد بعد البدء',
   'added_successfully_' => 'تمت الإضافة بنجاح',
   'buyer' => 'مشتري',
   'vendor' => 'بائع',
