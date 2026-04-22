@@ -109,8 +109,11 @@ class HomeVideoController extends Controller
 
         $data=LiveVideo::find($id);
 
-
-
+        if(auth('api')->user() && auth('api')->user()->admin_id){
+            $data['isHost'] = $data->admin_id == auth('api')->user()->admin->id ? true : false;
+        }else{
+            $data['isHost'] = null;
+        }
 
         return response()->json(['success' => true, 'code' => 200, 'message' => 'Successfully',
             'data' =>new  HomeVideoResource($data),

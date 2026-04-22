@@ -88,6 +88,7 @@ class HomeVideoResource extends JsonResource
                 'token' => $this->agora_token ?? null,
                 'uid' => $this->user_id ?? 0,
             ],
+            'isHost' => $this['isHost'] ?? null,
 
 
         ];

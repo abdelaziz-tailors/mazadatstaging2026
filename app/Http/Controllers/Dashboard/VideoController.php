@@ -133,6 +133,7 @@ class VideoController extends Controller
         if (! $isPartner) {
             $rules['partners_type'] = 'required|in:single,multiple';
             $rules['partner_id'] = 'nullable|exists:users,id';
+            $rules['user_id'] = 'nullable|exists:users,id';
         }
 
         $request->validate($rules);
@@ -141,7 +142,9 @@ class VideoController extends Controller
         $partnerId = $isPartner
             ? Auth::guard('admin')->user()->user_id
             : $request->partner_id;
-
+        $userId = $isPartner
+            ? Auth::guard('admin')->user()->user_id
+            : $request->partner_id;
         $file = [];
 
         if($request->hasfile('image')) {
@@ -156,7 +159,7 @@ class VideoController extends Controller
         $data=LiveVideo::create([
             'title'=>$request->title,
             'title_ar'=>$request->title_ar,
-            'user_id' => Auth::guard('admin')->user()->user_id,
+            'user_id' => $userId,
             'status' => 'pending',
             'image' => json_encode($file),
             'information' => $request->information,

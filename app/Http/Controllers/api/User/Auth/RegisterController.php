@@ -63,7 +63,11 @@ class RegisterController extends Controller
                     'user_id' => $user->id,
                     'password' => bcrypt($request->password),
                 ]);
+                $user->update([
+                    'admin_id' => $admin->id,
+                ]);
             }
+           
             $token = $user->createToken('MyApp')->accessToken;
 
             $user['token'] = $token;
