@@ -177,6 +177,8 @@ class LiveVideoController extends Controller
 
     public function update(UpdateVideoRequest $request, $id): JsonResponse
     {
+
+        $requestData = $request->validated();
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
@@ -190,26 +192,28 @@ class LiveVideoController extends Controller
             return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
         }
 
-        $admin_id = auth('api')->user()->admin->id;
-
-        $live_video->update([
-            'title' => $request->title,
-            'title_ar' => $request->title_ar,
-            'user_id' => auth('api')->user()->id,
-            'information' => $request->information,
-            'information_ar' => $request->information_ar,
-            'date_start_at' => $request->date_start_at,
-            'date_end_at' => $request->date_end_at,
-            'time_start_at' => $request->time_start_at,
-            'time_end_at' => $request->time_end_at,
-            'terms_conditions' => $request->terms_conditions,
-            'terms_conditions_ar' => $request->terms_conditions_ar,
-            'city_id' => $request->city_id,
-            'admin_id' => $admin_id,
-            'partner_id' => $request->partner_id ?? null,
-            'type' => $request->video_type,
-            'partners_type' => $request->partners_type,
-        ]);
+        $requestData['admin_id'] = auth('api')->user()->admin->id;
+        $requestData['user_id'] = auth('api')->user()->id;
+        $live_video->update($requestData);
+        
+        // $live_video->update([
+        //     'title' => $request->title,
+        //     'title_ar' => $request->title_ar,
+        //     'user_id' => auth('api')->user()->id,
+        //     'information' => $request->information,
+        //     'information_ar' => $request->information_ar,
+        //     'date_start_at' => $request->date_start_at,
+        //     'date_end_at' => $request->date_end_at,
+        //     'time_start_at' => $request->time_start_at,
+        //     'time_end_at' => $request->time_end_at,
+        //     'terms_conditions' => $request->terms_conditions,
+        //     'terms_conditions_ar' => $request->terms_conditions_ar,
+        //     'city_id' => $request->city_id,
+        //     'admin_id' => $admin_id,
+        //     'partner_id' => $request->partner_id ?? null,
+        //     'type' => $request->video_type,
+        //     'partners_type' => $request->partners_type,
+        // ]);
 
 
         if ($request->hasfile('image')) {
@@ -436,9 +440,9 @@ class LiveVideoController extends Controller
         if (!$video) {
             return $this->failed_response(TranslationHelper::translate('Video not found'));
         }
-        // if ($video->status != null) {
-        //     return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
-        // }
+        if ($video->status != null) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
+        }
 
         $video->delete();
         try {
