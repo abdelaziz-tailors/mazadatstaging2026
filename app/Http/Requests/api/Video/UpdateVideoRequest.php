@@ -40,6 +40,10 @@ class UpdateVideoRequest extends FormRequest
             'partner_id' => 'sometimes|nullable|required_if:partners_type,single|exists:users,id',
             'video_type' => 'sometimes|in:live,recorded,photo',
             'partners_type' => 'sometimes',
+            'city_id' => 'sometimes|nullable|exists:cities,id',
+            'type' => 'sometimes',
+            'image' => 'sometimes|nullable|array',
+            'image.*' => 'sometimes|nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ];
     }
 
