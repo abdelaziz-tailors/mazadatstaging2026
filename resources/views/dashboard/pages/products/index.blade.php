@@ -46,6 +46,7 @@
                         <th>{{ TranslationHelper::translate('Star price') }}</th>
                         <th>{{ TranslationHelper::translate('End price') }}</th>
                         <th>{{ TranslationHelper::translate('Buyer') }}</th>
+                        <th>{{ TranslationHelper::translate('seller') }}</th>
                         <th>{{ TranslationHelper::translate('shipping address') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
 
@@ -92,6 +93,7 @@
 
             {data: 'finished_price', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'buyer', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'seller', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'shipping_address', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
 

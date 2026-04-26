@@ -129,6 +129,10 @@ class VideoController extends Controller
             'terms_conditions_ar' => 'nullable|string',
             'image'               => 'nullable|array',
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'tax_amount' => 'nullable|min:0',
+            'commission_amount' => 'nullable|min:0',
+            'commission_payer' => 'nullable|in:buyer,seller',
+            'service_fee' => 'nullable|min:0',
         ];
         if (! $isPartner) {
             $rules['partners_type'] = 'required|in:single,multiple';
@@ -175,6 +179,10 @@ class VideoController extends Controller
             'partner_id' => $partnerId,
             'type' => $request->type,
             'partners_type' => $partnersType,
+            'tax_amount' => $request->filled('tax_amount') ? $request->tax_amount : null,
+            'commission_amount' => $request->filled('commission_amount') ?  $request->commission_amount : null,
+            'commission_payer' => $request->filled('commission_payer') ? $request->commission_payer : null,
+            'service_fee' => $request->filled('service_fee') ?  $request->service_fee : null,
         ]);
         try {
             $firebase = new FirebaseController();
@@ -206,7 +214,8 @@ class VideoController extends Controller
             'body_en'  => 'Auction "' . $data->title . '" will be held on ' . $data->date_start_at . ' at ' . $data->time_start_at,
             'body_ar'  => 'سيقام المزاد "' . $data->title . '" في ' . $data->date_start_at . ' في ' . $data->time_start_at,
         ];
-                // Send using job queue
+    try{
+          // Send using job queue
         dispatch(new SendFCMNotification(
             $tokens_en,
             $notification_record['title_en'],
@@ -218,6 +227,8 @@ class VideoController extends Controller
             $notification_record['title_ar'],
             $notification_record['body_ar'],
         ));
+    }catch(\Exception $t){}
+
 
 
         if($request->action == 'add_product'){
@@ -283,6 +294,10 @@ class VideoController extends Controller
             'terms_conditions_ar' => 'nullable|string',
             'image'               => 'nullable|array',
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'tax_amount' => 'nullable|min:0',
+            'commission_amount' => 'nullable|min:0',
+            'commission_payer' => 'nullable|in:buyer,seller',
+            'service_fee' => 'nullable|integer|min:0',
         ];
         if (! $isPartner) {
             $rules['partners_type'] = 'required|in:single,multiple';
@@ -319,6 +334,10 @@ class VideoController extends Controller
             'partner_id' => $partnerId,
             'type' => $request->type,
             'partners_type' => $partnersType,
+            'tax_amount' => $request->filled('tax_amount') ? $request->tax_amount : null,
+            'commission_amount' => $request->filled('commission_amount') ? $request->commission_amount : null,
+            'commission_payer' => $request->filled('commission_payer') ? $request->commission_payer : null,
+            'service_fee' => $request->filled('service_fee') ? $request->service_fee : null,
         ]);
 
 

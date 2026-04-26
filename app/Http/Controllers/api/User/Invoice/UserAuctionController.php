@@ -9,6 +9,9 @@ use App\Http\Requests\api\User\Profile\UploadCartPaymentProofRequest;
 use App\Http\Requests\api\User\Profile\UploadPaymentProofRequest;
 use App\Http\Resources\User\AuctionWinVideoResource;
 use App\Http\Resources\User\PaymentProofResource;
+use App\Http\Resources\User\PartnerAuctionInvoiceResource;
+use App\Http\Resources\User\PartnerInvoiceItemResource;
+use App\Http\Resources\User\SellerInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceResource;
 use App\Models\LiveVideo;
@@ -127,5 +130,46 @@ class UserAuctionController extends Controller
         $file->move($dir, $fileName);
 
         return 'payment_proofs/' . $fileName;
+    }
+    /**
+     * Settlement invoices for consignor sellers: live streams with sold items where seller_id is the auth user.
+     */
+    public function sellerInvoiceList()
+    {
+        $user = auth('api')->user();
+
+        if ($user->user_type !== 'seller') {
+            abort(403, TranslationHelper::translate('unauthorized_access'));
+        }
+        $items = LiveVideoItem::with('videoLive')->where('seller_id', $user->id)
+            ->whereNotNull('user_finished_id')
+            ->get();
+
+        $data = SellerInvoiceItemResource::collection($items);
+
+        return $this->success_response(null, $data);
+    }
+
+    /**
+     * Partner/vendor: flat list of sold lots tied to you (item user_id) or to lives you partner on (live partner_id).
+     */
+    public function partnerInvoiceItemList()
+    {
+        $user = auth('api')->user();
+
+        if (! in_array($user->user_type, ['vendor', 'buyer_vendor'], true)) {
+            abort(403, TranslationHelper::translate('unauthorized_access'));
+        }
+
+        $items = LiveVideoItem::with('videoLive')
+            ->whereNotNull('user_finished_id')
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id)
+                    ->orWhereHas('videoLive', fn ($lv) => $lv->where('partner_id', $user->id));
+            })
+            ->orderByDesc('end_at')
+            ->get();
+
+        return $this->success_response(null, PartnerInvoiceItemResource::collection($items));
     }
 }

@@ -115,6 +115,22 @@ class LiveVideo extends Model
         }
     }
 
+ 
+    public function sub_total()
+    {
+        return $this->user_finished_items->sum('finished_price');
+    }
 
+    public function total_price()
+    {
+        $tax = $this->sub_total() * ((float) ($this->tax_amount ?? 0)) / 100;
+
+        if ($this->commission_payer == 'buyer') {
+            $commission = $this->sub_total() * ((float) ($this->commission_amount ?? 0)) / 100;
+            return $this->sub_total() + $tax + $commission;
+        }
+
+        return $this->sub_total() + $tax;
+    }
 
 }

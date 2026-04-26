@@ -34,6 +34,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
     });
 
     Route::get('partners', 'PartnerController@index');
+    Route::get('sellers', 'SellerUserController@index');
 
 
 
@@ -145,6 +146,10 @@ Route::group(['middleware' => ['auth:api']], function() {
                 Route::get('user-invoice/{id}', 'UserAuctionController@Iteam');
                 Route::post('upload-win-video/{id}', 'UserAuctionController@uploadWinVideo');
                 Route::post('upload-payment-proof', 'UserAuctionController@uploadPaymentProof');
+
+                Route::get('seller-invoice-list', 'UserAuctionController@sellerInvoiceList');
+                Route::get('partner-invoice-items', 'UserAuctionController@partnerInvoiceItemList');
+
             });
 
             Route::group(['prefix' => 'friend','namespace' => 'Friend'], function(){

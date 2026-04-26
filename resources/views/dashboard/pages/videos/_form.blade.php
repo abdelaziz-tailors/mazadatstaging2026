@@ -160,6 +160,32 @@
                             </div>
                             @endif
 
+
+                            <div class="col-12"><h6 class="text-muted mt-2">{{ TranslationHelper::translate('auction_fees') }}</h6></div>
+                            <div class="col-lg-3 form-group">
+                                {!! Form::label('tax_amount', TranslationHelper::translate('tax_amount'), ['class'=>'form-label']) !!}
+                                {!! Form::number('tax_amount', old('tax_amount', isset($data) ? $data->tax_amount : null), ['class' => 'form-control', 'min'=>'0']) !!}
+                                @error('tax_amount')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="col-lg-3 form-group">
+                                {!! Form::label('commission_amount', TranslationHelper::translate('commission_amount'), ['class'=>'form-label']) !!}
+                                {!! Form::number('commission_amount', old('commission_amount', isset($data) ? $data->commission_amount : null), ['class' => 'form-control', 'min'=>'0']) !!}
+                                @error('commission_amount')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="col-lg-3 form-group">
+                                <label class="form-label" for="commission_payer">{{ TranslationHelper::translate('commission_payer') }}</label>
+                                <select name="commission_payer" id="commission_payer" class="form-control">
+                                    <option value="buyer" >{{ TranslationHelper::translate('buyer') }}</option>
+                                    <option value="seller">{{ TranslationHelper::translate('seller') }}</option>
+                                </select>
+                                @error('commission_payer')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="col-lg-3 form-group">
+                                {!! Form::label('service_fee', TranslationHelper::translate('service_fee'), ['class'=>'form-label']) !!}
+                                {!! Form::number('service_fee', old('service_fee', isset($data) ? $data->service_fee : null), ['class' => 'form-control', 'min'=>'0']) !!}
+                                @error('service_fee')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
+                            </div>
+
                             <div class="form-group col-lg-6">
                                 {!! Form::label('image', TranslationHelper::translate('PNG Images'), ['class' => 'form-label']) !!}
                                 <input type="file" multiple id="image_png" name="image[]" class="form-control @error('image') is-invalid @enderror @error('image.*') is-invalid @enderror" accept="image/*" />

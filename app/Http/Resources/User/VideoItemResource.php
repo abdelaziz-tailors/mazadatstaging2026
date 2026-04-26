@@ -72,6 +72,8 @@ class VideoItemResource extends JsonResource
             'identifier' => $this->identifier ?? '',
             'baham_count' => $this->baham_count ?? '',
             'user'=> New UserDataResource($this->user),
+            'seller_id' => $this->seller_id,
+            'seller' => $this->when($this->seller_id, new UserDataResource($this->seller)),
             'show_partner_name'=>$this['show_partner_name'],
 
         ];

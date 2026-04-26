@@ -14,13 +14,20 @@ class UserCartAuctionResource extends JsonResource
      */
     public function toArray($request)
     {
-        
-       
+
+
         $data = [
             'id' => $this->id ??'',
             'title' => $this->title ??'',
             'items_cart'=> CartItemResource::collection($this->user_finished_items),
-            'total_price' => $this->user_finished_items->sum('finished_price'),
+            'sub_total' => $this->sub_total(),
+            'tax_amount' => $this->tax_amount .'%',
+             $this->mergeWhen($this->commission_payer == 'buyer', function(){
+                return [
+                    'commission_amount' => $this->commission_amount .'%',
+                ];
+             }),
+            'total_price' => $this->total_price(),
         ];
         return $data;
     }
