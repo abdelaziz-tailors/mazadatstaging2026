@@ -440,9 +440,9 @@ class LiveVideoController extends Controller
         if (!$video) {
             return $this->failed_response(TranslationHelper::translate('Video not found'));
         }
-        if ($video->status != null) {
-            return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
-        }
+        // if ($video->status != null) {
+        //     return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
+        // }
 
         $video->delete();
         try {
