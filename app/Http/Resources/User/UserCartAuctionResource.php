@@ -21,7 +21,9 @@ class UserCartAuctionResource extends JsonResource
             'title' => $this->title ??'',
             'items_cart'=> CartItemResource::collection($this->user_finished_items),
             'sub_total' => $this->sub_total(),
+            'tax' => $this->tax_value(),
             'tax_amount' => $this->tax_amount .'%',
+            'commission' => $this->commission_value(),
              $this->mergeWhen($this->commission_payer == 'buyer', function(){
                 return [
                     'commission_amount' => $this->commission_amount .'%',

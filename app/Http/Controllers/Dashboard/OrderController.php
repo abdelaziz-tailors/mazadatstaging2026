@@ -242,7 +242,7 @@ class OrderController extends Controller
     public function edit($id)
     {
         //$this->authorizable('edit video');
-        $data = LiveVideoItem::findorfail($id);
+        $data = LiveVideoItem::query()->with(['user_auction', 'seller', 'user'])->findOrFail($id);
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $colors = Color::select('id','color', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();

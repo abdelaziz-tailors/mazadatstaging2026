@@ -172,6 +172,60 @@
                                 {!! Form::number('finished_price', NULL, ['step'=>"0.01",'class' => 'form-control', 'readonly']) !!}
                             </div>
 
+                            @if (isset($data) && $data->user_finished_id)
+                            <div class="col-12">
+                                <div class="border rounded p-3 bg-light mb-3">
+                                    <h6 class="mb-3">{{ TranslationHelper::translate('buyer_order_summary') }} ({{ TranslationHelper::translate('buyer') }}: {{ $data->user_auction->name ?? '—' }})</h6>
+                                    <div class="row">
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('sub_total') }}</small>
+                                            <strong>{{ number_format($live_video->sub_total((int) $data->user_finished_id), 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('tax') }}</small>
+                                            <strong>{{ number_format($live_video->tax_value((int) $data->user_finished_id), 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('commission') }}</small>
+                                            <strong>{{ number_format($live_video->commission_value((int) $data->user_finished_id), 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('order_total') }}</small>
+                                            <strong>{{ number_format($live_video->total_price((int) $data->user_finished_id), 2) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            @if (isset($data) && $data->seller_id)
+                            @php $sellerOrderRow = $live_video->sellerOrderSummaryForSellerId((int) $data->seller_id); @endphp
+                            @if ($sellerOrderRow)
+                            <div class="col-12">
+                                <div class="border rounded p-3 bg-light mb-3">
+                                    <h6 class="mb-3">{{ TranslationHelper::translate('seller_order_summary') }} ({{ TranslationHelper::translate('consignor_seller') }}: {{ $data->seller->name ?? '—' }})</h6>
+                                    <div class="row">
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('gross_sales') }}</small>
+                                            <strong>{{ number_format($sellerOrderRow['gross'], 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('commission') }}</small>
+                                            <strong>{{ number_format($sellerOrderRow['commission'], 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('service_fee') }}</small>
+                                            <strong>{{ number_format($sellerOrderRow['service_fee'], 2) }}</strong>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <small class="text-muted d-block">{{ TranslationHelper::translate('net_to_seller') }}</small>
+                                            <strong>{{ number_format($sellerOrderRow['net'], 2) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            @endif
 
                             <div class="col-6 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('payment status') }}</label>

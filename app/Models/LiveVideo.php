@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class LiveVideo extends Model
 {
@@ -115,22 +116,118 @@ class LiveVideo extends Model
         }
     }
 
- 
-    public function sub_total()
-    {
-        return $this->user_finished_items->sum('finished_price');
-    }
 
-    public function total_price()
+    public function sub_total(?int $buyerUserId = null): float
     {
-        $tax = $this->sub_total() * ((float) ($this->tax_amount ?? 0)) / 100;
-
-        if ($this->commission_payer == 'buyer') {
-            $commission = $this->sub_total() * ((float) ($this->commission_amount ?? 0)) / 100;
-            return $this->sub_total() + $tax + $commission;
+        $buyerId = $buyerUserId;
+        if ($buyerId === null && auth('api')->check()) {
+            $buyerId = (int) auth('api')->user()->id;
+        }
+        if ($buyerId === null) {
+            return 0.0;
         }
 
-        return $this->sub_total() + $tax;
+        return (float) $this->video_items()->where('user_finished_id', $buyerId)->sum('finished_price');
+    }
+
+    public function tax_value(?int $buyerUserId = null): float
+    {
+        return (float) ($this->sub_total($buyerUserId) * ((float) ($this->tax_amount ?? 0)) / 100);
+    }
+
+    public function commission_value(?int $buyerUserId = null): float
+    {
+        if ($this->commission_payer == 'buyer') {
+            return (float) ($this->sub_total($buyerUserId) * ((float) ($this->commission_amount ?? 0)) / 100);
+        }
+
+        return 0.0;
+    }
+
+    public function total_price(?int $buyerUserId = null): float
+    {
+        return (float) ($this->sub_total($buyerUserId) + $this->tax_value($buyerUserId) + $this->commission_value($buyerUserId));
+    }
+
+    /**
+     * Per-winning-buyer subtotal, tax, commission, and total for this live (admin dashboard).
+     */
+    public function buyerOrderSummaries(): Collection
+    {
+        $ids = $this->video_items()
+            ->whereNotNull('user_finished_id')
+            ->pluck('user_finished_id')
+            ->unique()
+            ->values();
+
+        return $ids->map(function ($buyerId) {
+            $buyerId = (int) $buyerId;
+            $user = User::query()->find($buyerId);
+
+            return [
+                'user_id' => $buyerId,
+                'user_name' => $user->name ?? '—',
+                'sub_total' => $this->sub_total($buyerId),
+                'tax' => $this->tax_value($buyerId),
+                'commission' => $this->commission_value($buyerId),
+                'total' => $this->total_price($buyerId),
+            ];
+        });
+    }
+
+
+
+    /**
+     * Per-consignor (seller) gross, platform commission, service fees, and net, for sold items with that seller_id.
+     */
+    public function sellerOrderSummaries(): Collection
+    {
+        $grouped = $this->video_items()
+            ->whereNotNull('user_finished_id')
+            ->whereNotNull('seller_id')
+            ->get()
+            ->groupBy('seller_id');
+
+        return $grouped->map(function ($rows, $sellerId) {
+            $sellerId = (int) $sellerId;
+            $seller = User::query()->find($sellerId);
+            $gross = 0.0;
+            $commissionTotal = 0.0;
+            $serviceTotal = 0.0;
+            $net = 0.0;
+            $servicePerLine = (float) ($this->service_fee ?? 0);
+            foreach ($rows as $item) {
+                $finished = (float) ($item->finished_price ?? 0);
+                $gross += $finished;
+                if ($this->commission_payer == 'seller') {
+                    $c = (float) ($this->commission_amount ?? 0) * $finished / 100;
+                } else {
+                    $c = 0.0;
+                }
+                $commissionTotal += $c;
+                $serviceTotal += $servicePerLine;
+                $net += $finished - $c - $servicePerLine;
+            }
+
+            return [
+                'seller_id' => $sellerId,
+                'seller_name' => $seller->name ?? '—',
+                'gross' => $gross,
+                'commission' => $commissionTotal,
+                'service_fee' => $serviceTotal,
+                'net' => $net,
+            ];
+        })->values();
+    }
+
+    public function sellerOrderSummaryForSellerId(?int $sellerId): ?array
+    {
+        if (! $sellerId) {
+            return null;
+        }
+
+        return $this->sellerOrderSummaries()
+            ->firstWhere('seller_id', (int) $sellerId);
     }
 
 }
