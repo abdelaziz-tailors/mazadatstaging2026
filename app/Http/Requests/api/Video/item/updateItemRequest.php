@@ -34,7 +34,8 @@ class updateItemRequest extends FormRequest
             'information' => 'required',
             'information_ar' => 'required',
             'category_id' => 'required|integer|exists:categories,id', // Assuming category_id references a table
-            'partner_id' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
+            'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
+            'seller_id' => 'nullable|integer|exists:users,id', //  seller
             'weight' => 'required|numeric', // Assuming weight should be a number
             'age' => 'required|integer', // Assuming age is an integer
             'age_type' => 'required', // Assuming age is an integer

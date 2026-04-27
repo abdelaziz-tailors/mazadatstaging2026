@@ -16,9 +16,7 @@
                     </div>
                 </div>
             @endif
-
                         @if ($live_video->partners_type=='single')
-
                         <div class="col-lg-12 form-group">
                             <label class="form-label">{{ TranslationHelper::translate('Vendor') }}</label>
 
@@ -53,6 +51,22 @@
                                 @enderror
                             </div>
                         @endif
+
+                            <div class="col-lg-12 form-group">
+                                <label class="form-label" for="seller_id">{{ TranslationHelper::translate('seller') }}</label>
+                                <select class="form-control @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
+                                    <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
+                                    @forelse($sellers as $sellerUser)
+                                        <option value="{{ $sellerUser->id }}" >
+                                            {{ $sellerUser->name }}
+                                        </option>
+                                    @empty
+                                    @endforelse
+                                </select>
+                                @error('seller_id')
+                                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
 
                             <div class="col-lg-12 form-group">
                                 <div class="form-check">

@@ -43,6 +43,10 @@ class AddVideoRequest extends FormRequest
             'video_type' => 'nullable|in:live,recorded,photo',
             'partners_type'=>'nullable',
             'partner_id'=>'nullable',
+            'tax_amount' => 'nullable|min:0',
+            'commission_amount' => 'nullable|min:0',
+            'commission_payer' => 'nullable|in:buyer,seller',
+            'service_fee' => 'nullable|min:0',
             // 'image'=> 'required',
             // 'image.*'=> 'mimes:jpeg,jpg,png|max:20000',
 

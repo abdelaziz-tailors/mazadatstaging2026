@@ -42,6 +42,10 @@ class UpdateVideoRequest extends FormRequest
             'partners_type' => 'sometimes',
             'city_id' => 'sometimes|nullable|exists:cities,id',
             'type' => 'sometimes',
+            'tax_amount' => 'sometimes|nullable|min:0',
+            'commission_amount' => 'sometimes|nullable|min:0',
+            'commission_payer' => 'sometimes|nullable|in:buyer,seller',
+            'service_fee' => 'sometimes|nullable|min:0',
             'image' => 'sometimes|nullable|array',
             'image.*' => 'sometimes|nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ];

@@ -28,7 +28,10 @@ class UserInvoiceResource extends JsonResource
             'title_ar' => $this->title_ar ??'',
             'status'=>$this['status'],
             'end_at'=>$this['end_at'],
-            'total_price'=>$this->video_items->where('user_finished_id',auth('api')->user()->id)->sum('finished_price'),
+            'sub_total' => $this->sub_total(),
+            'tax' => $this->tax_value(),
+            'commission' => $this->commission_value(),
+            'total_price' => $this->total_price(),
             'total_iteam'=>$this->video_items->where('user_finished_id',auth('api')->user()->id)->count(),
             'video_items'=>ProviderInvoiceItemResource::collection($this->video_items->where('user_finished_id',auth('api')->user()->id)),
         ];

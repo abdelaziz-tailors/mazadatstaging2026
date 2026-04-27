@@ -121,11 +121,14 @@ class LiveVideoController extends Controller
                 'agora_channel_name' => $channelName,
                 'agora_token' => $agoraToken,
                 'agora_app_id' => $agoraAppId,
+                'tax_amount' => $request->input('tax_amount'),
+                'commission_amount' => $request->input('commission_amount'),
+                'commission_payer' => $request->input('commission_payer'),
+                'service_fee' => $request->input('service_fee'),
             ]);
 
             // Decrement remaining auctions from subscription
             $activeSubscription->decrementAuctions();
-
 
             }
             try {
@@ -195,7 +198,7 @@ class LiveVideoController extends Controller
         $requestData['admin_id'] = auth('api')->user()->admin->id;
         $requestData['user_id'] = auth('api')->user()->id;
         $live_video->update($requestData);
-        
+
         // $live_video->update([
         //     'title' => $request->title,
         //     'title_ar' => $request->title_ar,

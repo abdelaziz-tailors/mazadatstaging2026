@@ -63,7 +63,7 @@ class ProductController extends Controller
         $live = LiveVideo::findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live);
 
-        $providers = LiveVideoItem::where('live_video_id',$id);
+        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller');
 
 
         return Datatables::of($providers)
@@ -97,6 +97,9 @@ class ProductController extends Controller
             })
             ->addColumn('buyer', function(LiveVideoItem $item) {
                 return $item->user_auction->name ?? '';
+            })
+            ->addColumn('consignor_seller', function (LiveVideoItem $item) {
+                return $item->seller->name ?? '—';
             })
 
             ->addColumn('action', function(LiveVideoItem $item) {
@@ -163,8 +166,12 @@ class ProductController extends Controller
             $providers->where('admin_id', Auth::guard('admin')->user()->id);
         }
         $providers = $providers->get();
+        $sellers = User::query()
+                    ->where('user_type', 'seller')
+                    ->orderBy('id','desc')
+                    ->get();
 
-        return view('dashboard.pages.products.create', compact([    'providers','categories','colors','ages','id','animal_pens','live_video']));
+        return view('dashboard.pages.products.create', compact([    'providers','sellers','categories','colors','ages','id','animal_pens','live_video']));
     }
 
     /**
@@ -182,6 +189,7 @@ class ProductController extends Controller
 
         $rules = [
             'user_id'                => 'nullable|exists:users,id',
+            'seller_id'              => 'nullable|exists:users,id',
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
             'age'                    => 'required',
@@ -207,7 +215,6 @@ class ProductController extends Controller
         }
 
         $request->validate($rules);
-
 
 
 
@@ -248,6 +255,7 @@ class ProductController extends Controller
             'title_ar' => $request->title_ar,
             'status'=>'pending',
             'user_id' => $request->user_id ?? null,
+            'seller_id' => $request->input('seller_id') ?: null,
             'image' => json_encode($file),
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
@@ -314,8 +322,11 @@ class ProductController extends Controller
         $animal_pens = AnimalPen::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $providers = User::where('user_type','vendor')->get();
         $live_video = LiveVideo::find($data->live_video_id);
-
-        return view('dashboard.pages.products.edit', compact(['providers','data','categories','colors','ages','animal_pens','live_video']));
+        $sellers = User::query()
+                    ->where('user_type', 'seller')
+                    ->orderBy('id','desc')
+                    ->get();
+        return view('dashboard.pages.products.edit', compact(['providers', 'sellers', 'data','categories','colors','ages','animal_pens','live_video']));
 
     }
 
@@ -337,11 +348,17 @@ class ProductController extends Controller
                 'user_id' => 'required|exists:users,id',
             ]);
         }
+        if ($request->exists('seller_id')) {
+            $request->validate([
+                'seller_id' => 'nullable|exists:users,id',
+            ]);
+        }
 
         $live_video->update([
             'title' => $request->title,
             'title_ar' => $request->title_ar,
             'user_id' =>$request->user_id,
+            'seller_id' => $request->exists('seller_id') ? ($request->input('seller_id') ?: null) : $live_video->seller_id,
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
             'information_ar' => $request->information_ar ?? null,

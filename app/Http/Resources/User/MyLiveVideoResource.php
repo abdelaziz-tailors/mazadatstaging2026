@@ -72,7 +72,13 @@ class MyLiveVideoResource extends JsonResource
                 'channel_name' => $this->agora_channel_name ?? null,
                 'token' => $this->agora_token ?? null,
                 'uid' => $this->user_id ?? 0,
-              
+
+            ],
+            'auction_fees' => [
+                'tax_amount' => isset($this->tax_amount) && $this->tax_amount !== null ?  $this->tax_amount : null,
+                'commission_amount' => isset($this->commission_amount) && $this->commission_amount !== null ?  $this->commission_amount : null,
+                'commission_payer' => $this->commission_payer,
+                'service_fee' => isset($this->service_fee) && $this->service_fee !== null ?  $this->service_fee : null,
             ],
 
         ];
