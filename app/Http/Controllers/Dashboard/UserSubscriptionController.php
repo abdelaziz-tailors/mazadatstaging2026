@@ -147,15 +147,15 @@ class UserSubscriptionController extends Controller
                 'is_verified' => 1,
             ]);
 
-            $admin = Admin::create([
-                'name' => $subscription->user->name,
-                'email' => $subscription->user->email,
-                'phone' => $subscription->user->phone,
-                'type' => 'partner',
-                'user_id' => $subscription->user_id,
-                'password' => bcrypt($subscription->user->password ?? '123456789'),
-                'image' => $subscription->user->image ?? 'partners/default.png',
-            ]);
+            // $admin = Admin::create([
+            //     'name' => $subscription->user->name,
+            //     'email' => $subscription->user->email,
+            //     'phone' => $subscription->user->phone,
+            //     'type' => 'partner',
+            //     'user_id' => $subscription->user_id,
+            //     'password' => bcrypt($subscription->user->password ?? '123456789'),
+            //     'image' => $subscription->user->image ?? 'partners/default.png',
+            // ]);
 
             DB::commit();
         } catch (\Throwable $th) {
