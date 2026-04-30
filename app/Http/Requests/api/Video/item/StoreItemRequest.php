@@ -34,6 +34,7 @@ class StoreItemRequest extends FormRequest
             'category_id'=>'required',
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
+            'seller_id.*' => 'nullable|integer|exists:users,id',
             'weight' => 'required', // Assuming weight should be a number
             'weight.*' => 'numeric', // Assuming weight should be a number
             'age' => 'required', // Assuming age is an integer
