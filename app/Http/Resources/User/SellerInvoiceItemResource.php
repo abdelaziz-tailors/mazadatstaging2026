@@ -29,7 +29,7 @@ class SellerInvoiceItemResource extends JsonResource
             'title_ar' => $this->title_ar ?? '',
             'price' => $this->finished_price,
             'commission_payer' => $this->videoLive->commission_payer,
-            'commission' => $commission . '%',
+            'commission' => $this->videoLive->commission_amount . '%',
             'commission_amount' => $commission,
             'service_fee_amount' => $service_fee,
             'net_price' => $net_price,
