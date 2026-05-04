@@ -21,23 +21,24 @@ class BalanceResource extends JsonResource
     {
 
 
-        if($this->isfollow ){
-            $follow=true;
-        }else{
-            $follow=false;
+        // if($this->isfollow ){
+        //     $follow=true;
+        // }else{
+        //     $follow=false;
 
-        }
-        if ($this->resource['phone'] == null) {
-            $profile_completed=false;
-        }else{
-            $profile_completed=true;
+        // }
+        // if ($this->resource['phone'] == null) {
+        //     $profile_completed=false;
+        // }else{
+        //     $profile_completed=true;
 
-        }
+        // }
 
 
         $data = [
-            'coin'=>$this->user_coin->coin ?? 0,
-            'live-video'=> VideoGiftResource::collection($this->user_live_video_gifts)
+            'balance' => $this->wallet_balance ?? 0,
+            // 'coin'=> $this->user_coin->coin ?? 0,
+            // 'live-video'=> VideoGiftResource::collection($this->user_live_video_gifts)
 
         ];
 

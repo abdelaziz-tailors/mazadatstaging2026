@@ -24,9 +24,11 @@ use Yajra\DataTables\DataTables;
 
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
+use App\Services\AuctionWalletSettlement;
 use App\Support\PartnerDashboardScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -262,26 +264,39 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {   
+    {
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
-
+        $wasPaid = $live_video->payment_status === 'paid';
 
         if($request->payment_status == 'paid' && $request->status_cart == 'pending'){
 
             $request['status_cart']='confirmed';
         }
-        // dd($request->all());
-            $live_video->update([
-                'payment_status'=>$request->payment_status,
-                'status_cart'=>$request->status_cart,
 
-        ]);
+        try {
+            DB::transaction(function () use ($request, $live_video, $wasPaid) {
+                $live_video->update([
+                    'payment_status'=>$request->payment_status,
+                    'status_cart'=>$request->status_cart,
+                ]);
 
+                if ($request->payment_status === 'paid' && ! $wasPaid) {
+                    AuctionWalletSettlement::settleIfNeeded($live_video->fresh());
+                }
+            });
+        } catch (\RuntimeException $e) {
 
+            if (in_array($e->getMessage(), ['insufficient_wallet_balance', 'user_not_found'], true)) {
+                $key = $e->getMessage() === 'user_not_found'
+                    ? 'buyer_not_found_for_wallet_settlement'
+                    : 'buyer_wallet_balance_insufficient_for_payment';
+                Toastr::error(TranslationHelper::translate($key));
 
-
-
+                return redirect()->route('admin.orders.index');
+            }
+            throw $e;
+        }
 
         Toastr::success(TranslationHelper::translate('Data Updated Successfully'));
         return redirect()->route('admin.orders.index' );

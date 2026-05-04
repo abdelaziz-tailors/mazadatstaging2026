@@ -1308,6 +1308,8 @@
   'payment_proof_max_size_10_mb' => 'Payment proof max size 10 MB',
   'payment_proof_must_be_jpeg__png__webp_or_pdf' => 'Payment proof must be jpeg  png  webp or pdf',
   'payment_proof_uploaded_successfully' => 'Payment proof uploaded successfully',
+  'buyer_wallet_balance_insufficient_for_payment' => 'The buyer wallet balance is insufficient to confirm this payment.',
+  'buyer_not_found_for_wallet_settlement' => 'Buyer account could not be loaded for wallet settlement.',
   'app_payment_proof_uploaded_successfully' => 'app payment_proof_uploaded_successfully',
   'please_choose_an_image_or_pdf_for_payment_proof' => 'Please choose an image or PDF for payment proof',
   'payment_proof' => 'Payment proof',
