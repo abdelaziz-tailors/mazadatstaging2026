@@ -34,9 +34,15 @@ class HomeVideoController extends Controller
 
         $data = LiveVideo::query();
 
-        if ($request->has('status')) {
-            $data->where('status', $request->status);
+        if ($request->has('status') && $request->status == 'end') {
+            $data->where('status', 'end');
+        } else {
+            if ($request->has('status')) {
+                $data->where('status', $request->status);
+            }
+            $data->where('status', '!=', 'end');
         }
+   
 
         if ($request->has('data_from')) {
             $data->where('date_start_at', '>=', $request->data_from);
