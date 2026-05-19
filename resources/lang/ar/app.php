@@ -1378,4 +1378,9 @@
   'net_to_seller' => 'الصافي للبائع',
   'partner_subtotal' => 'المجموع الفرعي للشريك',
   'partner_subtotal_hint' => 'إجمالي المزاد لشريك البث؛ في وضع عدة بائعين: مجموع مبيعات مالك هذا اللوت في البث.',
+  'sliders' => 'البانرات',
+  'new_slider' => 'بانر جديد',
+  'delete_slider' => 'حذف البانر',
+  'edit_slider' => 'تعديل البانر',
+  'new_slider_created_successfully' => 'New slider created successfully',
 );

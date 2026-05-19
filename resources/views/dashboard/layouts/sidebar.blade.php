@@ -251,6 +251,12 @@
                             <i class="fe fe-plus"></i> <span>{{ TranslationHelper::translate('Ages') }}</span>
                         </a>
                     </li>
+                    <li>
+                        <a class="{{ (Request::is(app()->getLocale() . '/admin/sliders*') ) ? 'active' : '' }}"
+                           href="{{ route('admin.sliders.index') }}">
+                            <i class="fe fe-image"></i> <span>{{ TranslationHelper::translate('Sliders') }}</span>
+                        </a>
+                    </li>
                     {{--                                                @if (Auth::guard('admin')->user()->canAny('view animal_pens'))--}}
 
 

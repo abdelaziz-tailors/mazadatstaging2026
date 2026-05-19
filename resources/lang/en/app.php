@@ -1372,4 +1372,8 @@
   'partner_subtotal' => 'Partner subtotal',
   'partner_subtotal_hint' => 'Full auction total for stream partner; for multi-vendor, subtotal for this lot vendor in the whole stream.',
   'you_need_to_subscribe_to_create_auctions__please_subscribe_to_continue_' => 'You need to subscribe to create auctions  Please subscribe to continue ',
+  'sliders' => 'Sliders',
+  'new_slider' => 'new slider',
+  'delete_slider' => 'delete slider',
+  'new_slider_created_successfully' => 'New slider created successfully',
 );

@@ -26,6 +26,7 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
         Route::get('sounds', 'SoundController');
         Route::get('reports', 'ReportController');
         Route::get('user-reports', 'ReportController@userReports');
+        Route::get('sliders', 'SliderController');
 
         Route::get('about', 'PageController@about');
         Route::get('privacy', 'PageController@privacy');

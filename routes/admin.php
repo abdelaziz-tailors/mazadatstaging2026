@@ -24,6 +24,7 @@ use App\Http\Controllers\Dashboard\PartnerController;
 use App\Http\Controllers\Dashboard\AuctionController;
 use App\Http\Controllers\Dashboard\OrderController;
 use App\Http\Controllers\Dashboard\SettingController;
+use App\Http\Controllers\Dashboard\SliderController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
 use App\Http\Controllers\Dashboard\SellerSubmissionController;
 
@@ -147,6 +148,11 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'l
             Route::get('settings/edit', [SettingController::class, 'edit'])->name('settings.edit');
             Route::post('settings/update', [SettingController::class, 'update'])->name('settings.update');
             // settings
+            // sliders
+            Route::resource('/sliders', SliderController::class)->except(['show']);
+            Route::post('sliders/active_toogler/{id}', [SliderController::class, 'active_toogler'])->name('sliders.active_toogler');
+            Route::post('sliders/getData', [SliderController::class, 'get_data'])->name('sliders.getData');
+            // sliders
             // colors
             Route::resource('/colors', ColorController::class)->except(['show']);
             Route::post('colors/active_toogler/{id}', [ColorController::class, 'active_toogler'])->name('colors.active_toogler');
