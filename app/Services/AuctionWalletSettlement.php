@@ -95,11 +95,15 @@ class AuctionWalletSettlement
     {
         $finished = (float) ($item->finished_price ?? 0);
         $serviceFee = (float) ($live->service_fee ?? 0);
-        $commissionAmount = (($live->commission_payer ?? '') === 'seller')
-            ? (float) ($live->commission_amount ?? 0) * $finished / 100
-            : 0.0;
+        // $commissionAmount = (($live->commission_payer ?? '') === 'seller')
+        //     ? (float) ($live->commission_amount ?? 0) * $finished / 100
+        //     : 0.0;
+        $commissionAmount = (float) ($live->commission_amount ?? 0) * $finished / 100;
+        $taxAmount = (float) ($live->tax_amount ?? 0) * $finished / 100;
+        $netPrice = $commissionAmount + $taxAmount + $serviceFee;
 
-        return round(max(0, $commissionAmount + $serviceFee), 2);
+        // return round(max(0, $commissionAmount + $serviceFee), 2);
+        return round(max(0, $netPrice), 2);
     }
 
     protected static function resolvePartnerUserId(LiveVideo $live): ?int
