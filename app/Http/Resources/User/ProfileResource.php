@@ -35,13 +35,17 @@ class ProfileResource extends JsonResource
         }
 
 
+        $shareBaseUrl = rtrim((string) config('deep_links.base_url', config('app.url')), '/');
+
         $data = [
             'id' => $this->resource['id'] ??'',
             'name' => $this->resource['name'] ?? '-',
             'email' => $this->resource['email'] ?? '-',
             // 'profile_completed'=>$profile_completed,
             'phone' => $this->resource['phone'] ?? Null,
+            'user_name' => $this->resource['user_name'] ?? '-',
             'user_name ' => $this->resource['user_name'] ?? '-',
+            'share_url' => isset($this->resource['id']) ? ($shareBaseUrl . '/u/' . $this->resource['id']) : null,
             'is_verified' => boolval($this->resource['is_verified']),
             'user_type' => $this->resource['user_type'] ?? '-',
             'image' => (Storage::disk('public')->exists($this->image)) ? Storage::disk('public')->url($this->image) : NULL,
