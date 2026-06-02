@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Auth\ForgetPasswordrRequest;
 use App\Http\Requests\api\User\Auth\RegisterRequest;
 use App\Helpers\TranslationHelper;
+use App\Services\SmsService;
 
 use App\Http\Resources\User\UserResource;
 use App\Models\Admin;
@@ -25,7 +26,7 @@ class RegisterController extends Controller
 {
     use HelperTrait, ResponseTrait;
 
-    public function __invoke(RegisterRequest $request)
+    public function __invoke(RegisterRequest $request, SmsService $smsService)
     {
 
         DB::beginTransaction();
@@ -67,13 +68,18 @@ class RegisterController extends Controller
                     'admin_id' => $admin->id,
                 ]);
             }
-           
-            $token = $user->createToken('MyApp')->accessToken;
 
-            $user['token'] = $token;
+            // $token = $user->createToken('MyApp')->accessToken;
 
+            $user['token'] = $token ?? null;
+
+            $smsResult = $smsService->sendRegistrationOtp($request->phone, (string) $numbers);
+
+            if (! ($smsResult['success'] ?? false)) {
+                throw new \RuntimeException($smsResult['error'] ?? 'Otp sending failed');
+            }
             DB::commit();
-            return $this->success_response(TranslationHelper::translate(' Account Registered Successfully '), new UserResource($user));
+            return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), new UserResource($user));
 
         } catch (\Throwable $th) {
             DB::rollBack();

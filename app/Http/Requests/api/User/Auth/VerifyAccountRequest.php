@@ -27,6 +27,7 @@ class VerifyAccountRequest extends FormRequest
     public function rules()
     {
         return [
+            'phone' => 'required',
             'otp' => 'required',
         ];
     }
@@ -34,6 +35,7 @@ class VerifyAccountRequest extends FormRequest
     public function messages()
     {
         return [
+            'phone.required' => TranslationHelper::translate('please Enter phone'),
             'otp.required' => TranslationHelper::translate('please_enter_otp'),
         ];
     }

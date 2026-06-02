@@ -60,6 +60,10 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    protected $casts = [
+        'expire_at' => 'datetime',
+    ];
     public function department()
     {
         return $this->belongsTo(Department::class, 'department_id')->withTrashed()->select('id','image', 'name->'.app()->getLocale().' as name');

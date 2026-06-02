@@ -25,6 +25,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::post('reset-password', 'ResetPasswordController');
 
         Route::post('login', 'LoginController');
+        Route::post('verify-account', 'VerifyAccountController');
         Route::group(['namespace' => 'Social'], function () {
         Route::post('social-login', 'LoginController');
         Route::post('social-register', 'RegisterController');

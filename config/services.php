@@ -36,4 +36,23 @@ return [
         'CALLBACK_URL' => env('NAFATH_CALLBACK_URL'),
     ],
 
+    'sms' => [
+        'endpoint' => env('SMS_ENDPOINT', 'https://smsvas.vlserv.com/VLSMSPlatformResellerAPI/NewSendingAPI/api/SMSSender/SendSMS'),
+        'username' => env('SMS_USERNAME'),
+        'password' => env('SMS_PASSWORD'),
+        'sender' => env('SMS_SENDER', 'Dacktra'),
+        'lang' => env('SMS_LANG', 'e'),
+        'country_code' => env('SMS_COUNTRY_CODE', '2'),
+        'timeout' => env('SMS_TIMEOUT', 10),
+    ],
+
+    'infobip' => [
+        'base_url' => env('INFOBIP_BASE_URL'),
+        'api_key' => env('INFOBIP_API_KEY'),
+        'whatsapp_from' => env('INFOBIP_WHATSAPP_FROM'),
+        'whatsapp_template' => env('INFOBIP_WHATSAPP_TEMPLATE'),
+        'whatsapp_lang' => env('INFOBIP_WHATSAPP_LANG', 'en'),
+        'timeout' => env('INFOBIP_TIMEOUT', 10),
+    ],
+
 ];

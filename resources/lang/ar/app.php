@@ -1383,4 +1383,5 @@
   'delete_slider' => 'حذف البانر',
   'edit_slider' => 'تعديل البانر',
   'new_slider_created_successfully' => 'New slider created successfully',
+  'otp_expire' => 'otp expire',
 );

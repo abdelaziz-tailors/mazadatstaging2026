@@ -1376,4 +1376,5 @@
   'new_slider' => 'new slider',
   'delete_slider' => 'delete slider',
   'new_slider_created_successfully' => 'New slider created successfully',
+  'otp_expire' => 'otp expire',
 );
