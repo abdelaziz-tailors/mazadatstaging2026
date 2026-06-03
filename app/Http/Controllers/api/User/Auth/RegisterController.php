@@ -6,20 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Auth\ForgetPasswordrRequest;
 use App\Http\Requests\api\User\Auth\RegisterRequest;
 use App\Helpers\TranslationHelper;
+use App\Models\UserOtp;
 use App\Services\SmsService;
-
-use App\Http\Resources\User\UserResource;
-use App\Models\Admin;
-use App\Models\Patient;
 use App\Models\User\User;
-
-
 use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class RegisterController extends Controller
@@ -28,8 +21,6 @@ class RegisterController extends Controller
 
     public function __invoke(RegisterRequest $request, SmsService $smsService)
     {
-
-        DB::beginTransaction();
         try {
             $numbers = mt_rand(1000, 9999);
             $expire_at = Carbon::now()->addMinutes(10);
@@ -41,49 +32,45 @@ class RegisterController extends Controller
                 $file->move(public_path('../storage/app/public/vendor-commercial-files'), $commercialRegisterName);
             }
 
-            $user = User::create([
+            $pendingRegistration = [
+                'type' => 'register',
+                'is_verified' => false,
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
                 'user_name' => $request->user_name,
-                // 'account_type' => $request->account_type,
                 'user_type' => $request->user_type ?? 'buyer',
                 'commercial_register' => $commercialRegisterName,
                 'password' => bcrypt($request->password),
                 'otp' => $numbers,
                 'expire_at' => $expire_at,
-            ]);
-
-
-            if ($request->user_type == 'vendor') {
-                $admin = Admin::create([
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'phone' => $request->phone,
-                    'type' => 'partner',
-                    'user_id' => $user->id,
-                    'password' => bcrypt($request->password),
-                ]);
-                $user->update([
-                    'admin_id' => $admin->id,
-                ]);
-            }
-
-            // $token = $user->createToken('MyApp')->accessToken;
-
-            $user['token'] = $token ?? null;
+            ];
 
             $smsResult = $smsService->sendRegistrationOtp($request->phone, (string) $numbers);
 
             if (! ($smsResult['success'] ?? false)) {
                 throw new \RuntimeException($smsResult['error'] ?? 'Otp sending failed');
             }
-            DB::commit();
-            return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), new UserResource($user));
+
+            $otpRecord = UserOtp::withTrashed()
+                ->where('phone', $request->phone)
+                ->where('type', 'register')
+                ->first();
+
+            if ($otpRecord) {
+                $otpRecord->update(array_merge($pendingRegistration, [
+                    'deleted_at' => null,
+                ]));
+            } else {
+                UserOtp::create($pendingRegistration);
+            }
+
+            return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
+                'phone' => $request->phone,
+                'expire_at' => $expire_at,
+            ]);
 
         } catch (\Throwable $th) {
-            DB::rollBack();
-
             return $this->failed_response(TranslationHelper::translate('Something went wrong'),);
         }
     }
