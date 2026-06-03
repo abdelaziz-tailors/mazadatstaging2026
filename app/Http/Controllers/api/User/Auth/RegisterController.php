@@ -31,7 +31,7 @@ class RegisterController extends Controller
 
         DB::beginTransaction();
         try {
-            $numbers =  (env('OTP_TEST_MODE') == 'true') ? env('OTP_TEST_CODE') : mt_rand(1000, 9999);
+            $numbers = mt_rand(1000, 9999);
             $expire_at = Carbon::now()->addMinutes(10);
 
             $commercialRegisterName = null;
