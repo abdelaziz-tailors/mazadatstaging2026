@@ -28,25 +28,28 @@ class updateItemRequest extends FormRequest
     {
         return [
             // Ensure each item in the 'title' array is required, a string, and max 255 chars
-            'lineage_title_ar' => 'required',
-            'lineage_title' => 'required',
-            // 'address' => 'required',
-            'information' => 'required',
-            'information_ar' => 'required',
-            'category_id' => 'required|integer|exists:categories,id', // Assuming category_id references a table
+            'lineage_title_ar' => 'sometimes',
+            'lineage_title' => 'sometimes',
+            'address' => 'sometimes',
+            'terms' => 'sometimes',
+            'terms_ar' => 'sometimes',
+            'type' => 'sometimes',
+            'information' => 'sometimes',
+            'information_ar' => 'sometimes',
+            'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
             'seller_id' => 'nullable|integer|exists:users,id', //  seller
-            'weight' => 'required|numeric', // Assuming weight should be a number
-            'age' => 'required|integer', // Assuming age is an integer
-            'age_type' => 'required', // Assuming age is an integer
-            'start_price' => 'required|numeric', // Assuming price is a number
-            'bidding' => 'required', // Assuming bidding is a true/false field
+            'weight' => 'sometimes|numeric', // Assuming weight should be a number
+            'age' => 'sometimes|integer', // Assuming age is an integer
+            'age_type' => 'sometimes', // Assuming age is an integer
+            'start_price' => 'sometimes|numeric', // Assuming price is a number
+            'bidding' => 'sometimes', // Assuming bidding is a true/false field
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
             'piece_multiplier_number' => 'nullable|string|max:255',
             'identifier' => 'nullable|string|max:255',
             'baham_count' => 'nullable|string|max:255',
-            'color_id' => 'required|integer|exists:colors,id', // Assuming category_id references a table
+            'color_id' => 'sometimes|integer|exists:colors,id', // Assuming category_id references a table
             'video'=>'nullable|file|mimes:mp4,mov,avi,wmv,flv|max:20480'
         ];
     }

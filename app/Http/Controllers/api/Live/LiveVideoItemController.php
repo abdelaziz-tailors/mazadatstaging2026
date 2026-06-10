@@ -184,35 +184,49 @@ class LiveVideoItemController extends Controller
         // if ($live_video->status !='pending'){
         //     return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
         // }
-        if(!$request->partner_id && $live_video->videoLive->partners_type == 'multiple'){
+        if ($request->exists('partner_id') && !$request->partner_id && $live_video->videoLive->partners_type == 'multiple') {
             return $this->failed_response(TranslationHelper::translate('partner_id is required'));
         }
 
+        $updateData = ['status' => 'pending'];
 
-        $live_video->update([
-        'title_ar' => $request->lineage_title_ar,
-        'title'=>$request->lineage_title,
-        'address'=>$request->address,
-        'status'=>'pending',
-        'category_id' => $request->category_id ?? null,
-        'information' => $request->information ?? null,
-        'information_ar'=>$request->information_ar,
-        'terms'=>$request->terms,
-        'terms_ar'=>$request->terms_ar,
-        'weight' => $request->weight ?? null,
-        'age' => $request->age ?? null,
-        'age_type'=>$request->age_type,
-        'type'=>$request->type,
-        'user_id' =>$request->partner_id ?? $live_video->videoLive->partner_id,
-        'seller_id' => $request->seller_id ?? $live_video->seller_id,
-        'start_price' => $request->start_price ?? 0,
-        'bidding' => $request->bidding ?? 0,
-        'color_id'=>$request->color_id,
-        'quantity'=>$request->quantity ?? 0,
-        'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
-        'identifier' => $request->identifier ?? null,
-        'baham_count' => $request->baham_count ?? null,
-    ]);
+        $fieldMap = [
+            'lineage_title_ar' => 'title_ar',
+            'lineage_title' => 'title',
+            'address' => 'address',
+            'category_id' => 'category_id',
+            'information' => 'information',
+            'information_ar' => 'information_ar',
+            'terms' => 'terms',
+            'terms_ar' => 'terms_ar',
+            'weight' => 'weight',
+            'age' => 'age',
+            'age_type' => 'age_type',
+            'type' => 'type',
+            'start_price' => 'start_price',
+            'bidding' => 'bidding',
+            'color_id' => 'color_id',
+            'quantity' => 'quantity',
+            'piece_multiplier_number' => 'piece_multiplier_number',
+            'identifier' => 'identifier',
+            'baham_count' => 'baham_count',
+        ];
+
+        foreach ($fieldMap as $requestKey => $dbKey) {
+            if ($request->has($requestKey)) {
+                $updateData[$dbKey] = $request->input($requestKey);
+            }
+        }
+
+        if ($request->exists('partner_id')) {
+            $updateData['user_id'] = $request->partner_id;
+        }
+
+        if ($request->exists('seller_id')) {
+            $updateData['seller_id'] = $request->seller_id;
+        }
+
+        $live_video->update($updateData);
 
         if($request->hasfile('image')) {
             $file=[];
