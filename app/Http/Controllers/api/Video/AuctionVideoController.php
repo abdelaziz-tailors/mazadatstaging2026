@@ -41,9 +41,9 @@ class AuctionVideoController extends Controller
         if (!$video){
             return $this->failed_response(TranslationHelper::translate('Video Item not found'));
         }
-        if ($video->status != 'working'){
-            return $this->failed_response(TranslationHelper::translate(' You cannot add auctions at that time'));
-        }
+        // if ($video->status != 'working'){
+        //     return $this->failed_response(TranslationHelper::translate(' You cannot add auctions at that time'));
+        // }
         $data=VideoComment::create([
             'video_id'=>$video->live_video_id,
             'live_video_item_id' => $request->live_video_item_id,
