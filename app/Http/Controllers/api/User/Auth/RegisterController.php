@@ -23,6 +23,8 @@ class RegisterController extends Controller
     {
         try {
             $numbers = mt_rand(1000, 9999);
+            $numbers = 1111;
+
             $expire_at = Carbon::now()->addMinutes(10);
 
             $commercialRegisterName = null;
@@ -46,11 +48,11 @@ class RegisterController extends Controller
                 'expire_at' => $expire_at,
             ];
 
-            $smsResult = $smsService->sendRegistrationOtp($request->phone, (string) $numbers);
+            // $smsResult = $smsService->sendRegistrationOtp($request->phone, (string) $numbers);
 
-            if (! ($smsResult['success'] ?? false)) {
-                throw new \RuntimeException($smsResult['error'] ?? 'Otp sending failed');
-            }
+            // if (! ($smsResult['success'] ?? false)) {
+            //     throw new \RuntimeException($smsResult['error'] ?? 'Otp sending failed');
+            // }
 
             $otpRecord = UserOtp::withTrashed()
                 ->where('phone', $request->phone)
