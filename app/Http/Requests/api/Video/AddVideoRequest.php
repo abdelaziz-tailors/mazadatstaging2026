@@ -47,6 +47,7 @@ class AddVideoRequest extends FormRequest
             'commission_amount' => 'nullable|min:0',
             'commission_payer' => 'nullable|in:buyer,seller',
             'service_fee' => 'nullable|min:0',
+            'start_price' => 'required|numeric|min:0',
             // 'image'=> 'required',
             // 'image.*'=> 'mimes:jpeg,jpg,png|max:20000',
 

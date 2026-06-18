@@ -138,14 +138,13 @@
                                     <span class="text-danger small d-block mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
-
-                            <div class="col-lg-4 form-group">
+                            {{-- <div class="col-lg-4 form-group">
                                 {!! Form::label('start_price', TranslationHelper::translate('start price') . ' *', ['class'=>'form-label']) !!}
                                 {!! Form::number('start_price', old('start_price', $data->start_price ?? null), ['step'=>"0.01", 'min'=>'0', 'class' => 'form-control'.($errors->has('start_price') ? ' is-invalid' : ''), 'required']) !!}
                                 @error('start_price')
                                     <span class="text-danger small d-block mt-1">{{ $message }}</span>
                                 @enderror
-                            </div>
+                            </div> --}}
                             <div class="col-lg-4 form-group">
                                 {!! Form::label('bidding', TranslationHelper::translate('bidding Price') . ' *', ['class'=>'form-label']) !!}
                                 {!! Form::number('bidding', old('bidding', $data->bidding ?? null), ['step'=>"0.01", 'min'=>'0', 'class' => 'form-control'.($errors->has('bidding') ? ' is-invalid' : ''), 'required']) !!}

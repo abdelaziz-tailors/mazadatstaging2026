@@ -46,6 +46,7 @@ class UpdateVideoRequest extends FormRequest
             'commission_amount' => 'sometimes|nullable|min:0',
             'commission_payer' => 'sometimes|nullable|in:buyer,seller',
             'service_fee' => 'sometimes|nullable|min:0',
+            'start_price' => 'sometimes|numeric|min:0',
             'image' => 'sometimes|nullable|array',
             'image.*' => 'sometimes|nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
         ];

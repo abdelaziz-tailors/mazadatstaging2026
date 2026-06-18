@@ -39,9 +39,11 @@ class StoreItemRequest extends FormRequest
             'weight.*' => 'numeric', // Assuming weight should be a number
             'age' => 'required', // Assuming age is an integer
             'age.*' => 'string', // Assuming age is an integer
-            'start_price' => 'required', // Assuming price is a number
-            'start_price.*' => 'numeric', // Assuming price is a number
-            'bidding' => 'required', // Assuming bidding is a true/false field
+            // 'start_price' => 'required', // Assuming price is a number
+            // 'start_price.*' => 'numeric', // Assuming price is a number
+
+            'bidding' => 'required',
+            'bidding.*' => 'numeric',
             'image' => 'required', // Each image in a nested array
             'image.*.*' => 'required|image|mimes:jpeg,jpg,png|max:20000', // Each image in a nested array
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
@@ -84,10 +86,8 @@ class StoreItemRequest extends FormRequest
             'weight.*.numeric' => TranslationHelper::translate('Each weight must be a number.'),
             'age.*.required' => TranslationHelper::translate('Each age field is required.'),
             'age.*.integer' => TranslationHelper::translate('Each age must be a number.'),
-            'start_price.*.required' => TranslationHelper::translate('Each start price field is required.'),
-            'start_price.*.numeric' => TranslationHelper::translate('Each start price must be a number.'),
             'bidding.*.required' => TranslationHelper::translate('Each bidding field is required.'),
-            'bidding.*.boolean' => TranslationHelper::translate('Each bidding must be true or false.'),
+            'bidding.*.numeric' => TranslationHelper::translate('Each bidding must be a number.'),
             'image.*.*.required' => TranslationHelper::translate('Each image is required.'),
             'image.*.*.image' => TranslationHelper::translate('Each file must be an image.'),
             'image.*.*.mimes' => TranslationHelper::translate('Only JPEG, JPG, and PNG formats are allowed.'),

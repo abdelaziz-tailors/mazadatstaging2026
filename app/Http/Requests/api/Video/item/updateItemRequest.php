@@ -42,8 +42,8 @@ class updateItemRequest extends FormRequest
             'weight' => 'sometimes|numeric', // Assuming weight should be a number
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer
-            'start_price' => 'sometimes|numeric', // Assuming price is a number
-            'bidding' => 'sometimes', // Assuming bidding is a true/false field
+            // 'start_price' => 'sometimes|numeric', // Assuming price is a number
+            'bidding' => 'sometimes|numeric',
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
             'piece_multiplier_number' => 'nullable|string|max:255',

@@ -51,7 +51,7 @@ class CartItemResource extends JsonResource
             'weight'=>$this['weight'],
             'age'=>$this['age'],
             'quantity'=>$this['quantity'],
-            'start_price'=>$this['start_price'],
+            'start_price'=>$this->videoLive->start_price ?? $this['start_price'],
             'bidding'=>$this['bidding'],
             'finished_price'=>$this['finished_price'],
             'user'=> New UserDataResource($this->videoLive->user_Video),

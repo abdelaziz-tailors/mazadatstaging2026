@@ -61,7 +61,7 @@ class VideoItemResource extends JsonResource
             'age_type'=>$this['age_type'],
             'type'=>$this['type'],
             'weight'=>$this['weight'],
-            'start_price'=>$this['start_price'],
+            'start_price'=>$this->videoLive->start_price ?? $this['start_price'],
             'bidding'=>$this['bidding'],
             'finished_price'=>$this['finished_price'],
             'user_take_auction'=> New UserDataResource($this->user_auction),

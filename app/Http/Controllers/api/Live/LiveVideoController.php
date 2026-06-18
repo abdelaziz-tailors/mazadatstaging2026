@@ -125,6 +125,7 @@ class LiveVideoController extends Controller
                 'commission_amount' => $request->input('commission_amount'),
                 'commission_payer' => $request->input('commission_payer'),
                 'service_fee' => $request->input('service_fee'),
+                'start_price' => $request->input('start_price'),
             ]);
 
             // Decrement remaining auctions from subscription

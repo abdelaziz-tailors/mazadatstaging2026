@@ -161,6 +161,14 @@
                             @endif
 
 
+                            <div class="col-lg-6 form-group">
+                                {!! Form::label('start_price', TranslationHelper::translate('start price') . ' *', ['class'=>'form-label']) !!}
+                                {!! Form::number('start_price', old('start_price', $data->start_price ?? null), ['step'=>"0.01", 'min'=>'0', 'class' => 'form-control'.($errors->has('start_price') ? ' is-invalid' : ''), 'required']) !!}
+                                @error('start_price')
+                                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                @enderror
+                            </div>
+
                             <div class="col-12"><h6 class="text-muted mt-2">{{ TranslationHelper::translate('auction_fees') }}</h6></div>
                             <div class="col-lg-3 form-group">
                                 {!! Form::label('tax_amount', TranslationHelper::translate('tax_amount'), ['class'=>'form-label']) !!}

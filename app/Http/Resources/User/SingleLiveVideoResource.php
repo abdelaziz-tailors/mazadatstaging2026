@@ -51,6 +51,7 @@ class SingleLiveVideoResource extends JsonResource
             'date_end_at'=>$this['date_end_at'],
             'time_start_at'=>$this['time_start_at'],
             'time_end_at'=>$this['time_end_at'],
+            'start_price' => $this->start_price,
             'information'=>app()->getLocale()=='en'? $this['information']??'' :$this['information_ar']??'',
             'information_en' => $this->information ??'',
             'information_ar' => $this->information_ar ??'',

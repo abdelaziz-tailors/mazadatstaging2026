@@ -80,9 +80,9 @@ class ProductController extends Controller
             ->addColumn('ageData', function(LiveVideoItem $item) {
                 return $item->age ??'';
             })
-            ->addColumn('start_price', function(LiveVideoItem $item) {
-                return $item->start_price;
-            })
+            // ->addColumn('start_price', function(LiveVideoItem $item) {
+            //     return $item->start_price;
+            // })
             ->addColumn('status', function(LiveVideoItem $item) {
 //                return  TranslationHelper::translate($item->status);
                 return view('dashboard.pages.products.status')
@@ -193,7 +193,6 @@ class ProductController extends Controller
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
             'age'                    => 'required',
-            'start_price'            => 'required|numeric|min:0',
             'bidding'                => 'required|numeric|min:0',
             'quantity'               => 'nullable|integer|min:0',
             'piece_multiplier_number'=> 'nullable|string|max:100',
@@ -266,7 +265,6 @@ class ProductController extends Controller
             'type'=>$request->type,
             'date_barth'=>$request->date_barth,
             'animal_pen_id'=>$request->animal_pen_id,
-            'start_price' => $request->start_price ?? 0,
             'health_certificate' => $health_certificate ?? null,
             'video' => $video ?? null,
             'address'=>$request->address,
@@ -274,7 +272,6 @@ class ProductController extends Controller
             'age_type'=>$request->age_type,
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
-            'bidding'=>$request->bidding,
             'quantity'=>$request->quantity ?? 0,
             'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
             'identifier' => $request->identifier ?? null,
@@ -368,7 +365,6 @@ class ProductController extends Controller
             'type'=>$request->type,
             'date_barth'=>$request->date_barth,
             'animal_pen_id'=>$request->animal_pen_id,
-            'start_price' => $request->start_price ?? 0,
             'address'=>$request->address,
             'age'=>$request->age,
             'age_type'=>$request->age_type,
