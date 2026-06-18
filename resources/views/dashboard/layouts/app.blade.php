@@ -54,7 +54,7 @@
                 <i class="fa fa-bars"></i>
             </a>
             <ul class="nav user-menu">
-                <li class="nav-item dropdown has-arrow">
+                {{-- <li class="nav-item dropdown has-arrow">
                     <a href="#" class="dropdown-toggle nav-link"  data-bs-toggle="dropdown">
                         <img class="rounded-circle" src="{{ asset('dashboard/img/language/'.app()->getLocale().'.png') }}" width="31" alt="{{ Auth::guard('admin')->user()->name }}">
                         {{ LaravelLocalization::getCurrentLocaleNative() }}
@@ -69,7 +69,7 @@
                             @endif
                         @endforeach
                     </div>
-                </li>
+                </li> --}}
                 <li class="nav-item dropdown has-arrow">
                     <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
                         <span class="user-img d-inline-flex align-items-center justify-content-center rounded-circle bg-light" style="width:31px;height:31px;">

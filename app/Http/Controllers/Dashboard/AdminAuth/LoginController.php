@@ -10,6 +10,7 @@ use Brian2694\Toastr\Facades\Toastr;
 
 use App\Models\Admin;
 use App\Http\Requests\Dashboard\Auth\LoginRequest;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 class LoginController extends Controller
 {
@@ -70,15 +71,15 @@ class LoginController extends Controller
             return redirect()->back();
         }
         Auth::guard('admin')->login($admin, true);
-        
-        return redirect('/admin/');
+
+        return redirect(LaravelLocalization::getLocalizedURL(config('app.dashboard_locale', 'ar'), '/admin/'));
     }
 
     protected function logout(Request $request)
     {
         Auth::guard('admin')->logout();
-        $request->session()->invalidate();    
-        $request->session()->regenerateToken();    
-        return redirect('/admin/login');
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect(LaravelLocalization::getLocalizedURL(config('app.dashboard_locale', 'ar'), '/admin/login'));
     }
 }

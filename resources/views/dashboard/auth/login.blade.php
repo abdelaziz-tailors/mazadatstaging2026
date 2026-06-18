@@ -20,7 +20,7 @@
                 <button class="btn btn-primary w-100" type="submit">{{ TranslationHelper::translate('login') }}</button>
             </div>
         </form>
-        <hr />
+        {{-- <hr />
         <div class="form-group text-end">
             <div class="btn-group">
                 <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -34,7 +34,7 @@
                     @endforeach
                 </div>
             </div>
-        </div>
+        </div> --}}
     </div>
 </div>
 @endsection

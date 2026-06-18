@@ -28,7 +28,7 @@ use App\Http\Controllers\Dashboard\SliderController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
 use App\Http\Controllers\Dashboard\SellerSubmissionController;
 
-Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => [ 'localeSessionRedirect', 'localizationRedirect', 'localeViewPath']], function () {
+Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeViewPath', 'dashboardLocale']], function () {
     Route::group(['prefix' => 'admin', 'as'=>'admin.'], function () {
 
         Route::group(['middleware'=>'AuthAdmin'], function () {

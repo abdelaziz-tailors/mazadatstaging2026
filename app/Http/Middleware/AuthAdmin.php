@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 
 use App\Helpers\TranslationHelper;
 use App\Models\Department;
+use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 class AuthAdmin
 {
@@ -23,10 +24,12 @@ class AuthAdmin
     {
         if(!Auth::guard('admin')->check())
         {
-            return redirect(app()->getLocale().'/admin/login');
+            $locale = config('app.dashboard_locale', 'ar');
+            return redirect(LaravelLocalization::getLocalizedURL($locale, '/admin/login'));
         }
         else {
-            if($request->is(app()->getLocale().'/admin/translations*')) {
+            $locale = config('app.dashboard_locale', 'ar');
+            if($request->is($locale.'/admin/translations*')) {
                 if (!Auth::guard('admin')->user()->can('manage translations')) {
                     abort('403', TranslationHelper::translate('THIS ACTION IS UNAUTHORIZED.'));
                 }
