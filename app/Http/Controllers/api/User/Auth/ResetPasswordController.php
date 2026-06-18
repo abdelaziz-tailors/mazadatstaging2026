@@ -9,6 +9,7 @@ use App\Http\Resources\User\UserResource;
 use App\Models\User\User;
 use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
+use Carbon\Carbon;
 
 class ResetPasswordController extends Controller
 {
@@ -24,8 +25,13 @@ class ResetPasswordController extends Controller
             return $this->failed_response(TranslationHelper::translate('wrong_otp'));
         }
 
+        if (! $user->expire_at || Carbon::now()->isAfter($user->expire_at)) {
+            return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
+        }
+
         $user->password = bcrypt($request->password);
         $user->password_otp = null;
+        $user->expire_at = null;
         $user->save();
 
         $user->token = $user->createToken('MyApp')->accessToken;

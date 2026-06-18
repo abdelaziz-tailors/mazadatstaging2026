@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\api\User\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\api\User\Auth\ForgetPasswordrRequest;
 use App\Http\Requests\api\User\Auth\RegisterRequest;
 use App\Helpers\TranslationHelper;
 use App\Models\UserOtp;
@@ -12,8 +11,6 @@ use App\Models\User\User;
 use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
 use Carbon\Carbon;
-use GuzzleHttp\Client;
-use Illuminate\Support\Str;
 
 class RegisterController extends Controller
 {
@@ -83,44 +80,4 @@ class RegisterController extends Controller
         return $this->success_response(TranslationHelper::translate('successfully'), '');
     }
 
-    public function forgetPassword(ForgetPasswordrRequest $request)
-    {
-
-        $user = User::where('phone', $request->phone)->first();
-
-        if (empty($user)) {
-            return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
-        }
-
-        $otp = $this->generate_password_otp();
-        $user->password_otp = $otp;
-        $user->save();
-
-        try {
-            $mobile = '2'.$request->phone;
-            $uuid = Str::uuid();
-            $client_sms = new Client();
-            $headers = [
-                'Content-Type' => 'application/json',
-            ];
-            $body = '{
-              "UserName": "DacktraAPI",
-              "Password": "rsDdr|u:&&",
-              "SMSText": "Your password reset code is: '.$otp.'",
-              "SMSLang": "e",
-              "SMSSender": "Dacktra",
-              "SMSReceiver": "'.$mobile.'",
-              "SMSID": "'.$uuid.'"
-            }';
-            $smsRequest = new \GuzzleHttp\Psr7\Request('POST', 'https://smsvas.vlserv.com/VLSMSPlatformResellerAPI/NewSendingAPI/api/SMSSender/SendSMS', $headers, $body);
-            $client_sms->sendAsync($smsRequest)->wait();
-        } catch (\Throwable $e) {
-            $user->password_otp = null;
-            $user->save();
-
-            return $this->failed_response(TranslationHelper::translate('Something went wrong'));
-        }
-
-        return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), $otp  );
-    }
 }
