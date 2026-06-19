@@ -16,6 +16,7 @@ use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
 use App\Support\PartnerDashboardScope;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class VideoController extends Controller
 {
@@ -34,7 +35,7 @@ class VideoController extends Controller
 
     // get index data by ajax
     public function get_data (Request $request) {
-        $providers = LiveVideo::query()->orderByDesc('date_start_at');
+        $providers = LiveVideo::query()->orderByDesc('id');
         PartnerDashboardScope::scopeLiveVideos($providers);
 
         if ($request->boolean('archive')) {
@@ -44,7 +45,7 @@ class VideoController extends Controller
         return Datatables::of($providers)
 
             ->editColumn('title', function(LiveVideo $item) {
-                return $item->title;
+                return $item->title_ar;
             })
             ->addColumn('user_name', function(LiveVideo $item) {
                 return $item->partner->name ??'';
@@ -115,7 +116,7 @@ class VideoController extends Controller
         $isPartner = PartnerDashboardScope::isPartner();
 
         $rules = [
-            'title'               => 'required|string|max:255',
+            'title'               => 'nullable|string|max:255',
             'title_ar'            => 'required|string|max:255',
             'date_start_at'       => 'required|date',
             'date_end_at'         => 'required|date|after_or_equal:date_start_at',
@@ -150,14 +151,14 @@ class VideoController extends Controller
         $userId = $isPartner
             ? Auth::guard('admin')->user()->user_id
             : $request->partner_id;
-        $file = [];
 
-        if($request->hasfile('image')) {
+        $files = [];
 
+        if ($request->hasFile('image')) {
             foreach ($request->file('image') as $image) {
-                $name = 'image_video/'.rand(11111, 99999) .'_'.$image->getClientOriginalName();
-                $image->move(public_path('../storage/app/public/image_video/'), $name);
-                $file[] = $name;
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+                $image->move(storage_path('app/public/image_video'), $filename);
+                $files[] = 'image_video/' . $filename;
             }
         }
 
@@ -166,7 +167,7 @@ class VideoController extends Controller
             'title_ar'=>$request->title_ar,
             'user_id' => $userId,
             'status' => 'pending',
-            'image' => json_encode($file),
+            'image' => json_encode($files),
             'information' => $request->information,
             'information_ar' => $request->information_ar,
             'date_start_at' => $request->date_start_at,
@@ -282,7 +283,7 @@ class VideoController extends Controller
         $isPartner = PartnerDashboardScope::isPartner();
 
         $rules = [
-            'title'               => 'required|string|max:255',
+            'title'               => 'nullable|string|max:255',
             'title_ar'            => 'required|string|max:255',
             'date_start_at'       => 'required|date',
             'date_end_at'         => 'required|date|after_or_equal:date_start_at',
@@ -302,6 +303,7 @@ class VideoController extends Controller
             'commission_payer' => 'nullable|in:buyer,seller',
             'service_fee' => 'nullable|integer|min:0',
         ];
+
         if (! $isPartner) {
             $rules['partners_type'] = 'required|in:single,multiple';
             $rules['partner_id'] = 'nullable|exists:users,id';
