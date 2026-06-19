@@ -365,7 +365,7 @@ class ProductController extends Controller
             'seller_id' => 'nullable|exists:users,id',
             'title' => 'required|string|max:255',
             'title_ar' => 'required|string|max:255',
-            'start_price' => 'required|numeric|min:0',
+            // 'start_price' => 'required|numeric|min:0',
             'bidding' => 'required|numeric|min:0',
             'quantity' => 'nullable|integer|min:1',
             'piece_multiplier_number' => 'nullable|string|max:100',
