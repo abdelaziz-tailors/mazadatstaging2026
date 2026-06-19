@@ -65,7 +65,7 @@ class ProductController extends Controller
         $live = LiveVideo::findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live);
 
-        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller');
+        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller', 'pieces');
 
 
         return Datatables::of($providers)
@@ -80,7 +80,7 @@ class ProductController extends Controller
                 return $item->categoryData->name ??'';
             })
             ->addColumn('ageData', function(LiveVideoItem $item) {
-                return $item->age ??'';
+                return $item->primaryPiece()?->age ?? '';
             })
             // ->addColumn('start_price', function(LiveVideoItem $item) {
             //     return $item->start_price;
@@ -154,7 +154,7 @@ class ProductController extends Controller
     {
 
         //$this->authorizable('add video');
-        $live_video = LiveVideo::findOrFail($id);
+        $live_video = LiveVideo::with('partnerData')->findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live_video);
 
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
@@ -189,26 +189,23 @@ class ProductController extends Controller
             PartnerDashboardScope::ensureOwnLiveVideo($live_video);
         }
 
-        $quantity = (int) ($request->quantity ?? 0);
+        $quantity = max(1, (int) ($request->quantity ?? 1));
+
+        $request->merge([
+            'title' => $request->input('title') ?: $request->input('title_ar'),
+            'information' => $request->input('information') ?: $request->input('information_ar'),
+            'terms' => $request->input('terms') ?: $request->input('terms_ar'),
+            'terms_ar' => $request->input('terms_ar') ?: $request->input('terms'),
+        ]);
 
         $rules = [
             'user_id'                => 'nullable|exists:users,id',
             'seller_id'              => 'nullable|exists:users,id',
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
-            'age'                    => $quantity > 1 ? 'nullable' : 'required',
             'bidding'                => 'required|numeric|min:0',
-            'quantity'               => 'nullable|integer|min:0',
+            'quantity'               => 'nullable|integer|min:1',
             'piece_multiplier_number'=> 'nullable|string|max:100',
-            'identifier'             => 'nullable|string|max:100',
-            'baham_count'            => 'nullable|string|max:100',
-            'pieces'                 => $quantity > 1 ? 'required|array|size:'.$quantity : 'nullable|array',
-            'pieces.*.age'           => 'nullable|string|max:255',
-            'pieces.*.age_type'      => 'nullable|string|max:255',
-            'pieces.*.weight'        => 'nullable|numeric',
-            'pieces.*.piece_multiplier_number' => 'nullable|string|max:100',
-            'pieces.*.identifier'    => 'nullable|string|max:100',
-            'pieces.*.baham_count'   => 'nullable|string|max:100',
             'address'                => 'nullable|string',
             'information'            => 'nullable|string',
             'information_ar'         => 'nullable|string',
@@ -218,6 +215,11 @@ class ProductController extends Controller
             'image'                  => 'nullable|array',
             'image.*'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'video'                  => 'nullable|file|mimes:mp4,avi,wmv,flv|max:204800',
+            'pieces'                 => 'required|array|size:'.$quantity,
+            'pieces.*.age'           => 'required|string|max:255',
+            'pieces.*.weight'        => 'nullable|numeric',
+            'pieces.*.identifier'    => 'nullable|string|max:100',
+            'pieces.*.baham_count'   => 'nullable|integer|min:0',
         ];
 
         if ($live_video && $live_video->type === 'recorded') {
@@ -226,12 +228,11 @@ class ProductController extends Controller
 
         $request->validate($rules);
 
+        $sellerId = $request->input('seller_source', 'owner') === 'from_list' && $request->filled('seller_id')
+            ? (int) $request->seller_id
+            : null;
 
-
-
-
-        $file = [];
-
+        $files = [];
 
         if ($request->hasFile('image')) {
             foreach ($request->file('image') as $image) {
@@ -265,13 +266,11 @@ class ProductController extends Controller
             'title_ar' => $request->title_ar,
             'status'=>'pending',
             'user_id' => $request->user_id ?? null,
-            'seller_id' => $request->input('seller_id') ?: null,
-            'image' => json_encode($file),
+            'seller_id' => $sellerId,
+            'image' => json_encode($files),
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
             'information_ar' => $request->information_ar ?? null,
-            'weight' => $request->weight ?? null,
-            'age_id' => $request->age_id ?? null,
             'color_id'=>$request->color_id,
             'type'=>$request->type,
             'date_barth'=>$request->date_barth,
@@ -279,22 +278,16 @@ class ProductController extends Controller
             'health_certificate' => $health_certificate ?? null,
             'video' => $video ?? null,
             'address'=>$request->address,
-            'age'=>$request->age,
-            'age_type'=>$request->age_type,
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
-            'quantity'=>$quantity,
+            // 'start_price' => $request->start_price,
+            'bidding' => $request->bidding,
+            'quantity'=>$quantity ?: 1,
             'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
-            'identifier' => $request->identifier ?? null,
-            'baham_count' => $request->baham_count ?? null,
             'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
 
-        if ($quantity > 1 && $request->filled('pieces')) {
-            LiveVideoItemPieceService::syncPieces($add_iteam, $request->input('pieces', []));
-        } elseif ($quantity <= 1) {
-            LiveVideoItemPieceService::syncSinglePieceFromItem($add_iteam->fresh());
-        }
+        LiveVideoItemPieceService::syncPieces($add_iteam, $request->input('pieces', []));
 
         $add_iteam->load('pieces');
 
@@ -337,7 +330,7 @@ class ProductController extends Controller
         $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $animal_pens = AnimalPen::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $providers = User::where('user_type','vendor')->get();
-        $live_video = LiveVideo::find($data->live_video_id);
+        $live_video = LiveVideo::with('partnerData')->find($data->live_video_id);
         $sellers = User::query()
                     ->where('user_type', 'seller')
                     ->orderBy('id','desc')
@@ -358,66 +351,59 @@ class ProductController extends Controller
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
 
-        $quantity = (int) ($request->quantity ?? $live_video->quantity ?? 0);
+        $quantity = max(1, (int) ($request->quantity ?? $live_video->quantity ?? 1));
+
+        $request->merge([
+            'title' => $request->input('title') ?: $request->input('title_ar'),
+            'information' => $request->input('information') ?: $request->input('information_ar'),
+            'terms' => $request->input('terms') ?: $request->input('terms_ar'),
+            'terms_ar' => $request->input('terms_ar') ?: $request->input('terms'),
+        ]);
 
         $request->validate([
             'user_id' => 'sometimes|required|exists:users,id',
             'seller_id' => 'nullable|exists:users,id',
-            'quantity' => 'nullable|integer|min:0',
-            'pieces' => $quantity > 1 ? 'required|array|size:'.$quantity : 'nullable|array',
-            'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.age_type' => 'nullable|string|max:255',
+            'title' => 'required|string|max:255',
+            'title_ar' => 'required|string|max:255',
+            'start_price' => 'required|numeric|min:0',
+            'bidding' => 'required|numeric|min:0',
+            'quantity' => 'nullable|integer|min:1',
+            'piece_multiplier_number' => 'nullable|string|max:100',
+            'pieces' => 'required|array|size:'.$quantity,
+            'pieces.*.age' => 'required|string|max:255',
             'pieces.*.weight' => 'nullable|numeric',
-            'pieces.*.piece_multiplier_number' => 'nullable|string|max:100',
             'pieces.*.identifier' => 'nullable|string|max:100',
-            'pieces.*.baham_count' => 'nullable|string|max:100',
+            'pieces.*.baham_count' => 'nullable|integer|min:0',
         ]);
 
-        // Validate user_id if it's being updated
-        if ($request->has('user_id')) {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-            ]);
-        }
-        if ($request->exists('seller_id')) {
-            $request->validate([
-                'seller_id' => 'nullable|exists:users,id',
-            ]);
-        }
+        $sellerId = $request->input('seller_source', 'owner') === 'from_list' && $request->filled('seller_id')
+            ? (int) $request->seller_id
+            : null;
+        $showPartnerName = $request->input('seller_source', 'owner') === 'owner';
 
         $live_video->update([
             'title' => $request->title,
             'title_ar' => $request->title_ar,
             'user_id' =>$request->user_id,
-            'seller_id' => $request->exists('seller_id') ? ($request->input('seller_id') ?: null) : $live_video->seller_id,
+            'seller_id' => $sellerId,
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
             'information_ar' => $request->information_ar ?? null,
-            'weight' => $request->weight ?? null,
-            'age_id' => $request->age_id ?? null,
             'color_id'=>$request->color_id,
             'type'=>$request->type,
             'date_barth'=>$request->date_barth,
             'animal_pen_id'=>$request->animal_pen_id,
             'address'=>$request->address,
-            'age'=>$request->age,
-            'age_type'=>$request->age_type,
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
+            // 'start_price' => $request->start_price,
             'bidding'=>$request->bidding,
-            'quantity'=>$quantity,
+            'quantity'=>$quantity ?: 1,
             'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
-            'identifier' => $request->identifier ?? null,
-            'baham_count' => $request->baham_count ?? null,
-            'show_partner_name' => $request->has('show_partner_name') ? true : false,
+            'show_partner_name' => $showPartnerName,
         ]);
 
-        if ($quantity > 1 && $request->filled('pieces')) {
-            LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
-        } elseif ($quantity <= 1) {
-            $live_video->pieces()->delete();
-            LiveVideoItemPieceService::syncSinglePieceFromItem($live_video->fresh());
-        }
+        LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
 
         $live_video->load('pieces');
         try {

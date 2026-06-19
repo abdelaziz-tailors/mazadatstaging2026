@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Color;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use App\Services\LiveVideoItemPieceService;
 use Illuminate\Http\Request;
 use App\Traits\ActionTrait;
 
@@ -67,7 +68,7 @@ class OrderController extends Controller
                 return $item->categoryData->name ??'';
             })
             ->addColumn('ageData', function(LiveVideoItem $item) {
-                return $item->age ??'';
+                return $item->primaryPiece()?->age ?? '';
             })
             ->addColumn('status', function(LiveVideoItem $item) {
 //                return  TranslationHelper::translate($item->status);
@@ -202,8 +203,6 @@ class OrderController extends Controller
             'category_id' => $request->category_id ?? null,
             'information' => $request->information ?? null,
             'information_ar' => $request->information_ar ?? null,
-            'weight' => $request->weight ?? null,
-            'age_id' => $request->age_id ?? null,
             'color_id'=>$request->color_id,
             'type'=>$request->type,
             'date_barth'=>$request->date_barth,
@@ -212,12 +211,16 @@ class OrderController extends Controller
             'health_certificate' => $health_certificate ?? null,
             'video' => $video ?? null,
             'address'=>$request->address,
-            'age'=>$request->age,
-            'age_type'=>$request->age_type,
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
         ]);
+
+        LiveVideoItemPieceService::syncPieces($add_iteam, LiveVideoItemPieceService::buildSinglePiecePayload([
+            'age' => $request->age,
+            'age_type' => $request->age_type,
+            'weight' => $request->weight,
+        ]));
 
 
         try {

@@ -86,32 +86,33 @@ class LiveVideoItemController extends Controller
                 'health_certificate' => $healthCertificatePath ?? null,
                 'video' => $videoPath ?? null,
                 'address'=>$request->address[$index],
-                'age'=>$request->age[$index] ?? null,
-                'age_type'=>$request->age_type[$index] ?? null,
                 'type'=>$request->type[$index],
                 'image' => json_encode($file),
                 'category_id' => $request->category_id[$index] ?? null,
                 'information' => $request->information[$index] ?? null,
                 'information_ar'=>$request->information_ar[$index],
-                'weight' => $request->weight[$index] ?? null,
-                // 'start_price' => $request->start_price[$index] ?? 0,
                 'bidding' => $request->bidding[$index] ?? 0,
                 'terms'=>$request->terms[$index],
                 'color_id'=>$request->color_id[$index],
                 'terms_ar'=>$request->terms_ar[$index],
-                'quantity'=>$request->quantity[$index] ?? 0,
+                'quantity'=>$request->quantity[$index] ?? 1,
                 'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
-                'identifier' => $request->identifier[$index] ?? null,
-                'baham_count' => $request->baham_count[$index] ?? null,
+                // 'baham_count' => $request->baham_count[$index] ?? null,
             ]);
 
             $itemPieces = $request->input("pieces.$index", []);
-            $itemQuantity = (int) ($request->quantity[$index] ?? 0);
+            $itemQuantity = (int) ($request->quantity[$index] ?? 1);
 
             if ($itemQuantity > 1 && ! empty($itemPieces)) {
                 LiveVideoItemPieceService::syncPieces($add_iteam, $itemPieces);
-            } elseif ($itemQuantity <= 1) {
-                LiveVideoItemPieceService::syncSinglePieceFromItem($add_iteam->fresh());
+            } else {
+                LiveVideoItemPieceService::syncPieces($add_iteam, LiveVideoItemPieceService::buildSinglePiecePayload([
+                    'age' => $request->age[$index] ?? null,
+                    'weight' => $request->weight[$index] ?? null,
+                    'identifier' => $request->identifier[$index] ?? null,
+                    'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
+                    'baham_count' => $request->baham_count[$index] ?? null,
+                ]));
             }
 
             $add_iteam->load('pieces');
@@ -211,16 +212,12 @@ class LiveVideoItemController extends Controller
             'information_ar' => 'information_ar',
             'terms' => 'terms',
             'terms_ar' => 'terms_ar',
-            'weight' => 'weight',
-            'age' => 'age',
-            'age_type' => 'age_type',
             'type' => 'type',
             'bidding' => 'bidding',
             'color_id' => 'color_id',
             'quantity' => 'quantity',
             'piece_multiplier_number' => 'piece_multiplier_number',
-            'identifier' => 'identifier',
-            'baham_count' => 'baham_count',
+            // 'baham_count' => 'baham_count',
         ];
 
         foreach ($fieldMap as $requestKey => $dbKey) {
@@ -274,9 +271,15 @@ class LiveVideoItemController extends Controller
 
         if ($request->filled('pieces')) {
             LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
-        } elseif ((int) ($live_video->quantity ?? 0) <= 1) {
-            $live_video->pieces()->delete();
-            LiveVideoItemPieceService::syncSinglePieceFromItem($live_video->fresh());
+        } elseif ($request->hasAny(['age', 'weight', 'identifier', 'age_type'])) {
+            LiveVideoItemPieceService::syncPieces($live_video, LiveVideoItemPieceService::buildSinglePiecePayload([
+                'age' => $request->input('age'),
+                'age_type' => $request->input('age_type'),
+                'weight' => $request->input('weight'),
+                'identifier' => $request->input('identifier'),
+                'piece_multiplier_number' => $request->input('piece_multiplier_number', $live_video->piece_multiplier_number),
+                'baham_count' => $request->input('baham_count', $live_video->baham_count),
+            ]));
         }
 
         $live_video->load('pieces');
