@@ -24,7 +24,7 @@ use Illuminate\Http\JsonResponse;
 
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Str;
 class LiveVideoItemController extends Controller
 {
     use ResponseTrait;
@@ -53,9 +53,9 @@ class LiveVideoItemController extends Controller
             if (!empty($request->image[$index])) {
                         $file = [];
                 foreach ($request->image[$index] as $img) {
-                $name = 'image_video_item/'.rand(11111, 99999) .'_'.$img->getClientOriginalName();
-                    $img->move(public_path('../storage/app/public/image_video_item/'), $name);
-                $file[] = $name;
+                $filename = Str::uuid() . '.' . $img->getClientOriginalExtension();
+                $img->move(storage_path('app/public/image_video_item'), $filename);
+                $file[] = 'image_video_item/' . $filename;
                 }
             }
             if ($request->hasFile("health_certificate.$index")) {
@@ -69,8 +69,9 @@ class LiveVideoItemController extends Controller
             // Handle video
             if ($request->hasFile("video.$index")) {
                 $videoFile = $request->file("video.$index");
-                $videoName = 'video/' . time() . '_' . $videoFile->getClientOriginalName();
-                $videoFile->move(public_path('storage/video'), $videoName);
+                $filename = Str::uuid() . '.' . $videoFile->getClientOriginalExtension();
+                $videoName = 'video/' . $filename;
+                $videoFile->move(storage_path('app/public/video'), $filename);
                 $videoPath = $videoName;
             }
 
@@ -78,18 +79,15 @@ class LiveVideoItemController extends Controller
             // Insert data into the database
             $add_iteam=LiveVideoItem::create([
                 'live_video_id' => $id,
-                'title' => $title,
                 'title_ar'=>$request->lineage_title_ar[$index],
                 'status'=>'pending',
                 'user_id' => auth('api')->user()->id ?? null,
                 'seller_id' => $request->seller_id[$index] ?? null,
-                'health_certificate' => $healthCertificatePath ?? null,
                 'video' => $videoPath ?? null,
                 'address'=>$request->address[$index],
                 'type'=>$request->type[$index],
                 'image' => json_encode($file),
                 'category_id' => $request->category_id[$index] ?? null,
-                'information' => $request->information[$index] ?? null,
                 'information_ar'=>$request->information_ar[$index],
                 'bidding' => $request->bidding[$index] ?? 0,
                 'terms'=>$request->terms[$index],
@@ -98,6 +96,12 @@ class LiveVideoItemController extends Controller
                 'quantity'=>$request->quantity[$index] ?? 1,
                 'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
                 // 'baham_count' => $request->baham_count[$index] ?? null,
+                'health_certificate' => $healthCertificatePath ?? null,
+                'title' => $title,
+                'information' => $request->information[$index] ?? null,
+
+
+
             ]);
 
             $itemPieces = $request->input("pieces.$index", []);
