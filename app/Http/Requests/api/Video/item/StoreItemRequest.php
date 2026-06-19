@@ -28,10 +28,10 @@ class StoreItemRequest extends FormRequest
     {
         return [
             // Ensure each item in the 'title' array is required, a string, and max 255 chars
-            'lineage_title.*' => 'required',
+            'lineage_title.*' => 'nullable',
             'lineage_title_ar.*' => 'required',
-            'information' => 'required',
-            'category_id'=>'required',
+            'information' => 'nullable',
+            'category_id'=>'nullable',
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'seller_id.*' => 'nullable|integer|exists:users,id',
@@ -42,10 +42,10 @@ class StoreItemRequest extends FormRequest
             // 'start_price' => 'required', // Assuming price is a number
             // 'start_price.*' => 'numeric', // Assuming price is a number
 
-            'bidding' => 'required',
+            'bidding' => 'nullable',
             'bidding.*' => 'numeric',
-            'image' => 'required', // Each image in a nested array
-            'image.*.*' => 'required|image|mimes:jpeg,jpg,png|max:20000', // Each image in a nested array
+            'image' => 'nullable', // Each image in a nested array
+            'image.*.*' => 'nullable|image|mimes:jpeg,jpg,png|max:20000', // Each image in a nested array
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
@@ -82,26 +82,26 @@ class StoreItemRequest extends FormRequest
                         );
                     }
 
-                    foreach ($pieces as $pieceIndex => $piece) {
-                        if (blank($piece['age'] ?? null)) {
-                            $validator->errors()->add(
-                                "pieces.$index.$pieceIndex.age",
-                                TranslationHelper::translate('Each age field is required.')
-                            );
-                        }
-                    }
+                    // foreach ($pieces as $pieceIndex => $piece) {
+                    //     if (blank($piece['age'] ?? null)) {
+                    //         $validator->errors()->add(
+                    //             "pieces.$index.$pieceIndex.age",
+                    //             TranslationHelper::translate('Each age field is required.')
+                    //         );
+                    //     }
+                    // }
                 } elseif (blank($this->input("age.$index"))) {
-                    $validator->errors()->add(
-                        "age.$index",
-                        TranslationHelper::translate('Each age field is required.')
-                    );
+                    // $validator->errors()->add(
+                    //     "age.$index",
+                    //     TranslationHelper::translate('Each age field is required.')
+                    // );
                 }
 
                 if ($quantity <= 1 && blank($this->input("weight.$index"))) {
-                    $validator->errors()->add(
-                        "weight.$index",
-                        TranslationHelper::translate('Each weight field is required.')
-                    );
+                    // $validator->errors()->add(
+                    //     "weight.$index",
+                    //     TranslationHelper::translate('Each weight field is required.')
+                    // );
                 }
             }
         });

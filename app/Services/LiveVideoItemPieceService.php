@@ -17,7 +17,7 @@ class LiveVideoItemPieceService
                 'piece_number' => $index + 1,
                 'age' => $piece['age'] ?? null,
                 'weight' => $piece['weight'] ?? null,
-                'piece_multiplier_number' => $piece['piece_multiplier_number'] ?? $item->piece_multiplier_number,
+                // 'piece_multiplier_number' => $piece['piece_multiplier_number'] ?? $item->piece_multiplier_number,
                 'identifier' => $piece['identifier'] ?? null,
                 'baham_count' => $piece['baham_count'] ?? null,
             ]);
@@ -35,7 +35,7 @@ class LiveVideoItemPieceService
             'age' => $attributes['age'] ?? null,
             'weight' => $attributes['weight'] ?? null,
             'identifier' => $attributes['identifier'] ?? null,
-            'piece_multiplier_number' => $attributes['piece_multiplier_number'] ?? null,
+            // 'piece_multiplier_number' => $attributes['piece_multiplier_number'] ?? null,
             'baham_count' => $attributes['baham_count'] ?? null,
         ]];
     }
@@ -61,7 +61,7 @@ class LiveVideoItemPieceService
 
     public static function pieceIsEmpty(array $piece): bool
     {
-        $fields = ['age', 'weight', 'piece_multiplier_number', 'identifier', 'baham_count'];
+        $fields = ['age', 'weight', 'identifier', 'baham_count'];
 
         foreach ($fields as $field) {
             if (filled($piece[$field] ?? null)) {

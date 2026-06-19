@@ -12,7 +12,7 @@ class VideoItemPieceResource extends JsonResource
             'piece_number' => $this->piece_number,
             'age' => $this->age,
             'weight' => $this->weight,
-            'piece_multiplier_number' => $this->piece_multiplier_number ?? '',
+            // 'piece_multiplier_number' => $this->piece_multiplier_number ?? '',
             'identifier' => $this->identifier ?? '',
             'baham_count' => $this->baham_count ?? '',
         ];

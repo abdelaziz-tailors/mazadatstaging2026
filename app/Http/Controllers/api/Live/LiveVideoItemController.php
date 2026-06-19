@@ -47,11 +47,11 @@ class LiveVideoItemController extends Controller
         }
 
 
-        foreach ($request->lineage_title as $index => $title) {
+        foreach ($request->lineage_title_ar as $index => $title) {
             // Store the image if provided
             $imagePath = null;
             if (!empty($request->image[$index])) {
-                        $file = [];
+                $file = [];
                 foreach ($request->image[$index] as $img) {
                 $filename = Str::uuid() . '.' . $img->getClientOriginalExtension();
                 $img->move(storage_path('app/public/image_video_item'), $filename);
@@ -85,14 +85,14 @@ class LiveVideoItemController extends Controller
                 'seller_id' => $request->seller_id[$index] ?? null,
                 'video' => $videoPath ?? null,
                 'address'=>$request->address[$index],
-                'type'=>$request->type[$index],
+                'type'=>$request->type[$index] ?? null,
                 'image' => json_encode($file),
                 'category_id' => $request->category_id[$index] ?? null,
                 'information_ar'=>$request->information_ar[$index],
                 'bidding' => $request->bidding[$index] ?? 0,
-                'terms'=>$request->terms[$index],
-                'color_id'=>$request->color_id[$index],
-                'terms_ar'=>$request->terms_ar[$index],
+                'terms'=>$request->terms[$index] ?? null,
+                'color_id'=>$request->color_id[$index]  ?? null,
+                'terms_ar'=>$request->terms_ar[$index]  ?? null,
                 'quantity'=>$request->quantity[$index] ?? 1,
                 'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
                 // 'baham_count' => $request->baham_count[$index] ?? null,
@@ -114,7 +114,7 @@ class LiveVideoItemController extends Controller
                     'age' => $request->age[$index] ?? null,
                     'weight' => $request->weight[$index] ?? null,
                     'identifier' => $request->identifier[$index] ?? null,
-                    'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
+                    // 'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
                     'baham_count' => $request->baham_count[$index] ?? null,
                 ]));
             }
