@@ -35,10 +35,10 @@ class StoreItemRequest extends FormRequest
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'seller_id.*' => 'nullable|integer|exists:users,id',
-            'weight' => 'required', // Assuming weight should be a number
-            'weight.*' => 'numeric', // Assuming weight should be a number
-            'age' => 'required', // Assuming age is an integer
-            'age.*' => 'string', // Assuming age is an integer
+            'weight' => 'nullable',
+            'weight.*' => 'nullable|numeric',
+            'age' => 'nullable',
+            'age.*' => 'nullable|string',
             // 'start_price' => 'required', // Assuming price is a number
             // 'start_price.*' => 'numeric', // Assuming price is a number
 
@@ -49,6 +49,13 @@ class StoreItemRequest extends FormRequest
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
+            'pieces' => 'nullable|array',
+            'pieces.*' => 'nullable|array',
+            'pieces.*.*.age' => 'nullable|string|max:255',
+            'pieces.*.*.weight' => 'nullable|numeric',
+            'pieces.*.*.piece_multiplier_number' => 'nullable|string|max:255',
+            'pieces.*.*.identifier' => 'nullable|string|max:255',
+            'pieces.*.*.baham_count' => 'nullable|string|max:255',
             'piece_multiplier_number' => 'nullable',
             'piece_multiplier_number.*' => 'nullable|string|max:255',
             'identifier' => 'nullable',
@@ -56,6 +63,48 @@ class StoreItemRequest extends FormRequest
             'baham_count' => 'nullable',
             'baham_count.*' => 'nullable|string|max:255',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $quantities = $this->input('quantity', []);
+
+            foreach ($quantities as $index => $quantity) {
+                $quantity = (int) $quantity;
+                $pieces = $this->input("pieces.$index", []);
+
+                if ($quantity > 1) {
+                    if (count($pieces) !== $quantity) {
+                        $validator->errors()->add(
+                            "pieces.$index",
+                            TranslationHelper::translate('pieces_count_must_match_quantity.')
+                        );
+                    }
+
+                    foreach ($pieces as $pieceIndex => $piece) {
+                        if (blank($piece['age'] ?? null)) {
+                            $validator->errors()->add(
+                                "pieces.$index.$pieceIndex.age",
+                                TranslationHelper::translate('Each age field is required.')
+                            );
+                        }
+                    }
+                } elseif (blank($this->input("age.$index"))) {
+                    $validator->errors()->add(
+                        "age.$index",
+                        TranslationHelper::translate('Each age field is required.')
+                    );
+                }
+
+                if ($quantity <= 1 && blank($this->input("weight.$index"))) {
+                    $validator->errors()->add(
+                        "weight.$index",
+                        TranslationHelper::translate('Each weight field is required.')
+                    );
+                }
+            }
+        });
     }
 
     /**

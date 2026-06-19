@@ -36,6 +36,7 @@ use Yajra\DataTables\DataTables;
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
 use App\Support\PartnerDashboardScope;
+use App\Services\LiveVideoItemPieceService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
@@ -187,17 +188,26 @@ class ProductController extends Controller
             PartnerDashboardScope::ensureOwnLiveVideo($live_video);
         }
 
+        $quantity = (int) ($request->quantity ?? 0);
+
         $rules = [
             'user_id'                => 'nullable|exists:users,id',
             'seller_id'              => 'nullable|exists:users,id',
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
-            'age'                    => 'required',
+            'age'                    => $quantity > 1 ? 'nullable' : 'required',
             'bidding'                => 'required|numeric|min:0',
             'quantity'               => 'nullable|integer|min:0',
             'piece_multiplier_number'=> 'nullable|string|max:100',
             'identifier'             => 'nullable|string|max:100',
             'baham_count'            => 'nullable|string|max:100',
+            'pieces'                 => $quantity > 1 ? 'required|array|size:'.$quantity : 'nullable|array',
+            'pieces.*.age'           => 'nullable|string|max:255',
+            'pieces.*.age_type'      => 'nullable|string|max:255',
+            'pieces.*.weight'        => 'nullable|numeric',
+            'pieces.*.piece_multiplier_number' => 'nullable|string|max:100',
+            'pieces.*.identifier'    => 'nullable|string|max:100',
+            'pieces.*.baham_count'   => 'nullable|string|max:100',
             'address'                => 'nullable|string',
             'information'            => 'nullable|string',
             'information_ar'         => 'nullable|string',
@@ -272,12 +282,20 @@ class ProductController extends Controller
             'age_type'=>$request->age_type,
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
-            'quantity'=>$request->quantity ?? 0,
+            'quantity'=>$quantity,
             'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
             'identifier' => $request->identifier ?? null,
             'baham_count' => $request->baham_count ?? null,
             'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
+
+        if ($quantity > 1 && $request->filled('pieces')) {
+            LiveVideoItemPieceService::syncPieces($add_iteam, $request->input('pieces', []));
+        } elseif ($quantity <= 1) {
+            LiveVideoItemPieceService::syncSinglePieceFromItem($add_iteam->fresh());
+        }
+
+        $add_iteam->load('pieces');
 
 
         try {
@@ -312,7 +330,7 @@ class ProductController extends Controller
     public function edit($id)
     {
         //$this->authorizable('edit video');
-        $data = LiveVideoItem::findorfail($id);
+        $data = LiveVideoItem::with('pieces')->findorfail($id);
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $colors = Color::select('id','color', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
@@ -338,6 +356,21 @@ class ProductController extends Controller
     {
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
+
+        $quantity = (int) ($request->quantity ?? $live_video->quantity ?? 0);
+
+        $request->validate([
+            'user_id' => 'sometimes|required|exists:users,id',
+            'seller_id' => 'nullable|exists:users,id',
+            'quantity' => 'nullable|integer|min:0',
+            'pieces' => $quantity > 1 ? 'required|array|size:'.$quantity : 'nullable|array',
+            'pieces.*.age' => 'nullable|string|max:255',
+            'pieces.*.age_type' => 'nullable|string|max:255',
+            'pieces.*.weight' => 'nullable|numeric',
+            'pieces.*.piece_multiplier_number' => 'nullable|string|max:100',
+            'pieces.*.identifier' => 'nullable|string|max:100',
+            'pieces.*.baham_count' => 'nullable|string|max:100',
+        ]);
 
         // Validate user_id if it's being updated
         if ($request->has('user_id')) {
@@ -371,12 +404,21 @@ class ProductController extends Controller
             'terms'=>$request->terms,
             'terms_ar'=>$request->terms_ar,
             'bidding'=>$request->bidding,
-            'quantity'=>$request->quantity ?? 0,
+            'quantity'=>$quantity,
             'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
             'identifier' => $request->identifier ?? null,
             'baham_count' => $request->baham_count ?? null,
             'show_partner_name' => $request->has('show_partner_name') ? true : false,
         ]);
+
+        if ($quantity > 1 && $request->filled('pieces')) {
+            LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
+        } elseif ($quantity <= 1) {
+            $live_video->pieces()->delete();
+            LiveVideoItemPieceService::syncSinglePieceFromItem($live_video->fresh());
+        }
+
+        $live_video->load('pieces');
         try {
             $firebase = new FirebaseController();
             $firebase->create_item($live_video);

@@ -47,5 +47,32 @@ class LiveVideoItem extends Model
     {
         return $this->belongsTo(User::class, 'seller_id');
     }
+
+    public function pieces()
+    {
+        return $this->hasMany(LiveVideoItemPiece::class)->orderBy('piece_number');
+    }
+
+    public function resolvedPieces()
+    {
+        if ($this->relationLoaded('pieces') && $this->pieces->isNotEmpty()) {
+            return $this->pieces;
+        }
+
+        if ((int) ($this->quantity ?? 0) <= 0 && blank($this->age)) {
+            return collect();
+        }
+
+        return collect([
+            new LiveVideoItemPiece([
+                'piece_number' => 1,
+                'age' => $this->age,
+                'weight' => $this->weight,
+                'piece_multiplier_number' => $this->piece_multiplier_number,
+                'identifier' => $this->identifier,
+                'baham_count' => $this->baham_count,
+            ]),
+        ]);
+    }
 }
 

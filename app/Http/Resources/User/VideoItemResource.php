@@ -71,6 +71,7 @@ class VideoItemResource extends JsonResource
             'piece_multiplier_number' => $this->piece_multiplier_number ?? '',
             'identifier' => $this->identifier ?? '',
             'baham_count' => $this->baham_count ?? '',
+            'pieces' => VideoItemPieceResource::collection($this->resolvedPieces()),
             'user'=> New UserDataResource($this->user),
             'seller_id' => $this->seller_id,
             'seller' => $this->when($this->seller_id, new UserDataResource($this->seller)),

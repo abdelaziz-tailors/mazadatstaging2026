@@ -80,21 +80,6 @@
                                 <input type="hidden" name="video_id" value="{{$id ?? $data->live_video_id }}">
 
                             <div class="col-lg-4 form-group">
-                                <label class="form-label">{{ TranslationHelper::translate('Age') }} <span class="text-danger">*</span></label>
-                                <select class="form-control @error('age') is-invalid @enderror" id="age_id" name="age">
-                                <option value="">{{ TranslationHelper::translate('Select Age') }}</option>
-                                @forelse($ages as $age)
-                                    <option @if (isset($data)) @if($age->name ==$data->age) selected @endif @endif value="{{ $age->name }}">{{ $age->name }}</option>
-
-                                @empty
-                                @endforelse
-                                </select>
-                                @error('age')
-                                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-
-                            <div class="col-lg-4 form-group">
                                 <label class="form-label">{{ TranslationHelper::translate('quantity') }}</label>
                                 <input type="number" class="form-control @error('quantity') is-invalid @enderror" id="quantity" name="quantity" value="{{ old('quantity', $data->quantity ?? 0) }}" min="0">
                                 @error('quantity')
@@ -102,27 +87,193 @@
                                 @enderror
                             </div>
 
-                            <div class="col-lg-4 form-group">
-                                <label class="form-label">{{ TranslationHelper::translate('piece_multiplier_number') }}</label>
-                                <input type="text" class="form-control @error('piece_multiplier_number') is-invalid @enderror" id="piece_multiplier_number" name="piece_multiplier_number" value="{{ old('piece_multiplier_number', $data->piece_multiplier_number ?? '') }}" placeholder="">
-                                @error('piece_multiplier_number')
+                            <div class="col-12" id="single-piece-fields">
+                                <div class="row">
+                                    <div class="col-lg-4 form-group">
+                                        <label class="form-label">{{ TranslationHelper::translate('Age') }} <span class="text-danger">*</span></label>
+                                        <select class="form-control @error('age') is-invalid @enderror" id="age_id" name="age">
+                                        <option value="">{{ TranslationHelper::translate('Select Age') }}</option>
+                                        @forelse($ages as $age)
+                                            <option @if (old('age', $data->age ?? '') == $age->name) selected @endif value="{{ $age->name }}">{{ $age->name }}</option>
+                                        @empty
+                                        @endforelse
+                                        </select>
+                                        @error('age')
+                                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col-lg-4 form-group">
+                                        <label class="form-label">{{ TranslationHelper::translate('piece_multiplier_number') }}</label>
+                                        <input type="text" class="form-control @error('piece_multiplier_number') is-invalid @enderror" id="piece_multiplier_number" name="piece_multiplier_number" value="{{ old('piece_multiplier_number', $data->piece_multiplier_number ?? '') }}" placeholder="">
+                                        @error('piece_multiplier_number')
+                                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-lg-4 form-group">
+                                        <label class="form-label">{{ TranslationHelper::translate('identifier') }}</label>
+                                        <input type="text" class="form-control @error('identifier') is-invalid @enderror" id="identifier" name="identifier" value="{{ old('identifier', $data->identifier ?? '') }}" placeholder="">
+                                        @error('identifier')
+                                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                    <div class="col-lg-4 form-group">
+                                        <label class="form-label">{{ TranslationHelper::translate('baham_count') }}</label>
+                                        <input type="text" class="form-control @error('baham_count') is-invalid @enderror" id="baham_count" name="baham_count" value="{{ old('baham_count', $data->baham_count ?? '') }}" placeholder="">
+                                        @error('baham_count')
+                                            <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+
+                            @php
+                                $existingPieces = old('pieces');
+                                if ($existingPieces === null && isset($data)) {
+                                    if ($data->relationLoaded('pieces') && $data->pieces->isNotEmpty()) {
+                                        $existingPieces = $data->pieces->map(function ($piece) {
+                                            return [
+                                                'age' => $piece->age,
+                                                'weight' => $piece->weight,
+                                                'piece_multiplier_number' => $piece->piece_multiplier_number,
+                                                'identifier' => $piece->identifier,
+                                                'baham_count' => $piece->baham_count,
+                                            ];
+                                        })->toArray();
+                                    } elseif ((int) ($data->quantity ?? 0) > 1) {
+                                        $existingPieces = array_fill(0, (int) $data->quantity, [
+                                            'age' => $data->age,
+                                            'weight' => $data->weight,
+                                            'piece_multiplier_number' => $data->piece_multiplier_number,
+                                            'identifier' => $data->identifier,
+                                            'baham_count' => $data->baham_count,
+                                        ]);
+                                    }
+                                }
+                                $existingPieces = $existingPieces ?? [];
+                            @endphp
+
+                            <div class="col-12 d-none" id="pieces-section">
+                                <div class="card border mt-2 mb-3">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <strong>{{ TranslationHelper::translate('piece_details') }}</strong>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="apply-pieces-to-all">
+                                            {{ TranslationHelper::translate('apply_same_to_all') }}
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>{{ TranslationHelper::translate('Age') }}</th>
+                                                        <th>{{ TranslationHelper::translate('weight') }}</th>
+                                                        <th>{{ TranslationHelper::translate('piece_multiplier_number') }}</th>
+                                                        <th>{{ TranslationHelper::translate('identifier') }}</th>
+                                                        <th>{{ TranslationHelper::translate('baham_count') }}</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="pieces-rows"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                @error('pieces')
                                     <span class="text-danger small d-block mt-1">{{ $message }}</span>
                                 @enderror
                             </div>
-                            <div class="col-lg-4 form-group">
-                                <label class="form-label">{{ TranslationHelper::translate('identifier') }}</label>
-                                <input type="text" class="form-control @error('identifier') is-invalid @enderror" id="identifier" name="identifier" value="{{ old('identifier', $data->identifier ?? '') }}" placeholder="">
-                                @error('identifier')
-                                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
-                            <div class="col-lg-4 form-group">
-                                <label class="form-label">{{ TranslationHelper::translate('baham_count') }}</label>
-                                <input type="text" class="form-control @error('baham_count') is-invalid @enderror" id="baham_count" name="baham_count" value="{{ old('baham_count', $data->baham_count ?? '') }}" placeholder="">
-                                @error('baham_count')
-                                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                                @enderror
-                            </div>
+
+                            <template id="piece-row-template">
+                                <tr>
+                                    <td class="piece-number align-middle"></td>
+                                    <td>
+                                        <select class="form-control piece-age" data-name="age">
+                                            <option value="">{{ TranslationHelper::translate('Select Age') }}</option>
+                                            @foreach($ages as $age)
+                                                <option value="{{ $age->name }}">{{ $age->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td><input type="number" step="0.01" class="form-control piece-weight" data-name="weight"></td>
+                                    <td><input type="text" class="form-control piece-multiplier" data-name="piece_multiplier_number"></td>
+                                    <td><input type="text" class="form-control piece-identifier" data-name="identifier"></td>
+                                    <td><input type="text" class="form-control piece-baham" data-name="baham_count"></td>
+                                </tr>
+                            </template>
+
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function () {
+                                    const quantityInput = document.getElementById('quantity');
+                                    const singleFields = document.getElementById('single-piece-fields');
+                                    const piecesSection = document.getElementById('pieces-section');
+                                    const piecesRows = document.getElementById('pieces-rows');
+                                    const rowTemplate = document.getElementById('piece-row-template');
+                                    const applyAllBtn = document.getElementById('apply-pieces-to-all');
+                                    const existingPieces = @json($existingPieces);
+
+                                    function renderPieceRows() {
+                                        const quantity = parseInt(quantityInput.value || '0', 10);
+                                        piecesRows.innerHTML = '';
+
+                                        if (quantity <= 1) {
+                                            singleFields.classList.remove('d-none');
+                                            piecesSection.classList.add('d-none');
+                                            return;
+                                        }
+
+                                        singleFields.classList.add('d-none');
+                                        piecesSection.classList.remove('d-none');
+
+                                        for (let i = 0; i < quantity; i++) {
+                                            const row = rowTemplate.content.firstElementChild.cloneNode(true);
+                                            row.querySelector('.piece-number').textContent = i + 1;
+
+                                            const piece = existingPieces[i] || {};
+                                            const fields = ['age', 'weight', 'piece_multiplier_number', 'identifier', 'baham_count'];
+
+                                            fields.forEach(function (field) {
+                                                const input = row.querySelector('[data-name="' + field + '"]');
+                                                if (!input) {
+                                                    return;
+                                                }
+
+                                                input.name = 'pieces[' + i + '][' + field + ']';
+                                                if (piece[field] !== undefined && piece[field] !== null) {
+                                                    input.value = piece[field];
+                                                }
+                                            });
+
+                                            piecesRows.appendChild(row);
+                                        }
+                                    }
+
+                                    applyAllBtn.addEventListener('click', function () {
+                                        const firstRow = piecesRows.querySelector('tr');
+                                        if (!firstRow) {
+                                            return;
+                                        }
+
+                                        const values = {};
+                                        firstRow.querySelectorAll('[data-name]').forEach(function (input) {
+                                            values[input.dataset.name] = input.value;
+                                        });
+
+                                        piecesRows.querySelectorAll('tr').forEach(function (row, index) {
+                                            if (index === 0) {
+                                                return;
+                                            }
+
+                                            row.querySelectorAll('[data-name]').forEach(function (input) {
+                                                input.value = values[input.dataset.name] || '';
+                                            });
+                                        });
+                                    });
+
+                                    quantityInput.addEventListener('input', renderPieceRows);
+                                    renderPieceRows();
+                                });
+                            </script>
 
                             <div class="col-lg-6 form-group">
                                 {!! Form::label('title', TranslationHelper::translate('lineage title') . ' *', ['class'=>'form-label']) !!}

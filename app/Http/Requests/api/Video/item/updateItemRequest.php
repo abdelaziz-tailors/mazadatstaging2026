@@ -46,12 +46,48 @@ class updateItemRequest extends FormRequest
             'bidding' => 'sometimes|numeric',
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
+            'pieces' => 'nullable|array',
+            'pieces.*.age' => 'nullable|string|max:255',
+            'pieces.*.weight' => 'nullable|numeric',
+            'pieces.*.piece_multiplier_number' => 'nullable|string|max:255',
+            'pieces.*.identifier' => 'nullable|string|max:255',
+            'pieces.*.baham_count' => 'nullable|string|max:255',
             'piece_multiplier_number' => 'nullable|string|max:255',
             'identifier' => 'nullable|string|max:255',
             'baham_count' => 'nullable|string|max:255',
             'color_id' => 'sometimes|integer|exists:colors,id', // Assuming category_id references a table
             'video'=>'nullable|file|mimes:mp4,mov,avi,wmv,flv|max:20480'
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if (! $this->has('quantity') && ! $this->has('pieces')) {
+                return;
+            }
+
+            $quantity = (int) $this->input('quantity', 0);
+            $pieces = $this->input('pieces', []);
+
+            if ($quantity > 1) {
+                if (count($pieces) !== $quantity) {
+                    $validator->errors()->add(
+                        'pieces',
+                        TranslationHelper::translate('pieces_count_must_match_quantity.')
+                    );
+                }
+
+                foreach ($pieces as $pieceIndex => $piece) {
+                    if (blank($piece['age'] ?? null)) {
+                        $validator->errors()->add(
+                            "pieces.$pieceIndex.age",
+                            TranslationHelper::translate('Each age field is required.')
+                        );
+                    }
+                }
+            }
+        });
     }
 
     /**

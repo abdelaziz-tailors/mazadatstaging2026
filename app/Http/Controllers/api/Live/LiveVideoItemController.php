@@ -18,6 +18,7 @@ use App\Http\Resources\User\VideoItemResource;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\VideoComment;
+use App\Services\LiveVideoItemPieceService;
 use Illuminate\Http\JsonResponse;
 
 
@@ -85,8 +86,8 @@ class LiveVideoItemController extends Controller
                 'health_certificate' => $healthCertificatePath ?? null,
                 'video' => $videoPath ?? null,
                 'address'=>$request->address[$index],
-                'age'=>$request->age[$index],
-                'age_type'=>$request->age_type[$index],
+                'age'=>$request->age[$index] ?? null,
+                'age_type'=>$request->age_type[$index] ?? null,
                 'type'=>$request->type[$index],
                 'image' => json_encode($file),
                 'category_id' => $request->category_id[$index] ?? null,
@@ -103,6 +104,17 @@ class LiveVideoItemController extends Controller
                 'identifier' => $request->identifier[$index] ?? null,
                 'baham_count' => $request->baham_count[$index] ?? null,
             ]);
+
+            $itemPieces = $request->input("pieces.$index", []);
+            $itemQuantity = (int) ($request->quantity[$index] ?? 0);
+
+            if ($itemQuantity > 1 && ! empty($itemPieces)) {
+                LiveVideoItemPieceService::syncPieces($add_iteam, $itemPieces);
+            } elseif ($itemQuantity <= 1) {
+                LiveVideoItemPieceService::syncSinglePieceFromItem($add_iteam->fresh());
+            }
+
+            $add_iteam->load('pieces');
 
 
             try {
@@ -260,6 +272,15 @@ class LiveVideoItemController extends Controller
 
         }
 
+        if ($request->filled('pieces')) {
+            LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
+        } elseif ((int) ($live_video->quantity ?? 0) <= 1) {
+            $live_video->pieces()->delete();
+            LiveVideoItemPieceService::syncSinglePieceFromItem($live_video->fresh());
+        }
+
+        $live_video->load('pieces');
+
 
         $data= new VideoItemResource($live_video);
         return $this->success_response(TranslationHelper::translate(' Update Successfully '), $data);
@@ -295,7 +316,7 @@ class LiveVideoItemController extends Controller
         if (!auth('api')->user()){
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data=LiveVideoItem::find($id);
+        $data=LiveVideoItem::with('pieces')->find($id);
         $data->update([
             'status'=>'working',
         ]);
@@ -316,7 +337,7 @@ class LiveVideoItemController extends Controller
         if (!auth('api')->user()){
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data=LiveVideoItem::find($id);
+        $data=LiveVideoItem::with('pieces')->find($id);
 
 
         $data->update([
