@@ -415,15 +415,15 @@ class ProductController extends Controller
 
 
         if($request->hasfile('image')) {
-            $file=[];
+            $files=[];
 
             foreach ($request->file('image') as $image) {
-                $name = 'image_video/'.rand(11111, 99999) .'_'.$image->getClientOriginalName();
-                $image->move(public_path('../storage/app/public/image_video/'), $name);
-                $file[] = $name;
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+                $image->move(storage_path('app/public/image_video'), $filename);
+                $files[] = 'image_video/' . $filename;
             }
             $live_video->update([
-                'image' => json_encode($file),
+                'image' => json_encode($files),
             ]);
         }
         if($request->hasfile('health_certificate')) {
