@@ -41,6 +41,7 @@ use Illuminate\Http\JsonResponse;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class LiveVideoController extends Controller
 {
@@ -57,9 +58,9 @@ class LiveVideoController extends Controller
         if ($request->hasfile('image')) {
 
             foreach ($request->file('image') as $image) {
-                $name = 'image_video/' . rand(11111, 99999) . '_' . $image->getClientOriginalName();
-                $image->move(public_path('../storage/app/public/image_video/'), $name);
-                $file[] = $name;
+                $filename = Str::uuid() . '.' . $image->getClientOriginalExtension();
+                $image->move(storage_path('app/public/image_video'), $filename);
+                $file[] = 'image_video/' . $filename;
             }
         }
 
@@ -101,31 +102,34 @@ class LiveVideoController extends Controller
 
             $data = LiveVideo::create([
                 'user_id' => auth('api')->user()->id,
-                'title' => $request->title,
+                'admin_id' => $admin_id,
+                'partner_id' => auth('api')->user()->admin->id ?? null,
                 'title_ar' => $request->title_ar,
-                'status' => 'pending',
-                'image' => json_encode($file),
-                'information' => $request->information,
-                'information_ar' => $request->information_ar,
+                'start_price' => $request->input('start_price'),
                 'date_start_at' => $request->date_start_at,
                 'date_end_at' => $request->date_end_at,
                 'time_start_at' => $request->time_start_at,
                 'time_end_at' => $request->time_end_at,
-                'terms_conditions' => $request->terms_conditions,
+                'status' => 'pending',
+                'image' => json_encode($file),
+                'information_ar' => $request->information_ar,
                 'terms_conditions_ar' => $request->terms_conditions_ar,
                 'city_id' => $request->city_id ?? null,
-                'admin_id' => $admin_id,
-                'partner_id' => auth('api')->user()->admin->id ?? null,
                 'type' => $videoType,
                 'partners_type' => 'single',
-                'agora_channel_name' => $channelName,
-                'agora_token' => $agoraToken,
-                'agora_app_id' => $agoraAppId,
                 'tax_amount' => $request->input('tax_amount'),
                 'commission_amount' => $request->input('commission_amount'),
                 'commission_payer' => $request->input('commission_payer'),
                 'service_fee' => $request->input('service_fee'),
-                'start_price' => $request->input('start_price'),
+                'agora_channel_name' => $channelName,
+                'agora_token' => $agoraToken,
+                'agora_app_id' => $agoraAppId,
+
+                'title' => $request->title,
+                'terms_conditions' => $request->terms_conditions,
+                'information' => $request->information,
+
+
             ]);
 
             // Decrement remaining auctions from subscription

@@ -27,9 +27,8 @@ class AddVideoRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => 'required',
             'title_ar' => 'required',
-            'information' => 'required|string|max:255',
+            'start_price' => 'required|numeric|min:0',
             'information_ar' => 'required|string|max:255',
             'date_start_at' => 'required|date_format:Y-m-d',
             'date_end_at' => 'required|date_format:Y-m-d',
@@ -39,7 +38,7 @@ class AddVideoRequest extends FormRequest
             'type' => 'nullable',
             'image' => 'nullable|array',
             'image.*' => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
-            'terms_conditions' => 'required|string|max:255',
+            'terms_conditions' => 'nullable|string|max:255',
             'video_type' => 'nullable|in:live,recorded,photo',
             'partners_type'=>'nullable',
             'partner_id'=>'nullable',
@@ -47,9 +46,11 @@ class AddVideoRequest extends FormRequest
             'commission_amount' => 'nullable|min:0',
             'commission_payer' => 'nullable|in:buyer,seller',
             'service_fee' => 'nullable|min:0',
-            'start_price' => 'required|numeric|min:0',
-            // 'image'=> 'required',
-            // 'image.*'=> 'mimes:jpeg,jpg,png|max:20000',
+            'title' => 'nullable',
+            'information' => 'nullable|string|max:255',
+
+
+
 
         ];
     }
