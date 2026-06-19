@@ -76,9 +76,9 @@ class ProductController extends Controller
             ->editColumn('title_ar', function(LiveVideoItem $item) {
                 return $item->title_ar;
             })
-            ->addColumn('category', function(LiveVideoItem $item) {
-                return $item->categoryData->name ??'';
-            })
+            // ->addColumn('category', function(LiveVideoItem $item) {
+            //     return $item->categoryData->name ??'';
+            // })
             ->addColumn('ageData', function(LiveVideoItem $item) {
                 return $item->primaryPiece()?->age ?? '';
             })
@@ -100,7 +100,7 @@ class ProductController extends Controller
             ->addColumn('buyer', function(LiveVideoItem $item) {
                 return $item->user_auction->name ?? '';
             })
-            ->addColumn('consignor_seller', function (LiveVideoItem $item) {
+            ->addColumn('seller', function (LiveVideoItem $item) {
                 return $item->seller->name ?? '—';
             })
 

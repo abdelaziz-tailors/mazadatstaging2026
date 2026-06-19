@@ -65,7 +65,7 @@ class AuctionController extends Controller
         return Datatables::of($providers)
 
             ->editColumn('title', function(LiveVideo $item) {
-                return $item->title;
+                return $item->title_ar;
             })
             ->addColumn('user_name', function(LiveVideo $item) {
                 return $item->partner->name ??'';

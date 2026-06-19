@@ -38,12 +38,12 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>{{ TranslationHelper::translate('Title') }}</th>
+                        {{-- <th>{{ TranslationHelper::translate('Title') }}</th> --}}
                         <th>{{ TranslationHelper::translate('Title ar') }}</th>
-                        <th>{{ TranslationHelper::translate('Category') }}</th>
+                        {{-- <th>{{ TranslationHelper::translate('Category') }}</th> --}}
                         <th>{{ TranslationHelper::translate('Age') }}</th>
                         <th>{{ TranslationHelper::translate('Status') }}</th>
-                        <th>{{ TranslationHelper::translate('Star price') }}</th>
+                        {{-- <th>{{ TranslationHelper::translate('Star price') }}</th> --}}
                         <th>{{ TranslationHelper::translate('End price') }}</th>
                         <th>{{ TranslationHelper::translate('Buyer') }}</th>
                         <th>{{ TranslationHelper::translate('seller') }}</th>
@@ -84,12 +84,12 @@
 
         columns: [
             {data: 'id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'title', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
+            // {data: 'title', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'title_ar', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'category', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
+            {{-- {data: 'category', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true}, --}}
             {data: 'ageData', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'status', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'start_price', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
+            {{-- {data: 'start_price', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true}, --}}
 
             {data: 'finished_price', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'buyer', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
