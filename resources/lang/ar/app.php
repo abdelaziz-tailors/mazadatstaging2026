@@ -1017,7 +1017,7 @@
   'item_photos' => 'صور القطعة',
   'auction_owner' => 'صاحب المزاد',
   'seller_from_list' => 'بائع من القائمة',
-  'add_item' => 'إضافة عنصر',
+  'add_item' => 'إضافة القطعة',
   'select_age' => 'اختر العمر',
   'start_price' => 'فتح الباب',
   'auction_time' => 'وقت المزاد',

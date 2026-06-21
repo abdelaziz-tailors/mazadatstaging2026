@@ -48,33 +48,32 @@
                 <div class="row g-2">
                     <div class="col-md-6">
                         <label class="border rounded p-3 d-block mb-0 h-100 @if($sellerSource === 'owner') border-primary @endif" style="cursor:pointer;">
-                            <input type="radio" name="seller_source" value="owner" class="form-check-input me-2" @checked($sellerSource === 'owner')>
+                            <input type="radio" name="seller_source" value="owner" class="form-check-input me-2" {{ $sellerSource === 'owner' ? 'checked' : '' }}>
                             <strong>{{ TranslationHelper::translate('auction_owner') }}</strong>
                             <div class="text-muted small mt-1">{{ $auctionOwnerName }}</div>
                         </label>
                     </div>
                     <div class="col-md-6">
                         <label class="border rounded p-3 d-block mb-0 h-100 @if($sellerSource === 'from_list') border-primary @endif" style="cursor:pointer;">
-                            <input type="radio" name="seller_source" value="from_list" class="form-check-input me-2" @checked($sellerSource === 'from_list')>
+                            <input type="radio" name="seller_source" value="from_list" class="form-check-input me-2" {{ $sellerSource === 'from_list' ? 'checked' : '' }}>
                             <strong>{{ TranslationHelper::translate('seller_from_list') }}</strong>
                         </label>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-lg-6 form-group @if($sellerSource !== 'from_list') d-none @endif" id="seller-from-list-field">
-                <select class="form-control @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
-                    <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
-                    @forelse($sellers as $sellerUser)
-                        <option value="{{ $sellerUser->id }}" @selected(old('seller_id', $data->seller_id ?? '') == $sellerUser->id)>
-                            {{ $sellerUser->name }}
-                        </option>
-                    @empty
-                    @endforelse
-                </select>
-                @error('seller_id')
-                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                @enderror
+                <div class="mt-2 @if($sellerSource !== 'from_list') d-none @endif" id="seller-from-list-field">
+                    <select class="form-control @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
+                        <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
+                        @forelse($sellers as $sellerUser)
+                            <option value="{{ $sellerUser->id }}" {{ old('seller_id', isset($data) ? $data->seller_id : '') == $sellerUser->id ? 'selected' : '' }}>
+                                {{ $sellerUser->name }}
+                            </option>
+                        @empty
+                        @endforelse
+                    </select>
+                    @error('seller_id')
+                        <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                    @enderror
+                </div>
             </div>
 
             @if ($live_video->partners_type == 'single')
@@ -85,7 +84,7 @@
                     <select class="form-control @error('user_id') is-invalid @enderror" id="user_id" name="user_id">
                         <option value="">{{ TranslationHelper::translate('Select Vendor') }}</option>
                         @forelse($providers as $provider)
-                            <option value="{{ $provider->id }}" @selected(old('user_id', $data->user_id ?? '') == $provider->id)>{{ $provider->name }}</option>
+                            <option value="{{ $provider->id }}" {{ old('user_id', isset($data) ? $data->user_id : '') == $provider->id ? 'selected' : '' }}>{{ $provider->name }}</option>
                         @empty
                         @endforelse
                     </select>
