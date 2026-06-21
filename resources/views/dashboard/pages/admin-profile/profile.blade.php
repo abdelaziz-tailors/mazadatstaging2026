@@ -24,6 +24,10 @@
                     {!! Form::text('name', NULL, ['class' => 'form-control']) !!}
                 </div>
                 <div class="col-lg-6 form-group">
+                    {!! Form::label('user_name', TranslationHelper::translate('alias_name'), ['class'=>'form-label']) !!}
+                    {!! Form::text('user_name', NULL, ['class' => 'form-control']) !!}
+                </div>
+                <div class="col-lg-6 form-group">
                     {!! Form::label('email', TranslationHelper::translate('email'), ['class'=>'form-label']) !!}
                     {!! Form::email('email', NULL, ['class' => 'form-control']) !!}
                 </div>

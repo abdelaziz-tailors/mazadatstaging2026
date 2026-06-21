@@ -25,9 +25,15 @@ class UpdateProfileRequest extends FormRequest
      */
     public function rules()
     {
+        $admin = Auth::guard('admin')->user();
+        $userNameUniqueRule = $admin->user_id
+            ? 'unique:users,user_name,'.$admin->user_id
+            : 'unique:admins,user_name,'.$admin->id.',id,deleted_at,NULL';
+
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:admins,email,'.Auth::guard('admin')->user()->id.',id,deleted_at,NULL',
+            'user_name' => ['nullable', 'string', $userNameUniqueRule],
+            'email' => 'required|email|unique:admins,email,'.$admin->id.',id,deleted_at,NULL',
             'phone' => 'required',
             'image' => 'sometimes|required|mimes:png,jpg,jpeg',
             'experience_years'=> 'min:0',

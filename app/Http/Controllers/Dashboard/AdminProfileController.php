@@ -10,6 +10,7 @@ use App\Helpers\TranslationHelper;
 
 use App\Http\Requests\Dashboard\Admin\ChangeHospitalPasswordRequest;
 use App\Http\Requests\Dashboard\Admin\UpdateProfileRequest;
+use App\Models\User\User;
 
 
 class AdminProfileController extends Controller
@@ -17,6 +18,8 @@ class AdminProfileController extends Controller
     public function index()
     {
         $admin = Auth::guard('admin')->user();
+        $admin->user_name = $admin->user_name ?? $admin->user?->user_name;
+
         return view('dashboard.pages.admin-profile.profile', compact(['admin']));
     }
 
@@ -28,10 +31,15 @@ class AdminProfileController extends Controller
         }
         $admin->update([
             'name' => $request->name,
+            'user_name' => $request->user_name,
             'email' => $request->email,
             'phone' => $request->phone,
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('admins', $request->file('image')) : $admin->image
         ]);
+
+        if ($admin->user_id) {
+            User::where('id', $admin->user_id)->update(['user_name' => $request->user_name]);
+        }
         Toastr::success(TranslationHelper::translate('Profile Updated Successfully'));
         return redirect()->route('admin.dashboard.index');
     }
