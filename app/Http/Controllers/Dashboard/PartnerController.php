@@ -69,6 +69,11 @@ class PartnerController extends Controller
     {
         $this->authorizable('add partner');
 
+        $commercialRegister = null;
+        if ($request->hasFile('commercial_register')) {
+            $commercialRegister = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
+        }
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -76,6 +81,7 @@ class PartnerController extends Controller
             'national_id' => $request->national_id,
             'user_name' => $request->user_name,
             'user_type' => 'vendor',
+            'commercial_register' => $commercialRegister,
             'password' => bcrypt($request->password),
             // 'is_verified'=>$request->is_verified,
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : 'partners/default.png'
@@ -150,14 +156,25 @@ class PartnerController extends Controller
 
 
         $user = User::findorfail($admin->user_id);
-        $user->update([
+
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'user_name' => $request->user_name,
             'phone' => $request->phone,
             'national_id' => $request->national_id,
+            'user_type' => 'vendor',
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $user->image
-        ]);
+        ];
+
+        if ($request->hasFile('commercial_register')) {
+            if ($user->commercial_register && Storage::disk('public')->exists($user->commercial_register)) {
+                Storage::disk('public')->delete($user->commercial_register);
+            }
+            $userData['commercial_register'] = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
+        }
+
+        $user->update($userData);
         if ($request->is_verified == 'on') {
             $user->update([
                 'is_verified' => 1

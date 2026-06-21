@@ -29,9 +29,10 @@ class StorePartnerRequest extends FormRequest
             'email' => 'required|email|unique:admins,email,NULL,id,deleted_at,NULL',
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
             'phone' => 'required',
+            'commercial_register' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'national_id' => 'nullable|string|max:32',
-            'password' => 'required|confirmed',
-            'image' => 'sometimes|required|mimes:png,jpg,jpeg'
+            'password' => 'required|min:6',
+            'image' => 'nullable|mimes:png,jpg,jpeg'
         ];
     }
 
@@ -51,7 +52,10 @@ class StorePartnerRequest extends FormRequest
             'phone.required' => TranslationHelper::translate('Please Enter Partner Phone'),
             'role_id.required' => TranslationHelper::translate('Please Choose Partner Role'),
             'password.required' => TranslationHelper::translate('Please Enter Partner Account Password'),
-            'password.confirmed' => TranslationHelper::translate('Password Not Matching Its Confirmation'),
+            'password.min' => TranslationHelper::translate('Please Enter Partner Account Password'),
+            'commercial_register.required' => TranslationHelper::translate('commercial_register_required_for_vendor'),
+            'commercial_register.mimes' => TranslationHelper::translate('please_add_valid_commercial_register'),
+            'commercial_register.max' => TranslationHelper::translate('_commercial_register_max_size_10_mb_'),
             'image.required' => TranslationHelper::translate('Please Choose Image'),
             'image.mimes' => TranslationHelper::translate('Please Choose Valid Image'),
         ];
