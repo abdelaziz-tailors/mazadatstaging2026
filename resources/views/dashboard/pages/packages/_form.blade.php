@@ -12,20 +12,21 @@
     @endif
     <div class="col-12 d-flex">
         <div class="card flex-fill">
-            <div class="card-header">
-                <ul role="tablist" class="nav nav-tabs card-header-tabs float-start">
-                    @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
-                        <li class="nav-item">
-                            <a href="#tab-{{ $localeCode }}" data-bs-toggle="tab" class="nav-link @if($loop->index == 0) active @endif ">
-                                <img class="me-3 rounded-circle" src="{{ asset('dashboard/img/language/'.$localeCode.'.png') }}" width="31" alt="{{ Auth::guard('admin')->user()->name }}" /> {{ $properties['native'] }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
             <div class='card-body'>
+                {{-- English tab hidden — values synced from Arabic on save --}}
+                {{--
+                <div class="card-header">
+                    <ul role="tablist" class="nav nav-tabs card-header-tabs float-start">
+                        @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
+                            <li class="nav-item">
+                                <a href="#tab-{{ $localeCode }}" data-bs-toggle="tab" class="nav-link @if($loop->index == 0) active @endif ">
+                                    <img class="me-3 rounded-circle" src="{{ asset('dashboard/img/language/'.$localeCode.'.png') }}" width="31" alt="{{ Auth::guard('admin')->user()->name }}" /> {{ $properties['native'] }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
                 <div class="tab-content pt-0">
-
                     @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
                         <div role="tabpanel" id="tab-{{ $localeCode }}" class="tab-pane fade @if($loop->index == 0) show active @endif "
                              dir="{{ TranslationHelper::language_direction($localeCode) }}" >
@@ -39,6 +40,16 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+                --}}
+
+                <div class="col-lg-6 form-group">
+                    {!! Form::label('name[ar]', TranslationHelper::translate('Name', 'ar'), ['class'=>'form-label']) !!}
+                    {!! Form::text('name[ar]', (is_array($names) && array_key_exists('ar', $names)) ? $names['ar'] : NULL, ['class' => 'form-control']) !!}
+                </div>
+                <div class="col-lg-12 form-group">
+                    {!! Form::label('description[ar]', TranslationHelper::translate('Description', 'ar'), ['class'=>'form-label']) !!}
+                    {!! Form::textarea('description[ar]', (is_array($description) && array_key_exists('ar', $description)) ? $description['ar'] : NULL, ['class' => 'form-control']) !!}
                 </div>
                 <div class="row">
 

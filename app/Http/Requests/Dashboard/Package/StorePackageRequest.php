@@ -23,13 +23,25 @@ class StorePackageRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        $name = $this->input('name', []);
+        $description = $this->input('description', []);
+
+        $name['en'] = $name['en'] ?? ($name['ar'] ?? '');
+        $description['en'] = $description['en'] ?? ($description['ar'] ?? '');
+
+        $this->merge([
+            'name' => $name,
+            'description' => $description,
+        ]);
+    }
+
     public function rules()
     {
 
         $rules = array();
-        foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {
-            $rules['name.'.$localeCode] = 'required';
-        }
+        $rules['name.ar'] = 'required';
         $rules['coin'] = 'nullable';
         $rules['price'] = 'nullable';
         $rules['subscription_type'] = 'nullable|in:monthly,annual';
@@ -51,9 +63,7 @@ class StorePackageRequest extends FormRequest
 
 
         $messages = array();
-        foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {
-            $messages['name.'.$localeCode.'.required'] = TranslationHelper::translate('Please enter city name in '.$properties['name']);
-        }
+        $messages['name.ar.required'] = TranslationHelper::translate('Please enter city name in Arabic');
         $messages['image_png.required'] = TranslationHelper::translate('Please Choose Png Image');
         $messages['image_png.mimes'] = TranslationHelper::translate('Please Choose Valid Png Image');
         $messages['image_svg.required'] = TranslationHelper::translate('Please Choose SVG Image');
