@@ -80,13 +80,13 @@
                 </div>
                 --}}
 
-                <div class="col-lg-6 form-group">
+                {{-- <div class="col-lg-6 form-group">
                     {!! Form::label('information_ar', TranslationHelper::translate('information'), ['class'=>'form-label']) !!}
                     {!! Form::textArea('information_ar', old('information_ar', $data->information_ar ?? null), ['class' => 'form-control'.($errors->has('information_ar') ? ' is-invalid' : '')]) !!}
                     @error('information_ar')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
-                </div>
+                </div> --}}
 
                 {{--
                 <div class="col-lg-6 form-group">
@@ -185,7 +185,7 @@
 
                 <div class="col-lg-3 form-group">
                     {!! Form::label('service_fee', TranslationHelper::translate('service_fee'), ['class'=>'form-label']) !!}
-                    {!! Form::number('service_fee', old('service_fee', isset($data) ? $data->service_fee : null), ['class' => 'form-control', 'min'=>'0', 'step'=>'0.01', 'placeholder' => TranslationHelper::translate('service_fee')]) !!}
+                    {!! Form::number('service_fee', old('service_fee', isset($data) ? $data->service_fee : null), ['class' => 'form-control', 'min'=>'0']) !!}
                     @error('service_fee')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
                 </div>
 
@@ -220,17 +220,17 @@
                         {!! Form::radio('type', 'recorded', isset($data) ? $data->type === 'recorded' : false, ['class' => 'form-check-input', 'id' => 'type_recorded']) !!}
                         <label class="form-check-label" for="type_recorded">{{ TranslationHelper::translate('recorded') }}</label>
                     </div>
-                    <div class="form-check">
+                    {{-- <div class="form-check">
                         {!! Form::radio('type', 'photo', isset($data) ? $data->type === 'photo' : false, ['class' => 'form-check-input', 'id' => 'type_photo']) !!}
                         <label class="form-check-label" for="type_photo">{{ TranslationHelper::translate('photo_auction') }}</label>
-                    </div>
+                    </div> --}}
                     @error('type')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
                 </div>
 
                 @if (!($isPartnerDashboard ?? false))
-                <div class="col-6 form-group mt-4">
+                {{-- <div class="col-6 form-group mt-4">
                     <label class="form-label">{{ TranslationHelper::translate('partners_type') }} <span class="text-danger">*</span></label>
                     <div class="form-check">
                         {!! Form::radio('partners_type', 'single', isset($data) ? $data->partners_type === 'single' : true, ['class' => 'form-check-input', 'id' => 'partners_type_single']) !!}
@@ -243,7 +243,7 @@
                     @error('partners_type')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
-                </div>
+                </div> --}}
 
                 <div class="col-lg-6 form-group" id="partner-select-field">
                     <label class="form-label">{{ TranslationHelper::translate('Partner') }}</label>

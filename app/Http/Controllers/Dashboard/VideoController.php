@@ -137,7 +137,7 @@ class VideoController extends Controller
             'service_fee' => 'nullable|min:0',
         ];
         if (! $isPartner) {
-            $rules['partners_type'] = 'required|in:single,multiple';
+            $rules['partners_type'] = 'nullable|in:single,multiple';
             $rules['partner_id'] = 'nullable|exists:users,id';
             $rules['user_id'] = 'nullable|exists:users,id';
         }
@@ -180,7 +180,7 @@ class VideoController extends Controller
             'admin_id' => Auth::guard('admin')->user()->id,
             'partner_id' => $partnerId,
             'type' => $request->type,
-            'partners_type' => $partnersType,
+            'partners_type' => $partnersType ?? 'single',
             'start_price' => $request->start_price,
             'tax_amount' => $request->filled('tax_amount') ? $request->tax_amount : null,
             'commission_amount' => $request->filled('commission_amount') ?  $request->commission_amount : null,
@@ -305,7 +305,7 @@ class VideoController extends Controller
         ];
 
         if (! $isPartner) {
-            $rules['partners_type'] = 'required|in:single,multiple';
+            $rules['partners_type'] = 'nullable|in:single,multiple';
             $rules['partner_id'] = 'nullable|exists:users,id';
         }
 
@@ -338,7 +338,7 @@ class VideoController extends Controller
             'city_id' => $request->city_id,
             'partner_id' => $partnerId,
             'type' => $request->type,
-            'partners_type' => $partnersType,
+            'partners_type' => $partnersType ?? 'single',
             'start_price' => $request->start_price,
             'tax_amount' => $request->filled('tax_amount') ? $request->tax_amount : null,
             'commission_amount' => $request->filled('commission_amount') ? $request->commission_amount : null,
