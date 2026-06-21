@@ -1399,4 +1399,5 @@
   'select' => 'select',
   'each_bidding_must_be_a_number_' => 'Each bidding must be a number ',
   'pieces_count_must_match_quantity_' => 'pieces_count_must_match_quantity ',
+  'max_birthdate_should_be_before_01-01-2022' => 'max birthdate should be before 01-01-2022',
 );
