@@ -152,7 +152,7 @@
                     </li>
                 {{-- @endif --}}
 
-                    <li>
+                    {{-- <li>
                         <a class="{{ (Request::is(app()->getLocale() . '/admin/colors*') ) ? 'active' : '' }}"
                            href="{{ route('admin.colors.index') }}">
                             <i class="fe fe-plus"></i> <span>{{ TranslationHelper::translate('Colors') }}</span>
@@ -165,7 +165,7 @@
                                                        href="{{ route('admin.categories.index') }}">
                                                         <i class="fe fe-list-task"></i> <span>{{ TranslationHelper::translate('Categories') }}</span>
                                                     </a>
-                                                </li>
+                                                </li> --}}
 
 
 
