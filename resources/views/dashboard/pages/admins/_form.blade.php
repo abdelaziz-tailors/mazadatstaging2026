@@ -45,11 +45,11 @@
     <div class="row">
         <div class="col-lg-6 form-group">
             {!! Form::label('password', TranslationHelper::translate('password'), ['class'=>'form-label']) !!}
-            <input type="password" name="password" id="password" class="form-control" />
+            <input type="text" name="password" id="password" class="form-control" />
         </div>
         <div class="col-lg-6 form-group">
             {!! Form::label('password_confirmation', TranslationHelper::translate('password_confirmation'), ['class'=>'form-label']) !!}
-            <input type="password" name="password_confirmation" id="password_confirmation" class="form-control" />
+            <input type="text" name="password_confirmation" id="password_confirmation" class="form-control" />
         </div>
     </div>
 @endif
