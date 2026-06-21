@@ -75,7 +75,7 @@
                         <span class="user-img d-inline-flex align-items-center justify-content-center rounded-circle bg-light" style="width:31px;height:31px;">
                             <i class="fa fa-user text-secondary"></i>
                         </span>
-                        <span class="ms-2 d-none d-lg-inline text-dark fw-semibold">
+                        <span class="ms-2 d-none d-lg-inline text-white fw-semibold">
                             {{ Auth::guard('admin')->user()->name }}
                         </span>
                     </a>
