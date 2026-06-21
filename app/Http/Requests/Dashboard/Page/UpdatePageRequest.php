@@ -23,14 +23,26 @@ class UpdatePageRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        $name = $this->input('name', []);
+        $description = $this->input('description', []);
+
+        $name['en'] = $name['en'] ?? ($name['ar'] ?? '');
+        $description['en'] = $description['en'] ?? ($description['ar'] ?? '');
+
+        $this->merge([
+            'name' => $name,
+            'description' => $description,
+        ]);
+    }
+
     public function rules()
     {
 
         $rules = array();
-        foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {
-            $rules['name.'.$localeCode] = 'required';
-            $rules['description.'.$localeCode] = 'required';
-        }
+        $rules['name.ar'] = 'required';
+        $rules['description.ar'] = 'required';
 //        $rules['image_svg'] = 'sometimes|mimes:svg';
         return $rules;
     }
@@ -46,10 +58,8 @@ class UpdatePageRequest extends FormRequest
 
 
         $messages = array();
-        foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties) {
-            $messages['name.'.$localeCode.'.required'] = TranslationHelper::translate('Please enter  name in '.$properties['name']);
-            $messages['description.'.$localeCode.'.required'] = TranslationHelper::translate('Please enter description in '.$properties['name']);
-        }
+        $messages['name.ar.required'] = TranslationHelper::translate('Please enter  name in Arabic');
+        $messages['description.ar.required'] = TranslationHelper::translate('Please enter description in Arabic');
 
         return $messages;
 
