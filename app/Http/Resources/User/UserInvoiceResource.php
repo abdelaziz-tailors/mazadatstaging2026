@@ -2,40 +2,34 @@
 
 namespace App\Http\Resources\User;
 
-use App\Http\Resources\CityResource;
-use App\Http\Resources\DepartmentResource;
-use App\Models\JobTitle;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-use TranslationHelper;
 
 class UserInvoiceResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
      * @param  \Illuminate\Http\Request  $request
      * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
      */
     public function toArray($request)
     {
+        $live = $this->liveVideo;
+        $lineItems = $this->items->map(fn ($orderItem) => $orderItem->liveVideoItem)->filter();
 
-        $data = [
-            'id' => $this->resource['id'] ??'',
-            'invoice_id'=>$this->resource['id'] ??'',
-            'title'=>app()->getLocale()=='en'? $this['title']??'' :$this['title_ar']??'',
-            'title_en' => $this->title ??'',
-            'title_ar' => $this->title_ar ??'',
-            'status'=>$this['status'],
-            'end_at'=>$this['end_at'],
-            'sub_total' => $this->sub_total(),
-            'tax' => $this->tax_value(),
-            'commission' => $this->commission_value(),
-            'total_price' => $this->total_price(),
-            'total_iteam'=>$this->video_items->where('user_finished_id',auth('api')->user()->id)->count(),
-            'video_items'=>ProviderInvoiceItemResource::collection($this->video_items->where('user_finished_id',auth('api')->user()->id)),
+        return [
+            'id' => $this->id,
+            'order_number' => $this->order_number,
+            'live_video_id' => $this->live_video_id,
+            'title' =>$live->title_ar,
+            'live_status' => $live->status ?? '',
+            'end_at' => $live->end_at ?? null,
+            'sub_total' => $this->subtotal,
+            'tax' => $this->tax_value,
+            'commission' => $this->commission_value,
+            'total_price' => $this->total,
+            'payment_status' => $this->payment_status,
+            'status' => $this->status,
+            'total_items' => $lineItems->count(),
+            'video_items' => ProviderInvoiceItemResource::collection($lineItems),
         ];
-
-        return $data;
     }
 }

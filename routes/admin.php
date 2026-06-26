@@ -87,9 +87,8 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::get('auctions/show/{id}', [AuctionController::class, 'show'])->name('auctions.show');
 
 
-            Route::resource('orders', OrderController::class)->except(['show']);
+            Route::resource('orders', OrderController::class)->except(['show', 'create', 'store']);
             Route::post('orders/getData', [OrderController::class, 'get_data'])->name('orders.getData');
-            Route::post('orders/active_toogler/{id}', [OrderController::class, 'active_toogler'])->name('orders.active_toogler');
             Route::get('orders/show/{id}', [OrderController::class, 'show'])->name('orders.show');
 
 

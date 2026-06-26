@@ -19,6 +19,7 @@ use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\VideoComment;
 use App\Services\LiveVideoItemPieceService;
+use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 
 
@@ -171,6 +172,8 @@ class LiveVideoItemController extends Controller
             'finished_price'=>$hight_pirce->comment,
             'user_finished_id'=>$hight_pirce->user_id,
         ]);
+
+        OrderService::attachWonItem($live_video->fresh());
 
 
         try {

@@ -6,26 +6,23 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PartnerInvoiceItemResource extends JsonResource
 {
-    /**
-     * Line item for vendors / stream partners (lot owner user_id or live partner_id).
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
-     */
     public function toArray($request)
     {
         $live = $this->videoLive;
+        $order = $this->order;
         $finished = (float) ($this->finished_price ?? 0);
         $commissionPct = (float) ($live?->commission_amount ?? 0);
         $commissionAmount = (($live?->commission_payer ?? '') === 'seller')
             ? $commissionPct * $finished / 100
             : 0;
         $serviceFee = (float) ($live?->service_fee ?? 0);
-        $netPrice =  $commissionAmount + $serviceFee;
+        $netPrice = $commissionAmount + $serviceFee;
 
         return [
             'id' => $this->id,
-            'invoice_id' => $this->live_video_id . '-' . $this->id,
+            'order_id' => $order?->id,
+            'order_number' => $order?->order_number,
+            'invoice_id' => $order ? $order->invoiceId() : ($this->live_video_id.'-'.$this->id),
             'auction' => [
                 'id' => $this->live_video_id,
                 'title_en' => $live->title ?? '',
@@ -34,8 +31,8 @@ class PartnerInvoiceItemResource extends JsonResource
             'title' => app()->getLocale() === 'en' ? ($this->title ?? '') : ($this->title_ar ?? ''),
             'title_en' => $this->title ?? '',
             'title_ar' => $this->title_ar ?? '',
-            'status' => $this->status_cart,
-            'payment_status' => $this->payment_status,
+            'status' => $order?->status ?? 'pending',
+            'payment_status' => $order?->payment_status ?? 'unpaid',
             'date' => $this->end_at,
             'price' => $this->finished_price,
             'commission_payer' => $live?->commission_payer,

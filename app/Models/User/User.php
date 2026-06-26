@@ -14,6 +14,7 @@ use App\Models\Friend;
 use App\Models\Gender;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use App\Models\Order;
 use App\Models\ProviderDay;
 use App\Models\Rate;
 use App\Models\Store;
@@ -164,6 +165,11 @@ class User extends Authenticatable
         return $this->hasMany(LiveVideoItem::class, 'user_finished_id')
             ->whereNotNull('winner_video')
             ->orderBy('id', 'desc');
+    }
+
+    public function auctionOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'buyer_id');
     }
 
     public function user_live_video_gifts(): HasMany

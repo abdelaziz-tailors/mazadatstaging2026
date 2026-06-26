@@ -7,6 +7,7 @@ use App\Jobs\SendFCMNotification;
 use App\Models\LiveVideo;
 use App\Models\User\User;
 use App\Models\VideoComment;
+use App\Services\OrderService;
 use Illuminate\Console\Command;
 
 class CheckLiveVideoEnd extends Command
@@ -96,6 +97,8 @@ class CheckLiveVideoEnd extends Command
                                 'user_finished_id'=>$hight_pirce->user_id,
                             ]);
 
+                            OrderService::attachWonItem($item->fresh());
+
                             $tokens_en = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
                             $tokens_ar = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
                                 $notification_record = [
@@ -119,6 +122,10 @@ class CheckLiveVideoEnd extends Command
 
                         }
 
+                    }
+
+                    if ($item->user_finished_id) {
+                        OrderService::attachWonItem($item->fresh());
                     }
 
                     try {

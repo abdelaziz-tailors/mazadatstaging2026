@@ -2,35 +2,26 @@
 
 namespace App\Http\Resources\User;
 
-use App\Http\Resources\CityResource;
-use App\Http\Resources\DepartmentResource;
-use App\Models\JobTitle;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
-use TranslationHelper;
 
 class UserInvoiceItemResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
-     */
     public function toArray($request)
     {
+        $order = $this->order;
 
-        $data = [
-            'id' => $this->resource['id'] ??'',
-            'invoice_id'=>$this->resource['live_video_id'] ."-" . $this->resource['id'],
-            'title'=>app()->getLocale()=='en'? $this['title']??'' :$this['title_ar']??'',
-            'title_en' => $this->title ??'',
-            'title_ar' => $this->title_ar ??'',
-            'status'=>$this['status_cart'],
-            'date'=>$this['end_at'],
-            'price'=>$this->finished_price,
+        return [
+            'id' => $this->id,
+            'order_id' => $order?->id,
+            'order_number' => $order?->order_number,
+            'invoice_id' => $order ? $order->invoiceId() : ($this->live_video_id.'-'.$this->id),
+            'title' => app()->getLocale() === 'en' ? ($this->title ?? '') : ($this->title_ar ?? ''),
+            'title_en' => $this->title ?? '',
+            'title_ar' => $this->title_ar ?? '',
+            'status' => $order?->status ?? 'pending',
+            'payment_status' => $order?->payment_status ?? 'unpaid',
+            'date' => $this->end_at,
+            'price' => $this->finished_price,
         ];
-
-        return $data;
     }
 }

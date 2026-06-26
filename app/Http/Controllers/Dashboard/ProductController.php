@@ -65,7 +65,7 @@ class ProductController extends Controller
         $live = LiveVideo::findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live);
 
-        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller', 'pieces');
+        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller', 'pieces', 'order');
 
 
         return Datatables::of($providers)
@@ -92,7 +92,7 @@ class ProductController extends Controller
 
             })
             ->addColumn('shipping_address', function(LiveVideoItem $item) {
-                return $item->addressData->address ?? $item->address ?? '';
+                return $item->order?->shipping_address ?? $item->address ?? '';
             })
             ->addColumn('finished_price', function(LiveVideoItem $item) {
                 return  $item->finished_price;

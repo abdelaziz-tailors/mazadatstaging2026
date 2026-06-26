@@ -6,16 +6,15 @@ use App\Helpers\TranslationHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Profile\UploadAuctionWinVideoRequest;
 use App\Http\Requests\api\User\Profile\UploadCartPaymentProofRequest;
-use App\Http\Requests\api\User\Profile\UploadPaymentProofRequest;
 use App\Http\Resources\User\AuctionWinVideoResource;
 use App\Http\Resources\User\PaymentProofResource;
-use App\Http\Resources\User\PartnerAuctionInvoiceResource;
 use App\Http\Resources\User\PartnerInvoiceItemResource;
 use App\Http\Resources\User\SellerInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceResource;
-use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use App\Models\Order;
+use App\Services\OrderService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,23 +26,24 @@ class UserAuctionController extends Controller
 
     public function list(Request $request)
     {
-        $live = LiveVideo::whereHas('video_items', function ($q) use ($request) {
-            $q->where('user_finished_id', auth('api')->user()->id);
-            if ($request->data_from) {
-                $q->where('end_at', '>=', $request->data_from);
-            }
-            if ($request->data_to) {
-                $q->where('end_at', '<=', $request->data_to);
-            }
-        })->get();
-        $data = UserInvoiceResource::collection($live);
+        $orders = Order::query()
+            ->with(['liveVideo', 'items.liveVideoItem'])
+            ->where('buyer_id', auth('api')->user()->id)
+            ->when($request->data_from, fn ($q) => $q->whereHas('liveVideo', fn ($lv) => $lv->where('end_at', '>=', $request->data_from)))
+            ->when($request->data_to, fn ($q) => $q->whereHas('liveVideo', fn ($lv) => $lv->where('end_at', '<=', $request->data_to)))
+            ->orderByDesc('id')
+            ->get();
+
+        $data = UserInvoiceResource::collection($orders);
 
         return $this->success_response(null, $data);
     }
 
     public function Iteam($id)
     {
-        $live = LiveVideoItem::where('user_finished_id', auth('api')->user()->id)->get();
+        $live = LiveVideoItem::with('order')
+            ->where('user_finished_id', auth('api')->user()->id)
+            ->get();
         $data = UserInvoiceItemResource::collection($live);
 
         return $this->success_response(null, $data);
@@ -87,32 +87,38 @@ class UserAuctionController extends Controller
     }
 
     /**
-     * One receipt for all items the user won in a live stream (same cart as my-cart).
-     * Body: live_video_id + proof file.
+     * One receipt per order (live stream cart). Optional live_video_id scopes to one cart.
      */
     public function uploadPaymentProof(UploadCartPaymentProofRequest $request): JsonResponse
     {
         $userId = auth('api')->user()->id;
 
-        $items = LiveVideoItem::where('user_finished_id', $userId)
-            ->get();
-        if ($items->isEmpty()) {
+        $ordersQuery = Order::query()->where('buyer_id', $userId);
+
+        if ($request->filled('live_video_id')) {
+            $ordersQuery->where('live_video_id', $request->live_video_id);
+        }
+
+        $orders = $ordersQuery->with('items.liveVideoItem')->get();
+
+        if ($orders->isEmpty()) {
             return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
         }
 
         $relativePath = $this->savePaymentProofFile($request->file('proof'));
-        foreach ($items as $item) {
-            $item->update([
-                'payment_proof' => $relativePath
-            ]);
+
+        foreach ($orders as $order) {
+            OrderService::applyPaymentProof($order, $relativePath);
         }
 
-        $updated = LiveVideoItem::where('user_finished_id', $userId)
-            ->get();
+        // $updated = LiveVideoItem::with('order')
+        //     ->where('user_finished_id', $userId)
+        //     ->when($request->filled('live_video_id'), fn ($q) => $q->where('live_video_id', $request->live_video_id))
+        //     ->get();
 
         return $this->success_response(
             TranslationHelper::translate('payment_proof_uploaded_successfully'),
-            PaymentProofResource::collection($updated)
+            // PaymentProofResource::collection($updated)
         );
     }
 
@@ -131,6 +137,7 @@ class UserAuctionController extends Controller
 
         return 'payment_proofs/' . $fileName;
     }
+
     /**
      * Settlement invoices for consignor sellers: live streams with sold items where seller_id is the auth user.
      */
@@ -141,7 +148,8 @@ class UserAuctionController extends Controller
         if ($user->user_type !== 'seller') {
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
-        $items = LiveVideoItem::with('videoLive')->where('seller_id', $user->id)
+        $items = LiveVideoItem::with(['videoLive', 'order'])
+            ->where('seller_id', $user->id)
             ->whereNotNull('user_finished_id')
             ->get();
 
@@ -161,7 +169,7 @@ class UserAuctionController extends Controller
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
 
-        $items = LiveVideoItem::with('videoLive')
+        $items = LiveVideoItem::with(['videoLive', 'order'])
             ->whereNotNull('user_finished_id')
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)

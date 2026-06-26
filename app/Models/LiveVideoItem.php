@@ -30,10 +30,6 @@ class LiveVideoItem extends Model
     {
         return $this->belongsTo(Color::class, 'color_id')->select('id', 'name->'.app()->getLocale().' as name','color');
     }
-    public function addressData()
-    {
-        return $this->hasOne(ShappingAddress::class,'live_video_item_id');
-    }
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -42,6 +38,23 @@ class LiveVideoItem extends Model
     public function seller()
     {
         return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function orderItem()
+    {
+        return $this->hasOne(OrderItem::class, 'live_video_item_id');
+    }
+
+    public function order()
+    {
+        return $this->hasOneThrough(
+            Order::class,
+            OrderItem::class,
+            'live_video_item_id',
+            'id',
+            'id',
+            'order_id'
+        );
     }
 
     public function pieces()

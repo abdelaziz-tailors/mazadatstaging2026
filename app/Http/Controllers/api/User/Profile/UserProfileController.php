@@ -18,10 +18,11 @@ use App\Http\Resources\User\VideoItemResource;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\Notification;
+use App\Models\Order;
 use App\Models\User\User;
 use App\Models\Video;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
-use App\Models\ShappingAddress;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -56,23 +57,13 @@ class UserProfileController extends Controller
 
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-      
-        // $data = LiveVideoItem::with('videoLive')->where('user_finished_id', auth('api')->user()->id)
-        //         ->orderBy('id', 'desc')
-        //         ->get();
 
-        // $total_price = $data->sum('finished_price');
-
-        // return $this->success_response(null, [
-        //     'items' => CartItemResource::collection($data),
-        //     'total_price' => $total_price,
-        // ]);
-
-        $data = LiveVideo::whereHas('video_items', function($query) {
-            $query->where('user_finished_id', auth('api')->user()->id);
-        })
-                ->orderBy('id', 'desc')
-                ->get();
+        $data = Order::query()
+            ->with(['liveVideo', 'items.liveVideoItem.categoryData', 'items.liveVideoItem.videoLive.user_Video', 'items.liveVideoItem.user_auction', 'items.liveVideoItem.pieces'])
+            ->where('buyer_id', auth('api')->user()->id)
+            ->orderByDesc('id')
+            ->get();
+        
 
         return $this->success_response(null, UserCartAuctionResource::collection($data));
     }
@@ -83,19 +74,21 @@ class UserProfileController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
 
+        $userId = auth('api')->user()->id;
+        $ordersQuery = Order::query()->where('buyer_id', $userId);
 
+        if ($request->filled('live_video_id')) {
+            $ordersQuery->where('live_video_id', $request->live_video_id);
+        }
 
-        // dd($request->all());
-        // $data=LiveVideoItem::where('id',$request->id)->where('user_finished_id', auth('api')->user()->id)-> orderBy('id', 'desc')->first();
-          $data = LiveVideoItem::where('user_finished_id', auth('api')->user()->id)->orderBy('id', 'desc')->get();
-        // if (!$data){
-        //     return $this->failed_response(TranslationHelper::translate('Item Not Found'));
-        // }
+        $orders = $ordersQuery->get();
 
-        foreach ($data as $item) {
-            ShappingAddress::updateOrCreate([
-                'live_video_item_id' => $item->id,
-            ],[
+        if ($orders->isEmpty()) {
+            return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
+        }
+
+        foreach ($orders as $order) {
+            OrderService::applyShippingAddress($order, [
                 'address' => $request->shipping_address,
                 'city_id' => $request->city_id,
                 'lat' => $request->lat,
@@ -103,10 +96,13 @@ class UserProfileController extends Controller
             ]);
         }
 
+        $data = LiveVideoItem::with('order')
+            ->where('user_finished_id', $userId)
+            ->when($request->filled('live_video_id'), fn ($q) => $q->where('live_video_id', $request->live_video_id))
+            ->orderBy('id', 'desc')
+            ->get();
 
-        $data =  CartItemResource::collection($data);
-
-        return $this->success_response(TranslationHelper::translate('shipping_address_added_successfully'), $data);
+        return $this->success_response(TranslationHelper::translate('shipping_address_added_successfully'), CartItemResource::collection($data));
     }
 
     public function otherUserprofile($user_name) {

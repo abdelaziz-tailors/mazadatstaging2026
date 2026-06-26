@@ -5,32 +5,77 @@ namespace App\Services;
 use App\Models\Admin;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\User\User;
+use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 
 class AuctionWalletSettlement
 {
     /**
-     * Apply wallet movements when an order line is marked paid.
+     * Settle all unsettled lines on an order when it transitions to paid.
      *
-     * Buyer: debit = proportional share of live total (subtotal + tax + buyer commission).
-     * Seller: credit = net from SellerInvoiceItemResource rules.
-     * Partner: credit = seller commission + service fee (PartnerInvoiceItemResource).
-     *
-     * Idempotency: only call when transitioning to paid (e.g. !$wasPaid in OrderController).
+     * @throws \Throwable
+     */
+    public static function settleOrderIfNeeded(Order $order): void
+    {
+        if ($order->payment_status !== 'paid') {
+            return;
+        }
+
+        $order->loadMissing(['items.liveVideoItem.videoLive']);
+
+        DB::transaction(function () use ($order) {
+            $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->first();
+
+            if (! $lockedOrder || $lockedOrder->payment_status !== 'paid') {
+                return;
+            }
+
+            foreach ($lockedOrder->items as $orderItem) {
+                self::settleOrderItemIfNeeded($orderItem);
+            }
+
+            $lockedOrder->refresh();
+            $allSettled = $lockedOrder->items()->whereNull('settled_at')->doesntExist();
+
+            if ($allSettled && ! $lockedOrder->settled_at) {
+                $lockedOrder->update(['settled_at' => now()]);
+            }
+        });
+    }
+
+    /**
+     * Settle via the order that owns this auction line.
      *
      * @throws \Throwable
      */
     public static function settleIfNeeded(LiveVideoItem $item): void
     {
-        $item->loadMissing('videoLive');
-        $live = $item->videoLive;
+        $order = OrderService::resolveForItem($item);
 
-        if (! $live) {
+        if ($order && $order->payment_status === 'paid') {
+            self::settleOrderIfNeeded($order);
+        }
+    }
+
+    protected static function settleOrderItemIfNeeded(OrderItem $orderItem): void
+    {
+        $locked = OrderItem::query()
+            ->whereKey($orderItem->id)
+            ->lockForUpdate()
+            ->with(['liveVideoItem.videoLive', 'order'])
+            ->first();
+
+        if (! $locked || $locked->settled_at) {
             return;
         }
 
-        if ($item->payment_status !== 'paid' || ! $item->user_finished_id) {
+        $item = $locked->liveVideoItem;
+        $live = $item?->videoLive;
+
+        if (! $item || ! $live || ! $item->user_finished_id) {
             return;
         }
 
@@ -40,27 +85,36 @@ class AuctionWalletSettlement
         $partnerCredit = self::partnerCreditForItem($item, $live);
         $partnerUserId = self::resolvePartnerUserId($live);
 
-        DB::transaction(function () use ($item, $buyerId, $buyerDebit, $sellerNet, $partnerCredit, $partnerUserId) {
-            $locked = LiveVideoItem::query()
-                ->whereKey($item->id)
-                ->lockForUpdate()
-                ->first();
+        self::applyDelta($buyerId, -$buyerDebit, [
+            'type' => 'buyer_debit',
+            'order_id' => $locked->order_id,
+            'order_item_id' => $locked->id,
+            'live_video_item_id' => $item->id,
+            'description' => 'Auction order payment',
+        ]);
 
-            if (! $locked || $locked->payment_status !== 'paid') {
-                return;
-            }
+        $sellerId = $locked->seller_id ? (int) $locked->seller_id : null;
+        if ($sellerId && $sellerNet > 0) {
+            self::applyDelta($sellerId, $sellerNet, [
+                'type' => 'seller_credit',
+                'order_id' => $locked->order_id,
+                'order_item_id' => $locked->id,
+                'live_video_item_id' => $item->id,
+                'description' => 'Auction seller settlement',
+            ]);
+        }
 
-            self::applyDelta($buyerId, -$buyerDebit);
+        if ($partnerUserId && $partnerCredit > 0) {
+            self::applyDelta($partnerUserId, $partnerCredit, [
+                'type' => 'partner_credit',
+                'order_id' => $locked->order_id,
+                'order_item_id' => $locked->id,
+                'live_video_item_id' => $item->id,
+                'description' => 'Auction partner settlement',
+            ]);
+        }
 
-            $sellerId = $locked->seller_id ? (int) $locked->seller_id : null;
-            if ($sellerId && $sellerNet > 0) {
-                self::applyDelta($sellerId, $sellerNet);
-            }
-
-            if ($partnerUserId && $partnerCredit > 0) {
-                self::applyDelta($partnerUserId, $partnerCredit);
-            }
-        });
+        $locked->update(['settled_at' => now()]);
     }
 
     public static function buyerDebitForItem(LiveVideoItem $item, LiveVideo $live): float
@@ -95,14 +149,10 @@ class AuctionWalletSettlement
     {
         $finished = (float) ($item->finished_price ?? 0);
         $serviceFee = (float) ($live->service_fee ?? 0);
-        // $commissionAmount = (($live->commission_payer ?? '') === 'seller')
-        //     ? (float) ($live->commission_amount ?? 0) * $finished / 100
-        //     : 0.0;
         $commissionAmount = (float) ($live->commission_amount ?? 0) * $finished / 100;
         $taxAmount = (float) ($live->tax_amount ?? 0) * $finished / 100;
         $netPrice = $commissionAmount + $taxAmount + $serviceFee;
 
-        // return round(max(0, $commissionAmount + $serviceFee), 2);
         return round(max(0, $netPrice), 2);
     }
 
@@ -124,7 +174,7 @@ class AuctionWalletSettlement
         return null;
     }
 
-    protected static function applyDelta(int $userId, float $delta): void
+    protected static function applyDelta(int $userId, float $delta, array $meta = []): void
     {
         if (abs($delta) < 0.00001) {
             return;
@@ -137,13 +187,19 @@ class AuctionWalletSettlement
         }
 
         $balance = (float) ($user->wallet_balance ?? 0);
-
         $next = $balance + $delta;
 
-        // if ($next < 0) {
-        //     throw new \RuntimeException('insufficient_wallet_balance');
-        // }
-
         $user->update(['wallet_balance' => $next]);
+
+        WalletTransaction::query()->create([
+            'user_id' => $userId,
+            'order_id' => $meta['order_id'] ?? null,
+            'order_item_id' => $meta['order_item_id'] ?? null,
+            'live_video_item_id' => $meta['live_video_item_id'] ?? null,
+            'type' => $meta['type'] ?? 'adjustment',
+            'amount' => $delta,
+            'balance_after' => $next,
+            'description' => $meta['description'] ?? null,
+        ]);
     }
 }

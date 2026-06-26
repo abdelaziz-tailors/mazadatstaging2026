@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Category;
 use App\Models\LiveVideo;
+use App\Models\Order;
 use App\Models\SellerSubmission;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -27,6 +28,35 @@ class PartnerDashboardScope
         }
 
         return $query;
+    }
+
+    /**
+     * Limit Order queries to auctions owned by the current partner admin.
+     */
+    public static function scopeOrders(Builder $query): Builder
+    {
+        if (self::isPartner()) {
+            $query->whereHas('liveVideo', function (Builder $q) {
+                $q->where('admin_id', Auth::guard('admin')->user()->id);
+            });
+        }
+
+        return $query;
+    }
+
+    public static function ensureOwnOrder(Order $order): void
+    {
+        if (! self::isPartner()) {
+            return;
+        }
+
+        $order->loadMissing('liveVideo');
+
+        if (! $order->liveVideo) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        self::ensureOwnLiveVideo($order->liveVideo);
     }
 
     /**

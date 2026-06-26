@@ -38,6 +38,11 @@ class LiveVideo extends Model
         return $this->hasMany(LiveVideoItem::class, 'live_video_id');
     }
 
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'live_video_id');
+    }
+
     public function user_finished_items()
     {
         return $this->hasMany(LiveVideoItem::class, 'live_video_id')->where('user_finished_id', auth('api')->user()->id);

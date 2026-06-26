@@ -8,12 +8,14 @@ class PaymentProofResource extends JsonResource
 {
     public function toArray($request)
     {
+        $proof = $this->order?->payment_proof;
+
         return [
             'id' => $this->id,
+            'order_id' => $this->order?->id,
+            'order_number' => $this->order?->order_number,
             'auction_item_id' => $this->id,
-            'payment_proof' => $this->payment_proof
-                ? asset($this->payment_proof)
-                : null,
+            'payment_proof' => $proof ? asset($proof) : null,
         ];
     }
 }

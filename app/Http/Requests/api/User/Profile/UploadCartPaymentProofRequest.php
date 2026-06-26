@@ -18,6 +18,7 @@ class UploadCartPaymentProofRequest extends FormRequest
     {
         return [
             'proof' => 'required|file|mimes:jpeg,jpg,png,webp,pdf|max:10240',
+            'live_video_id' => 'sometimes|integer|exists:live_videos,id',
         ];
     }
 

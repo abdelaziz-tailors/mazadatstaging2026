@@ -23,7 +23,9 @@ class SellerInvoiceItemResource extends JsonResource
         }
         return [
             'id' => $this->resource['id'] ?? '',
-            'invoice_id' => $this->resource['live_video_id'] . '-' . $this->resource['id'],
+            'order_id' => $this->order?->id,
+            'order_number' => $this->order?->order_number,
+            'invoice_id' => $this->order ? $this->order->invoiceId() : ($this->resource['live_video_id'] . '-' . $this->resource['id']),
             'title' => app()->getLocale() == 'en' ? ($this['title'] ?? '') : ($this['title_ar'] ?? ''),
             'title_en' => $this->title ?? '',
             'title_ar' => $this->title_ar ?? '',

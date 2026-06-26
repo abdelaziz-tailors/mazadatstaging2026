@@ -93,7 +93,9 @@ class ClearOldData
         self::deleteFromTable('video_comment_likes', $deleted);
         self::deleteFromTable('video_comments', $deleted);
         self::deleteFromTable('live_video_comments', $deleted);
-        self::deleteFromTable('shapping_addresses', $deleted);
+        self::deleteFromTable('wallet_transactions', $deleted);
+        self::deleteFromTable('order_items', $deleted);
+        self::deleteFromTable('orders', $deleted);
         self::deleteFromTable('user_gifts', $deleted);
         self::deleteFromTable('live_video_likes', $deleted);
         self::deleteFromTable('live_video_users', $deleted);

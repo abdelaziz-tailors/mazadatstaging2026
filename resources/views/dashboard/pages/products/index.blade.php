@@ -16,7 +16,7 @@
             <h3 class="page-title" >
                 {{TranslationHelper::translate('Auctions') }}
 {{--                @if(Auth::guard('admin')->user()->can('add video'))--}}
-                    <a href='{{ route('admin.products.create',request()->id) }}' class='btn btn-primary float-end'><i class="fas fa-plus"></i> {{ TranslationHelper::translate('new Product') }}</a>
+                    <a href='{{ route('admin.products.create',request()->id) }}' class='btn btn-primary float-end'><i class="fas fa-plus"></i> {{ TranslationHelper::translate('Add Product') }}</a>
 {{--                @endif--}}
 
             </h3>
