@@ -18,7 +18,7 @@ class UserCartAuctionResource extends JsonResource
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
-            'invoice_id' => $this->invoiceId(),
+            // 'invoice_id' => $this->invoiceId(),
             'order_id' => $this->id,
             'live_video_id' => $this->live_video_id,
             'title' => $live->title_ar ?? '',

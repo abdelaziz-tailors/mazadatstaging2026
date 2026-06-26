@@ -8,7 +8,6 @@ use App\Http\Requests\api\User\Profile\AddShippingAddress;
 use App\Http\Requests\api\User\Profile\UpdateFcmRequest;
 use App\Http\Requests\api\User\Profile\UpdateLangRequest;
 use App\Http\Resources\User\BalanceResource;
-use App\Http\Resources\User\CartItemResource;
 use App\Http\Resources\User\HomeVideoResource;
 use App\Http\Resources\User\NotificationResource;
 use App\Http\Resources\User\ProfileResource;
@@ -16,7 +15,6 @@ use App\Http\Resources\User\UserCartAuctionResource;
 use App\Http\Resources\User\UserResource;
 use App\Http\Resources\User\VideoItemResource;
 use App\Models\LiveVideo;
-use App\Models\LiveVideoItem;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\User\User;
@@ -61,9 +59,9 @@ class UserProfileController extends Controller
         $data = Order::query()
             ->with(['liveVideo', 'items.liveVideoItem.categoryData', 'items.liveVideoItem.videoLive.user_Video', 'items.liveVideoItem.user_auction', 'items.liveVideoItem.pieces'])
             ->where('buyer_id', auth('api')->user()->id)
+            ->activeCart()
             ->orderByDesc('id')
             ->get();
-        
 
         return $this->success_response(null, UserCartAuctionResource::collection($data));
     }
@@ -75,13 +73,11 @@ class UserProfileController extends Controller
         }
 
         $userId = auth('api')->user()->id;
-        $ordersQuery = Order::query()->where('buyer_id', $userId);
+        $orderId = $request->input('order_id') ?? $request->input('id');
 
-        if ($request->filled('live_video_id')) {
-            $ordersQuery->where('live_video_id', $request->live_video_id);
-        }
-
-        $orders = $ordersQuery->get();
+        $orders = OrderService::activeCartOrdersQuery($userId, $orderId)
+            ->with(['liveVideo', 'items.liveVideoItem.categoryData', 'items.liveVideoItem.videoLive.user_Video', 'items.liveVideoItem.user_auction', 'items.liveVideoItem.pieces'])
+            ->get();
 
         if ($orders->isEmpty()) {
             return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
@@ -96,13 +92,12 @@ class UserProfileController extends Controller
             ]);
         }
 
-        $data = LiveVideoItem::with('order')
-            ->where('user_finished_id', $userId)
-            ->when($request->filled('live_video_id'), fn ($q) => $q->where('live_video_id', $request->live_video_id))
-            ->orderBy('id', 'desc')
-            ->get();
+        $orders->each->refresh();
 
-        return $this->success_response(TranslationHelper::translate('shipping_address_added_successfully'), CartItemResource::collection($data));
+        return $this->success_response(
+            TranslationHelper::translate('shipping_address_added_successfully'),
+            UserCartAuctionResource::collection($orders)
+        );
     }
 
     public function otherUserprofile($user_name) {

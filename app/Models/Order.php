@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\User\User;
 use App\Services\OrderService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -55,6 +56,14 @@ class Order extends Model
     public function invoiceId(): string
     {
         return $this->order_number ?? (string) $this->id;
+    }
+
+    public function scopeActiveCart(Builder $query): Builder
+    {
+        return $query
+            ->where('payment_status', 'unpaid')
+            ->where('status', '!=', 'delivered')
+            ->whereNull('settled_at');
     }
 
     protected static function booted(): void

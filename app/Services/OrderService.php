@@ -6,12 +6,26 @@ use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Illuminate\Database\Eloquent\Builder;
 
 class OrderService
 {
     /**
      * Attach or refresh a won auction line on the buyer's order for that live stream.
      */
+    public static function activeCartOrdersQuery(int $buyerId, ?int $orderId = null): Builder
+    {
+        $query = Order::query()
+            ->where('buyer_id', $buyerId)
+            ->activeCart();
+
+        if ($orderId !== null) {
+            $query->whereKey($orderId);
+        }
+
+        return $query;
+    }
+
     public static function attachWonItem(LiveVideoItem $item): ?Order
     {
         if (! $item->user_finished_id || ! $item->live_video_id) {

@@ -10,6 +10,7 @@ use App\Http\Resources\User\AuctionWinVideoResource;
 use App\Http\Resources\User\PaymentProofResource;
 use App\Http\Resources\User\PartnerInvoiceItemResource;
 use App\Http\Resources\User\SellerInvoiceItemResource;
+use App\Http\Resources\User\UserCartAuctionResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceResource;
 use App\Models\LiveVideoItem;
@@ -87,19 +88,16 @@ class UserAuctionController extends Controller
     }
 
     /**
-     * One receipt per order (live stream cart). Optional live_video_id scopes to one cart.
+     * One receipt per order. Optional order_id scopes to one cart order; omit to apply to all active cart orders.
      */
     public function uploadPaymentProof(UploadCartPaymentProofRequest $request): JsonResponse
     {
         $userId = auth('api')->user()->id;
+        $orderId = $request->input('order_id') ?? $request->input('id');
 
-        $ordersQuery = Order::query()->where('buyer_id', $userId);
-
-        if ($request->filled('live_video_id')) {
-            $ordersQuery->where('live_video_id', $request->live_video_id);
-        }
-
-        $orders = $ordersQuery->with('items.liveVideoItem')->get();
+        $orders = OrderService::activeCartOrdersQuery($userId, $orderId)
+            ->with(['liveVideo', 'items.liveVideoItem'])
+            ->get();
 
         if ($orders->isEmpty()) {
             return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
@@ -111,14 +109,11 @@ class UserAuctionController extends Controller
             OrderService::applyPaymentProof($order, $relativePath);
         }
 
-        // $updated = LiveVideoItem::with('order')
-        //     ->where('user_finished_id', $userId)
-        //     ->when($request->filled('live_video_id'), fn ($q) => $q->where('live_video_id', $request->live_video_id))
-        //     ->get();
+        $orders->each->refresh();
 
         return $this->success_response(
             TranslationHelper::translate('payment_proof_uploaded_successfully'),
-            // PaymentProofResource::collection($updated)
+            UserCartAuctionResource::collection($orders)
         );
     }
 

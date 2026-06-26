@@ -26,7 +26,8 @@ class AddShippingAddress extends FormRequest
     public function rules()
     {
         return [
-            'id' => 'nullable',
+            'order_id' => 'nullable|integer|exists:orders,id',
+            'id' => 'nullable|integer|exists:orders,id',
             'shipping_address' => 'required',
             'city_id' => 'required',
             'lat' => 'required',
