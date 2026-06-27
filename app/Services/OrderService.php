@@ -83,7 +83,7 @@ class OrderService
             ? round($subtotal * ((float) $order->commission_percent) / 100, 2)
             : 0.0;
         $serviceFeeTotal = round(((float) $order->service_fee_per_item) * $itemCount, 2);
-        $total = round($subtotal + $taxValue + $commissionValue + $pieceServicesTotal, 2);
+        $total = round($subtotal + $taxValue + $commissionValue, 2);
 
         $order->update([
             'subtotal' => $subtotal,

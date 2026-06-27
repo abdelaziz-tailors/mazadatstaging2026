@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\User;
 
+use App\Services\PieceServiceService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PartnerInvoiceItemResource extends JsonResource
@@ -16,7 +17,8 @@ class PartnerInvoiceItemResource extends JsonResource
             ? $commissionPct * $finished / 100
             : 0;
         $serviceFee = (float) ($live?->service_fee ?? 0);
-        $netPrice = $commissionAmount + $serviceFee;
+        $pieceServices = PieceServiceService::sumItemServicesForLiveVideoItem($this->resource);
+        $netPrice = $commissionAmount + $serviceFee + $pieceServices;
 
         return [
             'id' => $this->id,
@@ -38,6 +40,7 @@ class PartnerInvoiceItemResource extends JsonResource
             'commission_payer' => $live?->commission_payer,
             'commission_amount' => $commissionAmount,
             'service_fee_amount' => $serviceFee,
+            'piece_services_amount' => $pieceServices,
             'net_price' => $netPrice,
         ];
     }

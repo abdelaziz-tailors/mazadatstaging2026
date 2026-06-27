@@ -33,7 +33,6 @@ class UserCartAuctionResource extends JsonResource
             }),
             'payment_status' => $this->payment_status,
             'status' => $this->status,
-            'piece_services_total' => $this->piece_services_total,
             'total_price' => $this->total,
         ];
     }

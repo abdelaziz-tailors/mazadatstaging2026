@@ -6,7 +6,13 @@
 
 <div class="mb-4">
     <div class="border rounded p-3">
-        <h6 class="mb-3">{{ TranslationHelper::translate('item_services') }}</h6>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">{{ TranslationHelper::translate('item_services') }}</h6>
+            <div class="text-end">
+                <small class="text-muted d-block">{{ TranslationHelper::translate('piece_services_total') }}</small>
+                <strong>{{ number_format($order->piece_services_total, 2) }}</strong>
+            </div>
+        </div>
 
         @if (! $orderEditable)
             <p class="text-muted mb-3">{{ TranslationHelper::translate('order_not_editable') }}</p>

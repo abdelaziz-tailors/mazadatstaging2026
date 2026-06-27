@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\User\User;
+use App\Services\PieceServiceService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -190,6 +191,7 @@ class LiveVideo extends Model
         $grouped = $this->video_items()
             ->whereNotNull('user_finished_id')
             ->whereNotNull('seller_id')
+            ->with('orderItem.services')
             ->get()
             ->groupBy('seller_id');
 
@@ -199,10 +201,12 @@ class LiveVideo extends Model
             $gross = 0.0;
             $commissionTotal = 0.0;
             $serviceTotal = 0.0;
+            $pieceServicesTotal = 0.0;
             $net = 0.0;
             $servicePerLine = (float) ($this->service_fee ?? 0);
             foreach ($rows as $item) {
                 $finished = (float) ($item->finished_price ?? 0);
+                $pieceServices = PieceServiceService::sumItemServicesForLiveVideoItem($item);
                 $gross += $finished;
                 if ($this->commission_payer == 'seller') {
                     $c = (float) ($this->commission_amount ?? 0) * $finished / 100;
@@ -211,7 +215,8 @@ class LiveVideo extends Model
                 }
                 $commissionTotal += $c;
                 $serviceTotal += $servicePerLine;
-                $net += $finished - $c - $servicePerLine;
+                $pieceServicesTotal += $pieceServices;
+                $net += $finished - $c - $servicePerLine - $pieceServices;
             }
 
             return [
@@ -220,6 +225,7 @@ class LiveVideo extends Model
                 'gross' => $gross,
                 'commission' => $commissionTotal,
                 'service_fee' => $serviceTotal,
+                'piece_services' => $pieceServicesTotal,
                 'net' => $net,
             ];
         })->values();

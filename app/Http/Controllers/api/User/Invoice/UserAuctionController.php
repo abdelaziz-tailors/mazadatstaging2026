@@ -143,7 +143,7 @@ class UserAuctionController extends Controller
         if ($user->user_type !== 'seller') {
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
-        $items = LiveVideoItem::with(['videoLive', 'order'])
+        $items = LiveVideoItem::with(['videoLive', 'order', 'orderItem.services'])
             ->where('seller_id', $user->id)
             ->whereNotNull('user_finished_id')
             ->get();
@@ -164,7 +164,7 @@ class UserAuctionController extends Controller
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
 
-        $items = LiveVideoItem::with(['videoLive', 'order'])
+        $items = LiveVideoItem::with(['videoLive', 'order', 'orderItem.services'])
             ->whereNotNull('user_finished_id')
             ->where(function ($q) use ($user) {
                 $q->where('user_id', $user->id)

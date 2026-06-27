@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\User;
 
+use App\Services\PieceServiceService;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class SellerInvoiceItemResource extends JsonResource
@@ -12,15 +13,18 @@ class SellerInvoiceItemResource extends JsonResource
      */
     public function toArray($request)
     {
-        if($this->videoLive->commission_payer == 'seller'){
+        $pieceServices = PieceServiceService::sumItemServicesForLiveVideoItem($this->resource);
+
+        if ($this->videoLive->commission_payer == 'seller') {
             $commission = $this->videoLive->commission_amount * $this->finished_price / 100;
             $service_fee = $this->videoLive->service_fee;
-            $net_price = $this->finished_price - $commission - $service_fee;
-        }else{
+            $net_price = $this->finished_price - $commission - $service_fee - $pieceServices;
+        } else {
             $commission = 0;
             $service_fee = $this->videoLive->service_fee;
-            $net_price = $this->finished_price - $service_fee;
+            $net_price = $this->finished_price - $service_fee - $pieceServices;
         }
+
         return [
             'id' => $this->resource['id'] ?? '',
             'order_id' => $this->order?->id,
@@ -34,6 +38,7 @@ class SellerInvoiceItemResource extends JsonResource
             'commission' => $this->videoLive->commission_amount . '%',
             'commission_amount' => $commission,
             'service_fee_amount' => $service_fee,
+            'piece_services_amount' => $pieceServices,
             'net_price' => $net_price,
         ];
     }

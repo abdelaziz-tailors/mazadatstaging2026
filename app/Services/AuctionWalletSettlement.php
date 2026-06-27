@@ -24,7 +24,7 @@ class AuctionWalletSettlement
             return;
         }
 
-        $order->loadMissing(['items.liveVideoItem.videoLive']);
+        $order->loadMissing(['items.liveVideoItem.videoLive', 'items.services']);
 
         DB::transaction(function () use ($order) {
             $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->first();
@@ -65,7 +65,7 @@ class AuctionWalletSettlement
         $locked = OrderItem::query()
             ->whereKey($orderItem->id)
             ->lockForUpdate()
-            ->with(['liveVideoItem.videoLive', 'order'])
+            ->with(['liveVideoItem.videoLive', 'order', 'services'])
             ->first();
 
         if (! $locked || $locked->settled_at) {
@@ -81,8 +81,8 @@ class AuctionWalletSettlement
 
         $buyerId = (int) $item->user_finished_id;
         $buyerDebit = self::buyerDebitForItem($item, $live);
-        $sellerNet = self::sellerNetForItem($item, $live);
-        $partnerCredit = self::partnerCreditForItem($item, $live);
+        $sellerNet = self::sellerNetForItem($item, $live, $locked);
+        $partnerCredit = self::partnerCreditForItem($item, $live, $locked);
         $partnerUserId = self::resolvePartnerUserId($live);
 
         self::applyDelta($buyerId, -$buyerDebit, [
@@ -131,27 +131,33 @@ class AuctionWalletSettlement
         return round($live->total_price($buyerId) * $fraction, 2);
     }
 
-    public static function sellerNetForItem(LiveVideoItem $item, LiveVideo $live): float
+    public static function sellerNetForItem(LiveVideoItem $item, LiveVideo $live, ?OrderItem $orderItem = null): float
     {
         $finished = (float) ($item->finished_price ?? 0);
         $serviceFee = (float) ($live->service_fee ?? 0);
+        $pieceServices = $orderItem
+            ? PieceServiceService::sumItemServicesForOrderItem($orderItem)
+            : PieceServiceService::sumItemServicesForLiveVideoItem($item);
 
         if (($live->commission_payer ?? '') === 'seller') {
             $commission = (float) ($live->commission_amount ?? 0) * $finished / 100;
 
-            return round(max(0, $finished - $commission - $serviceFee), 2);
+            return round(max(0, $finished - $commission - $serviceFee - $pieceServices), 2);
         }
 
-        return round(max(0, $finished - $serviceFee), 2);
+        return round(max(0, $finished - $serviceFee - $pieceServices), 2);
     }
 
-    public static function partnerCreditForItem(LiveVideoItem $item, LiveVideo $live): float
+    public static function partnerCreditForItem(LiveVideoItem $item, LiveVideo $live, ?OrderItem $orderItem = null): float
     {
         $finished = (float) ($item->finished_price ?? 0);
         $serviceFee = (float) ($live->service_fee ?? 0);
         $commissionAmount = (float) ($live->commission_amount ?? 0) * $finished / 100;
         $taxAmount = (float) ($live->tax_amount ?? 0) * $finished / 100;
-        $netPrice = $commissionAmount + $taxAmount + $serviceFee;
+        $pieceServices = $orderItem
+            ? PieceServiceService::sumItemServicesForOrderItem($orderItem)
+            : PieceServiceService::sumItemServicesForLiveVideoItem($item);
+        $netPrice = $commissionAmount + $taxAmount + $serviceFee + $pieceServices;
 
         return round(max(0, $netPrice), 2);
     }

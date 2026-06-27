@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Helpers\TranslationHelper;
 use App\Models\ItemService;
+use App\Models\LiveVideoItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemService;
@@ -149,6 +150,24 @@ class PieceServiceService
         }
 
         return round($total, 2);
+    }
+
+    public static function sumItemServicesForOrderItem(OrderItem $orderItem): float
+    {
+        $orderItem->loadMissing('services');
+
+        return round((float) $orderItem->services->sum('price'), 2);
+    }
+
+    public static function sumItemServicesForLiveVideoItem(LiveVideoItem $item): float
+    {
+        $item->loadMissing('orderItem.services');
+
+        if (! $item->orderItem) {
+            return 0.0;
+        }
+
+        return self::sumItemServicesForOrderItem($item->orderItem);
     }
 
     public static function resolveDefaultPrice(?int $itemServiceId): ?float
