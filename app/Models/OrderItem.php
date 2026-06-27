@@ -29,4 +29,9 @@ class OrderItem extends Model
     {
         return $this->belongsTo(User::class, 'seller_id');
     }
+
+    public function services()
+    {
+        return $this->hasMany(OrderItemService::class);
+    }
 }

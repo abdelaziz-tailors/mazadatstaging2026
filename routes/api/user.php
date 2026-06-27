@@ -51,6 +51,11 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         Route::get('my-cart', 'UserProfileController@MyCart');
         Route::post('cart/add-address', 'UserProfileController@addAddress');
 
+        Route::get('item-services', 'PieceServiceController@types');
+        Route::post('piece-services', 'PieceServiceController@store');
+        Route::post('piece-services/{id}', 'PieceServiceController@update');
+        Route::delete('piece-services/{id}', 'PieceServiceController@destroy');
+
         Route::get('user-profile/{user_name}', 'UserProfileController@otherUserprofile');
         Route::post('logout', 'UserProfileController@logout');
         Route::post('delete-account', 'UserProfileController@deleteAccount');

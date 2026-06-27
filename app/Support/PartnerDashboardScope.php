@@ -133,4 +133,31 @@ class PartnerDashboardScope
             abort(403, 'Unauthorized access.');
         }
     }
+
+    public static function scopeItemServices(Builder $query): Builder
+    {
+        if (self::isPartner()) {
+            $query->where('admin_id', Auth::guard('admin')->user()->id);
+        }
+
+        return $query;
+    }
+
+    public static function ensureOwnItemService(\App\Models\ItemService $service): void
+    {
+        if (! self::isPartner()) {
+            return;
+        }
+
+        if ((int) ($service->admin_id ?? 0) !== (int) Auth::guard('admin')->user()->id) {
+            abort(403, 'Unauthorized access.');
+        }
+    }
+
+    public static function isSuperAdmin(): bool
+    {
+        $admin = Auth::guard('admin')->user();
+
+        return $admin && $admin->type !== 'partner';
+    }
 }

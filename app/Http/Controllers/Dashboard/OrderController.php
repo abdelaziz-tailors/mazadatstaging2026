@@ -87,12 +87,22 @@ class OrderController extends Controller
                 'items.liveVideoItem.seller',
                 'items.liveVideoItem.user',
                 'items.liveVideoItem.pieces',
+                'items.services.itemService',
             ])
             ->findOrFail($id);
 
         PartnerDashboardScope::ensureOwnOrder($order);
 
-        return view('dashboard.pages.orders.edit', compact('order'));
+        $itemServices = \App\Models\ItemService::query()
+            ->where('is_active', true)
+            ->when($order->liveVideo?->admin_id, function ($query, $adminId) {
+                $query->where('admin_id', $adminId);
+            })
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return view('dashboard.pages.orders.edit', compact('order', 'itemServices'));
     }
 
     public function update(Request $request, $id)

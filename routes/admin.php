@@ -23,6 +23,8 @@ use App\Http\Controllers\Dashboard\ProductController;
 use App\Http\Controllers\Dashboard\PartnerController;
 use App\Http\Controllers\Dashboard\AuctionController;
 use App\Http\Controllers\Dashboard\OrderController;
+use App\Http\Controllers\Dashboard\OrderPieceServiceController;
+use App\Http\Controllers\Dashboard\ItemServiceController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\SliderController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
@@ -90,6 +92,9 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::resource('orders', OrderController::class)->except(['show', 'create', 'store']);
             Route::post('orders/getData', [OrderController::class, 'get_data'])->name('orders.getData');
             Route::get('orders/show/{id}', [OrderController::class, 'show'])->name('orders.show');
+            Route::post('orders/{order}/piece-services', [OrderPieceServiceController::class, 'store'])->name('order-piece-services.store');
+            Route::put('piece-services/{id}', [OrderPieceServiceController::class, 'update'])->name('order-piece-services.update');
+            Route::delete('piece-services/{id}', [OrderPieceServiceController::class, 'destroy'])->name('order-piece-services.destroy');
 
 
             Route::resource('products', ProductController::class)->except(['show']);
@@ -162,6 +167,11 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::post('ages/active_toogler/{id}', [AgeController::class, 'active_toogler'])->name('ages.active_toogler');
             Route::post('ages/getData', [AgeController::class, 'get_data'])->name('ages.getData');
             // ages
+            // item-services
+            Route::resource('/item-services', ItemServiceController::class)->except(['show']);
+            Route::post('item-services/active_toogler/{id}', [ItemServiceController::class, 'active_toogler'])->name('item-services.active_toogler');
+            Route::post('item-services/getData', [ItemServiceController::class, 'get_data'])->name('item-services.getData');
+            // item-services
             // animal-pens
             Route::resource('/animal-pens', AnimalPenController::class)->except(['show']);
             Route::post('animal-pens/active_toogler/{id}', [AnimalPenController::class, 'active_toogler'])->name('animal-pens.active_toogler');

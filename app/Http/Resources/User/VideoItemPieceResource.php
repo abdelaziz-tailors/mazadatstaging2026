@@ -9,6 +9,7 @@ class VideoItemPieceResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'id' => $this->id,
             'piece_number' => $this->piece_number,
             'age' => $this->age,
             'weight' => $this->weight,

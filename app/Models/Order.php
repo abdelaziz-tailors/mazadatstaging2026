@@ -24,6 +24,7 @@ class Order extends Model
         'commission_value' => 'float',
         'service_fee_per_item' => 'float',
         'service_fee_total' => 'float',
+        'piece_services_total' => 'float',
         'total' => 'float',
         'settled_at' => 'datetime',
     ];

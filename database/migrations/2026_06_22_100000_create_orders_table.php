@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('commission_value', 12, 2)->default(0);
             $table->decimal('service_fee_per_item', 12, 2)->default(0);
             $table->decimal('service_fee_total', 12, 2)->default(0);
+            $table->decimal('piece_services_total', 12, 2)->default(0);
             $table->decimal('total', 12, 2)->default(0);
             $table->enum('payment_status', ['unpaid', 'paid'])->default('unpaid');
             $table->enum('status', [

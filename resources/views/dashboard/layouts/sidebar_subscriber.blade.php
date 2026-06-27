@@ -46,6 +46,13 @@
                     </a>
                 </li>
 
+                <li class="{{ Request::is(app()->getLocale() . '/admin/item-services*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.item-services.index') }}">
+                        <i class="fe fe-tool"></i>
+                        <span>{{ TranslationHelper::translate('item_services') }}</span>
+                    </a>
+                </li>
+
                 {{-- <li class="menu-title">
                     <span>{{ TranslationHelper::translate('main') }}</span>
                 </li>

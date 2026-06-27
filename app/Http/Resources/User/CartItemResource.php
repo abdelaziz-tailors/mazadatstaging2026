@@ -8,45 +8,43 @@ class CartItemResource extends JsonResource
 {
     public function toArray($request)
     {
+        $item = $this->liveVideoItem;
+
         $files = [];
-        if (! empty($this->image) && is_array(json_decode($this->image))) {
+        if ($item && ! empty($item->image) && is_array(json_decode($item->image))) {
             $index = 0;
-            foreach (json_decode($this->image) as $feature) {
+            foreach (json_decode($item->image) as $feature) {
                 $index++;
                 $files[] = [
                     'key' => $index,
                     'file' => \Illuminate\Support\Facades\Storage::disk('public')->url($feature),
                 ];
             }
-        } else {
+        } elseif ($item && ! empty($item->image)) {
             $files[] = [
                 'key' => 1,
-                'file' => \Illuminate\Support\Facades\Storage::disk('public')->url($this->image),
+                'file' => \Illuminate\Support\Facades\Storage::disk('public')->url($item->image),
             ];
         }
 
-        $order = $this->order;
-
         return [
-            'id' => $this->id,
-            // 'order_id' => $order?->id,
-            'title' => $this->title ?? '',
-            // 'cart_status' => $order?->status_cart ?? 'pending',
-            // 'payment_status' => $order?->payment_status ?? 'unpaid',
-            'status' => $this->status,
+            'order_item_id' => $this->id,
+            'id' => $item?->id,
+            'title' => $item?->title ?? '',
+            'status' => $item?->status,
             'image' => $files,
-            'end_at' => $this->end_at,
-            // 'category' => new CategoryResource($this->categoryData),
-            'information' => $this->information,
-            // 'weight' => $this->primaryPiece()?->weight,
-            // 'age' => $this->primaryPiece()?->age,
-            'quantity' => $this->quantity,
-            'pieces' => VideoItemPieceResource::collection($this->pieces),
-            // 'start_price' => $this->videoLive->start_price ?? $this->start_price,
-            // 'bidding' => $this->bidding,
+            'end_at' => $item?->end_at,
+            'information' => $item?->information,
+            'quantity' => $item?->quantity,
+            'pieces' => VideoItemPieceResource::collection($item?->pieces ?? collect()),
+            'services' => PieceServiceResource::collection($this->whenLoaded('services')),
+            'services_total' => $this->when(
+                $this->relationLoaded('services'),
+                fn () => round((float) $this->services->sum('price'), 2)
+            ),
             'finished_price' => $this->finished_price,
-            'user' => new UserDataResource($this->videoLive->user_Video),
-            'user_take_auction' => new UserDataResource($this->user_auction),
+            'user' => $item?->videoLive ? new UserDataResource($item->videoLive->user_Video) : null,
+            'user_take_auction' => $item?->user_auction ? new UserDataResource($item->user_auction) : null,
         ];
     }
 }

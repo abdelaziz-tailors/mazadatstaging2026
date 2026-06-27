@@ -73,22 +73,24 @@ class OrderService
 
     public static function recalculateTotals(Order $order): void
     {
-        $order->loadMissing('items');
+        $order->loadMissing('items.services');
         $itemCount = $order->items->count();
         $subtotal = (float) $order->items->sum('finished_price');
+        $pieceServicesTotal = PieceServiceService::sumItemServicesForOrder($order);
 
         $taxValue = round($subtotal * ((float) $order->tax_percent) / 100, 2);
         $commissionValue = ($order->commission_payer === 'buyer')
             ? round($subtotal * ((float) $order->commission_percent) / 100, 2)
             : 0.0;
         $serviceFeeTotal = round(((float) $order->service_fee_per_item) * $itemCount, 2);
-        $total = round($subtotal + $taxValue + $commissionValue, 2);
+        $total = round($subtotal + $taxValue + $commissionValue + $pieceServicesTotal, 2);
 
         $order->update([
             'subtotal' => $subtotal,
             'tax_value' => $taxValue,
             'commission_value' => $commissionValue,
             'service_fee_total' => $serviceFeeTotal,
+            'piece_services_total' => $pieceServicesTotal,
             'total' => $total,
         ]);
     }

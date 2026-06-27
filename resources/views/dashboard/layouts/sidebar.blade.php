@@ -252,6 +252,12 @@
                         </a>
                     </li>
                     <li>
+                        <a class="{{ Request::is(app()->getLocale() . '/admin/item-services*') ? 'active' : '' }}"
+                           href="{{ route('admin.item-services.index') }}">
+                            <i class="fe fe-tool"></i> <span>{{ TranslationHelper::translate('item_services') }}</span>
+                        </a>
+                    </li>
+                    <li>
                         <a class="{{ (Request::is(app()->getLocale() . '/admin/sliders*') ) ? 'active' : '' }}"
                            href="{{ route('admin.sliders.index') }}">
                             <i class="fe fe-image"></i> <span>{{ TranslationHelper::translate('Sliders') }}</span>

@@ -13,7 +13,6 @@ class UserCartAuctionResource extends JsonResource
     public function toArray($request)
     {
         $live = $this->liveVideo;
-        $lineItems = $this->items->map(fn ($orderItem) => $orderItem->liveVideoItem)->filter();
 
         return [
             'id' => $this->id,
@@ -22,7 +21,7 @@ class UserCartAuctionResource extends JsonResource
             'order_id' => $this->id,
             'live_video_id' => $this->live_video_id,
             'title' => $live->title_ar ?? '',
-            'items_cart' => CartItemResource::collection($lineItems),
+            'items_cart' => CartItemResource::collection($this->whenLoaded('items')),
             'sub_total' => $this->subtotal,
             'tax' => $this->tax_value,
             'tax_amount' => $this->tax_percent.'%',
@@ -34,6 +33,7 @@ class UserCartAuctionResource extends JsonResource
             }),
             'payment_status' => $this->payment_status,
             'status' => $this->status,
+            'piece_services_total' => $this->piece_services_total,
             'total_price' => $this->total,
         ];
     }

@@ -57,7 +57,7 @@ class UserProfileController extends Controller
         }
 
         $data = Order::query()
-            ->with(['liveVideo', 'items.liveVideoItem.categoryData', 'items.liveVideoItem.videoLive.user_Video', 'items.liveVideoItem.user_auction', 'items.liveVideoItem.pieces'])
+            ->with(['liveVideo', 'items.services.itemService', 'items.liveVideoItem.categoryData', 'items.liveVideoItem.videoLive.user_Video', 'items.liveVideoItem.user_auction', 'items.liveVideoItem.pieces'])
             ->where('buyer_id', auth('api')->user()->id)
             ->activeCart()
             ->orderByDesc('id')
