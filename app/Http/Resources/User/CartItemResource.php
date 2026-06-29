@@ -27,6 +27,8 @@ class CartItemResource extends JsonResource
             ];
         }
 
+        $hasSeller = $item?->seller_id !== null;
+
         return [
             'order_item_id' => $this->id,
             'id' => $item?->id,
@@ -37,9 +39,13 @@ class CartItemResource extends JsonResource
             'information' => $item?->information,
             'quantity' => $item?->quantity,
             'pieces' => VideoItemPieceResource::collection($item?->pieces ?? collect()),
-            'services' => PieceServiceResource::collection($this->whenLoaded('services')),
+            'can_add_services' => $hasSeller,
+            'services' => $this->when(
+                $hasSeller && $this->relationLoaded('services'),
+                fn () => PieceServiceResource::collection($this->services)
+            ),
             'services_total' => $this->when(
-                $this->relationLoaded('services'),
+                $hasSeller && $this->relationLoaded('services'),
                 fn () => round((float) $this->services->sum('price'), 2)
             ),
             'finished_price' => $this->finished_price,

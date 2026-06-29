@@ -20,6 +20,20 @@
     @include('dashboard.pages.orders._form')
 {!! Form::close() !!}
 
+@if (($sellerInvoices ?? collect())->isNotEmpty())
+<div class="row mt-3">
+    <div class="col-12 d-flex">
+        <div class="card flex-fill">
+            <div class="card-body">
+                @include('dashboard.pages.orders._seller_invoice', [
+                    'order' => $order,
+                    'sellerInvoices' => $sellerInvoices,
+                ])
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row mt-3">
     <div class="col-12 d-flex">
         <div class="card flex-fill">
@@ -29,4 +43,5 @@
         </div>
     </div>
 </div>
+@endif
 @endsection

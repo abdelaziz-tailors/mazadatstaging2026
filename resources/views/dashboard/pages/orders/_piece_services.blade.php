@@ -2,8 +2,13 @@
     $orderEditable = $order->payment_status === 'unpaid'
         && $order->status !== 'delivered'
         && $order->settled_at === null;
+
+    $sellerOrderItems = $order->items->filter(
+        fn ($orderItem) => $orderItem->liveVideoItem?->seller_id
+    );
 @endphp
 
+@if ($sellerOrderItems->isNotEmpty())
 <div class="mb-4">
     <div class="border rounded p-3">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -18,11 +23,8 @@
             <p class="text-muted mb-3">{{ TranslationHelper::translate('order_not_editable') }}</p>
         @endif
 
-        @foreach ($order->items as $orderItem)
+        @foreach ($sellerOrderItems as $orderItem)
             @php $item = $orderItem->liveVideoItem; @endphp
-            @if (! $item)
-                @continue
-            @endif
 
             <div class="border rounded p-3 mt-2 bg-light mb-3">
                 <strong>{{ app()->getLocale() === 'ar' ? ($item->title_ar ?? $item->title) : ($item->title ?? $item->title_ar) }}</strong>
@@ -95,6 +97,7 @@
         @endforeach
     </div>
 </div>
+@endif
 
 @once
     @push('scripts')

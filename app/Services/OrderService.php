@@ -7,6 +7,7 @@ use App\Models\LiveVideoItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class OrderService
 {
@@ -165,5 +166,95 @@ class OrderService
         $sequence = $last ? ((int) substr($last, -5)) + 1 : 1;
 
         return $prefix.str_pad((string) $sequence, 5, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Per-consignor seller invoice breakdown for items in this order (seller_id on the lot).
+     */
+    public static function sellerInvoiceSummariesForOrder(Order $order, ?int $onlySellerId = null): Collection
+    {
+        $order->loadMissing(['liveVideo', 'items.liveVideoItem.seller', 'items.liveVideoItem.pieces', 'items.services']);
+
+        $live = $order->liveVideo;
+        $commissionPayer = $live?->commission_payer ?? 'buyer';
+        $commissionPct = (float) ($live?->commission_amount ?? 0);
+        $serviceFeePerItem = (float) ($live?->service_fee ?? 0);
+
+        $sellerItems = $order->items->filter(function (OrderItem $orderItem) use ($onlySellerId) {
+            $sellerId = $orderItem->liveVideoItem?->seller_id;
+            if (! $sellerId) {
+                return false;
+            }
+
+            return $onlySellerId === null || (int) $sellerId === (int) $onlySellerId;
+        });
+
+        return $sellerItems
+            ->groupBy(fn (OrderItem $orderItem) => (int) $orderItem->liveVideoItem->seller_id)
+            ->map(function (Collection $orderItems, int|string $sellerId) use ($commissionPayer, $commissionPct, $serviceFeePerItem) {
+                $sellerId = (int) $sellerId;
+                $seller = $orderItems->first()->liveVideoItem->seller;
+
+                $lines = [];
+                $gross = 0.0;
+                $commissionTotal = 0.0;
+                $serviceTotal = 0.0;
+                $pieceServicesTotal = 0.0;
+                $net = 0.0;
+
+                foreach ($orderItems as $orderItem) {
+                    $item = $orderItem->liveVideoItem;
+                    $finished = (float) $orderItem->finished_price;
+                    $pieceServices = PieceServiceService::sumItemServicesForOrderItem($orderItem);
+                    $commission = $commissionPayer === 'seller'
+                        ? round($commissionPct * $finished / 100, 2)
+                        : 0.0;
+                    $serviceFee = $serviceFeePerItem;
+                    $lineNet = round($finished - $commission - $serviceFee - $pieceServices, 2);
+
+                    $title = app()->getLocale() === 'ar'
+                        ? ($item->title_ar ?? $item->title ?? '—')
+                        : ($item->title ?? $item->title_ar ?? '—');
+
+                    $lines[] = [
+                        'order_item_id' => $orderItem->id,
+                        'live_video_item_id' => $item?->id,
+                        'title' => $title,
+                        'price' => $finished,
+                        'commission' => $commission,
+                        'service_fee' => $serviceFee,
+                        'piece_services' => $pieceServices,
+                        'net' => $lineNet,
+                        'pieces' => $item
+                            ? $item->resolvedPieces()->map(fn ($piece) => [
+                                'id' => $piece->id,
+                                'piece_number' => $piece->piece_number,
+                                'age' => $piece->age,
+                                'weight' => $piece->weight,
+                                'identifier' => $piece->identifier ?? '',
+                                'baham_count' => $piece->baham_count ?? '',
+                            ])->values()->all()
+                            : [],
+                    ];
+
+                    $gross += $finished;
+                    $commissionTotal += $commission;
+                    $serviceTotal += $serviceFee;
+                    $pieceServicesTotal += $pieceServices;
+                    $net += $lineNet;
+                }
+
+                return [
+                    'seller_id' => $sellerId,
+                    'seller_name' => $seller->name ?? '—',
+                    'lines' => $lines,
+                    'gross' => round($gross, 2),
+                    'commission' => round($commissionTotal, 2),
+                    'service_fee' => round($serviceTotal, 2),
+                    'piece_services' => round($pieceServicesTotal, 2),
+                    'net' => round($net, 2),
+                ];
+            })
+            ->values();
     }
 }

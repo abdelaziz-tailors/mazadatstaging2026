@@ -59,10 +59,6 @@
                                 <strong>{{ number_format($order->commission_value, 2) }}</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <small class="text-muted d-block">{{ TranslationHelper::translate('piece_services_total') }}</small>
-                                <strong>{{ number_format($order->piece_services_total, 2) }}</strong>
-                            </div>
-                            <div class="col-6 col-md-3">
                                 <small class="text-muted d-block">{{ TranslationHelper::translate('order_total') }}</small>
                                 <strong>{{ number_format($order->total, 2) }}</strong>
                             </div>

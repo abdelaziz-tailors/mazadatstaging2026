@@ -102,7 +102,9 @@ class OrderController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('dashboard.pages.orders.edit', compact('order', 'itemServices'));
+        $sellerInvoices = OrderService::sellerInvoiceSummariesForOrder($order);
+
+        return view('dashboard.pages.orders.edit', compact('order', 'itemServices', 'sellerInvoices'));
     }
 
     public function update(Request $request, $id)

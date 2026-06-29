@@ -8,8 +8,6 @@ use App\Http\Requests\api\User\Profile\UploadAuctionWinVideoRequest;
 use App\Http\Requests\api\User\Profile\UploadCartPaymentProofRequest;
 use App\Http\Resources\User\AuctionWinVideoResource;
 use App\Http\Resources\User\PaymentProofResource;
-use App\Http\Resources\User\PartnerInvoiceItemResource;
-use App\Http\Resources\User\SellerInvoiceItemResource;
 use App\Http\Resources\User\UserCartAuctionResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
 use App\Http\Resources\User\UserInvoiceResource;
@@ -18,6 +16,7 @@ use App\Models\Order;
 use App\Services\OrderService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 
@@ -98,6 +97,7 @@ class UserAuctionController extends Controller
         $orders = OrderService::activeCartOrdersQuery($userId, $orderId)
             ->with(['liveVideo', 'items.liveVideoItem'])
             ->get();
+        /** @var \Illuminate\Support\Collection<int, \App\Models\Order> $orders */
 
         if ($orders->isEmpty()) {
             return $this->failed_response(TranslationHelper::translate('No won items for this live auction'));
@@ -134,7 +134,7 @@ class UserAuctionController extends Controller
     }
 
     /**
-     * Settlement invoices for consignor sellers: live streams with sold items where seller_id is the auth user.
+     * Settlement invoices for consignor sellers, grouped by order (dashboard style).
      */
     public function sellerInvoiceList()
     {
@@ -143,18 +143,30 @@ class UserAuctionController extends Controller
         if ($user->user_type !== 'seller') {
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
-        $items = LiveVideoItem::with(['videoLive', 'order', 'orderItem.services'])
-            ->where('seller_id', $user->id)
-            ->whereNotNull('user_finished_id')
+
+        $orders = Order::query()
+            ->with([
+                'liveVideo',
+                'items.liveVideoItem.seller',
+                'items.liveVideoItem.pieces',
+                'items.services',
+            ])
+            ->whereHas('items', function ($q) use ($user) {
+                $q->where('seller_id', $user->id);
+            })
+            ->orderByDesc('id')
             ->get();
 
-        $data = SellerInvoiceItemResource::collection($items);
+        $data = $orders
+            ->map(fn (Order $order) => $this->formatSellerInvoiceOrder($order, (int) $user->id))
+            ->filter()
+            ->values();
 
         return $this->success_response(null, $data);
     }
 
     /**
-     * Partner/vendor: flat list of sold lots tied to you (item user_id) or to lives you partner on (live partner_id).
+     * Partner/vendor invoices grouped by order with per-seller breakdown and all pieces.
      */
     public function partnerInvoiceItemList()
     {
@@ -164,15 +176,126 @@ class UserAuctionController extends Controller
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
 
-        $items = LiveVideoItem::with(['videoLive', 'order', 'orderItem.services'])
-            ->whereNotNull('user_finished_id')
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                    ->orWhereHas('videoLive', fn ($lv) => $lv->where('partner_id', $user->id));
+        $orders = Order::query()
+            ->with([
+                'liveVideo',
+                'items.liveVideoItem.seller',
+                'items.liveVideoItem.pieces',
+                'items.services',
+            ])
+            ->where(function ($query) use ($user) {
+                $query
+                    ->whereHas('items.liveVideoItem', fn ($q) => $q->where('user_id', $user->id))
+                    ->orWhereHas('liveVideo', fn ($lv) => $lv->where('partner_id', $user->id));
             })
-            ->orderByDesc('end_at')
+            ->whereHas('items', fn ($q) => $q->whereNotNull('seller_id'))
+            ->orderByDesc('id')
             ->get();
 
-        return $this->success_response(null, PartnerInvoiceItemResource::collection($items));
+        $data = $orders
+            ->map(fn (Order $order) => $this->formatPartnerInvoiceOrder($order))
+            ->filter(fn (?array $row) => $row !== null)
+            ->values();
+
+        return $this->success_response(null, $data);
+    }
+
+    private function formatSellerInvoiceOrder(Order $order, int $sellerId): ?array
+    {
+        $sellerSummary = OrderService::sellerInvoiceSummariesForOrder($order, $sellerId)->first();
+
+        if (! $sellerSummary) {
+            return null;
+        }
+
+        $live = $order->liveVideo;
+
+        return [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'invoice_id' => $order->invoiceId(),
+            'payment_status' => $order->payment_status,
+            'status' => $order->status,
+            'auction' => [
+                'id' => $order->live_video_id,
+                'title' => app()->getLocale() === 'ar'
+                    ? ($live?->title_ar ?? $live?->title ?? '')
+                    : ($live?->title ?? $live?->title_ar ?? ''),
+                'title_en' => $live?->title ?? '',
+                'title_ar' => $live?->title_ar ?? '',
+                'end_at' => $live?->end_at,
+            ],
+            'seller' => [
+                'id' => $sellerSummary['seller_id'],
+                'name' => $sellerSummary['seller_name'],
+            ],
+            'totals' => [
+                'gross' => $sellerSummary['gross'],
+                'commission' => $sellerSummary['commission'],
+                'service_fee' => $sellerSummary['service_fee'],
+                'piece_services' => $sellerSummary['piece_services'],
+                'net' => $sellerSummary['net'],
+            ],
+            'items_count' => count($sellerSummary['lines']),
+            'items' => $sellerSummary['lines'],
+        ];
+    }
+
+    private function formatPartnerInvoiceOrder(Order $order): ?array
+    {
+        $sellerSummaries = OrderService::sellerInvoiceSummariesForOrder($order)->values();
+
+        if ($sellerSummaries->isEmpty()) {
+            return null;
+        }
+
+        $live = $order->liveVideo;
+        $totals = $this->sumSellerSummaries($sellerSummaries);
+
+        return [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'invoice_id' => $order->invoiceId(),
+            'payment_status' => $order->payment_status,
+            'status' => $order->status,
+            'auction' => [
+                'id' => $order->live_video_id,
+                'title' => app()->getLocale() === 'ar'
+                    ? ($live?->title_ar ?? $live?->title ?? '')
+                    : ($live?->title ?? $live?->title_ar ?? ''),
+                'title_en' => $live?->title ?? '',
+                'title_ar' => $live?->title_ar ?? '',
+                'end_at' => $live?->end_at,
+            ],
+            'totals' => $totals,
+            'sellers_count' => $sellerSummaries->count(),
+            'items_count' => (int) $sellerSummaries->sum(fn (array $summary) => count($summary['lines'])),
+            'sellers' => $sellerSummaries->map(function (array $summary) {
+                return [
+                    'seller_id' => $summary['seller_id'],
+                    'seller_name' => $summary['seller_name'],
+                    'totals' => [
+                        'gross' => $summary['gross'],
+                        'commission' => $summary['commission'],
+                        'service_fee' => $summary['service_fee'],
+                        'piece_services' => $summary['piece_services'],
+                        'net' => $summary['net'],
+                    ],
+                    'items_count' => count($summary['lines']),
+                    'items' => $summary['lines'],
+                ];
+            })->values(),
+        ];
+    }
+
+    private function sumSellerSummaries(Collection $sellerSummaries): array
+    {
+        return [
+            'gross' => round((float) $sellerSummaries->sum('gross'), 2),
+            'commission' => round((float) $sellerSummaries->sum('commission'), 2),
+            'service_fee' => round((float) $sellerSummaries->sum('service_fee'), 2),
+            'piece_services' => round((float) $sellerSummaries->sum('piece_services'), 2),
+            'net' => round((float) $sellerSummaries->sum('net'), 2),
+        ];
     }
 }

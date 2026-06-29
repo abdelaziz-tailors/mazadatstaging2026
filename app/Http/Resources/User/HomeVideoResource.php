@@ -61,6 +61,7 @@ class HomeVideoResource extends JsonResource
             'title_en' => $this->title ??'',
             'title_ar' => $this->title_ar ??'',
             'status'=>$this['status'],
+            'start_price' => $this->start_price,
             'image'=>$files,
             'date_start_at'=>$this['date_start_at'],
             'date_end_at'=>$this['date_end_at'],
@@ -80,6 +81,7 @@ class HomeVideoResource extends JsonResource
             'city'=> New CitiesResource($this->city),
             'video_items'=> VideoItemResource::collection($this->video_items),
             'user'=> New UserDataResource($this->user_Video),
+
             
               // Agora Live Streaming Configuration
               'agora' => [
