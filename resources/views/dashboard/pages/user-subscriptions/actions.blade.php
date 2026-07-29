@@ -1,50 +1,35 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-        @if (Auth::guard('admin')->user()->can('view user subscriptions'))
-            <a class="dropdown-item" href="{{ route('admin.user-subscriptions.show', $item->id) }}">
-                <i class="fas fa-eye"></i> {{ TranslationHelper::translate('view') }}
-            </a>
-        @endif
+@php
+    $status = $item->status ?? 'pending';
+@endphp
+<div class="d-flex align-items-center gap-2">
+    @if (Auth::guard('admin')->user()->can('view user subscriptions'))
+        <a class="md-icon-btn" href="{{ route('admin.user-subscriptions.show', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+            <i class="fas fa-eye"></i>
+        </a>
+    @endif
 
-        @php
-            $status = $item->status ?? 'pending';
-        @endphp
-        @if ($status === 'pending')
-            <form action="{{ route('admin.user-subscriptions.approve', $item->id) }}" method="POST" class="m-0 p-0" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
-                {{ csrf_field() }}
-                <button type="submit" class="dropdown-item text-success w-100">
-                    <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
-                </button>
-            </form>
-            <a class="dropdown-item text-danger" href="#rejectSubscriptionModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
-            </a>
-        @elseif ($status === 'approved')
-            <a class="dropdown-item text-warning" href="#rejectSubscriptionModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
-            </a>
-        @elseif ($status === 'rejected')
-            <form action="{{ route('admin.user-subscriptions.approve', $item->id) }}" method="POST" class="m-0 p-0" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
-                {{ csrf_field() }}
-                <button type="submit" class="dropdown-item text-success w-100">
-                    <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
-                </button>
-            </form>
-        @endif
+    @if (in_array($status, ['pending', 'rejected']))
+        <form action="{{ route('admin.user-subscriptions.approve', $item->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
+            {{ csrf_field() }}
+            <button type="submit" class="md-icon-btn md-icon-btn-success" title="{{ TranslationHelper::translate('Approve') }}">
+                <i class="fas fa-check"></i>
+            </button>
+        </form>
+    @endif
+
+    @if (in_array($status, ['pending', 'approved']))
+        <a class="md-icon-btn md-icon-btn-danger" href="#rejectSubscriptionModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('Reject') }}">
+            <i class="fas fa-times"></i>
+        </a>
+    @endif
 
     @if (Auth::guard('admin')->user()->can('delete user subscription'))
-        <a class="dropdown-item" href="#deleteSubscriptionModal-{{ $item->id }}" data-bs-toggle="modal">
-          <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
+        <a class="md-icon-btn md-icon-btn-danger" href="#deleteSubscriptionModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('delete') }}">
+            <i class="fas fa-trash"></i>
         </a>
     @endif
 </div>
 
-@php
-    $status = $item->status ?? 'pending';
-@endphp
 @if (in_array($status, ['pending', 'approved']))
   <!-- Reject Modal -->
   <div class="modal fade" id="rejectSubscriptionModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -90,4 +75,3 @@
     </div>
   </div>
 @endif
-

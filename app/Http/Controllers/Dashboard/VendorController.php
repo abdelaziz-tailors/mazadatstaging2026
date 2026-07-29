@@ -25,6 +25,7 @@ use App\Http\Requests\Dashboard\Admin\ChangeHospitalPasswordRequest;
 use App\Http\Requests\Dashboard\Providers\StoreProviderRequest;
 use App\Http\Requests\Dashboard\Providers\UpdateProviderRequest;
 use App\Models\Country;
+use App\Support\PartnerDashboardScope;
 use Yajra\DataTables\DataTables;
 
 use App\Traits\AuthorizeTrait;
@@ -43,18 +44,75 @@ class VendorController extends Controller
      */
     public function index(Request $request)
     {
-        return view('dashboard.pages.vendors.index',compact('request'));
+        $base = User::where('user_type', 'vendor');
+        PartnerDashboardScope::scopeVendors($base);
+
+        $total = (clone $base)->count();
+        $active = (clone $base)->where('is_active', 1)->count();
+
+        $thisMonthCount = (clone $base)->whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+        $lastMonthCount = (clone $base)->whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+        if ($lastMonthCount > 0) {
+            $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => $total,
+            'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($totalTrendPct),
+            'active' => $active,
+            'active_pct' => $total > 0 ? round($active / $total * 100, 1) : 0,
+            'inactive' => $total - $active,
+            'inactive_pct' => $total > 0 ? round(($total - $active) / $total * 100, 1) : 0,
+            'new_this_month' => $thisMonthCount,
+            'new_this_month_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'new_this_month_trend_pct' => abs($totalTrendPct),
+        ];
+
+        return view('dashboard.pages.vendors.index', compact('request', 'stats'));
+    }
+
+    /**
+     * Read-only details page for a single vendor (linked from the "view"
+     * icon in the vendors table).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function show($id)
+    {
+        $vendor = User::where('user_type', 'vendor')->findOrFail($id);
+
+        return view('dashboard.pages.vendors.show', compact('vendor'));
     }
 
 
     // get index data by ajax
     public function get_data (Request $request) {
-        // dd($re/)
+        $providers = User::where('user_type', 'vendor');
+        PartnerDashboardScope::scopeVendors($providers);
 
+        if ($request->filled('filter_username')) {
+            $providers->where('name', 'like', '%'.$request->filter_username.'%');
+        }
 
-        $admin_id=Auth::guard('admin')->user()->id;
+        if ($request->filled('filter_email')) {
+            $providers->where('email', 'like', '%'.$request->filter_email.'%');
+        }
 
-        $providers = User::where('admin_id',$admin_id)->where('user_type','vendor');
+        if ($request->filled('filter_status') && in_array($request->filter_status, ['1', '0'], true)) {
+            $providers->where('is_active', $request->filter_status);
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $providers->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $providers->whereDate('created_at', '<=', $request->filter_date_to);
+        }
 
 
         return Datatables::of($providers)
@@ -106,29 +164,35 @@ class VendorController extends Controller
      */
     public function create()
     {
+        $cities = City::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
 
-        return view('dashboard.pages.vendors.create');
+        return view('dashboard.pages.vendors.create', compact('cities'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created vendor in storage. Admin-only entry point (the
+     * admin is the one accepting responsibility for the account, so unlike
+     * a public signup flow there's no terms-and-conditions checkbox here) —
+     * matches the buyer creation flow (App\Http\Controllers\Dashboard\UserController::store()).
      *
-     * @param  \App\Http\Requests\Dashboard\Admin\StoreProviderRequest  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreVendorRequest $request)
     {
-
-        $user = User::create([
+        User::create([
             'name' => $request->name,
-            'email' => $request->email,
+            'user_name' => $request->user_name,
             'phone' => $request->phone,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'city_id' => $request->city_id,
             'admin_id' => Auth::guard('admin')->user()->id,
-            'user_type'=>'vendor'
-
-
+            'user_type' => 'vendor',
+            'is_active' => 1,
         ]);
-        Toastr::success(TranslationHelper::translate(' Created Successfully'));
+
+        Toastr::success(TranslationHelper::translate('New Vendor Created Successfully'));
+
         return redirect()->route('admin.vendors.index');
     }
 
@@ -141,9 +205,7 @@ class VendorController extends Controller
     public function edit($id)
     {
         $user = User::findorfail($id);
-        if ($user->admin_id !== Auth::guard('admin')->user()->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        PartnerDashboardScope::ensureOwnVendor($user);
 
         return view('dashboard.pages.vendors.edit', compact(['user']));
     }
@@ -158,9 +220,7 @@ class VendorController extends Controller
     public function update(UpdateVendorRequest $request, $id)
     {
         $provider = User::findorfail($id);
-        if ($provider->admin_id !== Auth::guard('admin')->user()->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        PartnerDashboardScope::ensureOwnVendor($provider);
 
         $provider->update([
             'name' => $request->name,

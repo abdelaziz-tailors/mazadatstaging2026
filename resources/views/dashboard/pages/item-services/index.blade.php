@@ -27,7 +27,7 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped table-bordered">
+            <table id="data-table" class="table table-bordered">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -66,7 +66,22 @@
             {data: 'default_price'},
             {data: 'is_active', searchable: false, orderable: false},
             {data: 'action', searchable: false, orderable: false}
-        ]
+        ],
+        language: {
+            "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_item_services_placeholder') }}",
+            "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
+            "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
+            "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
+            "infoEmpty": "{{ TranslationHelper::translate('nothing_found') }}",
+            "infoFiltered": "({{ TranslationHelper::translate('filtered_from') }} _MAX_)",
+            "loadingRecords": "{{ TranslationHelper::translate('loading') }}...",
+            "paginate": {
+                "previous": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-right'></i>" @else "<i class='fas fa-angle-left'></i>" @endif,
+                "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
+            }
+        },
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>'
     });
 </script>
 @endsection

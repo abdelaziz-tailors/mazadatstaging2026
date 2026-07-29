@@ -1,29 +1,24 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-        <a class="dropdown-item" href="{{ route('admin.seller-submissions.show', $item->id) }}">
-            <i class="fas fa-eye"></i> {{ TranslationHelper::translate('view') }}
-        </a>
+<div class="d-flex align-items-center gap-2">
+    <a class="md-icon-btn" href="{{ route('admin.seller-submissions.show', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+        <i class="fas fa-eye"></i>
+    </a>
 
-        @if($item->status !== 'approved')
-            <form action="{{ route('admin.seller-submissions.approve', $item->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure') }}')">
-                {{ csrf_field() }}
-                <button type="submit" class="dropdown-item text-success" style="border: none; background: none; width: 100%; text-align: left;">
-                    <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
-                </button>
-            </form>
-        @endif
+    <a class="md-icon-btn" href="#editRequestModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('Request Edit') }}">
+        <i class="fas fa-pen"></i>
+    </a>
 
-        <a class="dropdown-item text-warning" href="#editRequestModal-{{ $item->id }}" data-bs-toggle="modal">
-            <i class="fas fa-pen"></i> {{ TranslationHelper::translate('Request Edit') }}
-        </a>
+    @if($item->status !== 'approved')
+        <form action="{{ route('admin.seller-submissions.approve', $item->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure') }}')">
+            {{ csrf_field() }}
+            <button type="submit" class="md-icon-btn md-icon-btn-success" title="{{ TranslationHelper::translate('Approve') }}">
+                <i class="fas fa-check"></i>
+            </button>
+        </form>
+    @endif
 
-        <a class="dropdown-item text-danger" href="#rejectSubmissionModal-{{ $item->id }}" data-bs-toggle="modal">
-            <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
-        </a>
-    </div>
+    <a class="md-icon-btn md-icon-btn-danger" href="#rejectSubmissionModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('Reject') }}">
+        <i class="fas fa-times"></i>
+    </a>
 </div>
 
 <div class="modal fade" id="editRequestModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">

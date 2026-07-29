@@ -29,13 +29,16 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>{{ TranslationHelper::translate('image') }}</th>
                         <th>{{ TranslationHelper::translate('name') }}</th>
                         <th>{{ TranslationHelper::translate('email') }}</th>
+                        <th>{{ TranslationHelper::translate('phone') }}</th>
                         <th>{{ TranslationHelper::translate('role') }}</th>
+                        <th>{{ TranslationHelper::translate('created at') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>
                 </thead>
@@ -71,13 +74,17 @@
                     return info.start + meta.row + 1;
                 }
             },
+            {data: 'image', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'name', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'email', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'phone', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'role', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
+            {data: 'created_at', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
         ],
         language: {
             "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_admins_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
             "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
             "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
@@ -89,7 +96,7 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>'
     });
 </script>
 @endsection

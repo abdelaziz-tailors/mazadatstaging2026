@@ -38,6 +38,7 @@ class RegisterRequest extends FormRequest
             'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'password' => 'required|min:6|confirmed',
+            'city' => 'nullable|exists:cities,id',
         ];
     }
 
@@ -72,6 +73,7 @@ class RegisterRequest extends FormRequest
             'password.required' => TranslationHelper::translate('please_enter_password'),
             'passsword.min' => TranslationHelper::translate('password should have at least 6 characters'),
             'passsword.max' => TranslationHelper::translate('The password must consist of a maximum of 8 characters'),
+            'city.exists' => TranslationHelper::translate('select_city'),
 
         ];
     }

@@ -27,11 +27,72 @@
         </div>
     </div>
 </div>
-<div class="card">
+
+@include('dashboard.partials.stat-row', ['cards' => [
+    [
+        'icon' => 'fa-solid fa-gavel',
+        'value' => $stats['max_auctions_limit'],
+        'label' => TranslationHelper::translate('max_auctions_limit'),
+        'color' => 'purple',
+    ],
+    [
+        'icon' => 'fa-solid fa-sack-dollar',
+        'value' => number_format($stats['avg_monthly_price'], 2),
+        'label' => TranslationHelper::translate('avg_monthly_price'),
+        'color' => 'warning',
+    ],
+    [
+        'icon' => 'fa-solid fa-shield-halved',
+        'value' => $stats['active'],
+        'label' => TranslationHelper::translate('active_packages'),
+        'color' => 'success',
+        'trend' => ['direction' => 'up', 'text' => $stats['active_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-box',
+        'value' => $stats['total'],
+        'label' => TranslationHelper::translate('total_packages'),
+        'color' => 'primary',
+        'trend' => ['direction' => $stats['total_trend_direction'], 'text' => $stats['total_trend_pct'] . '%'],
+    ],
+]])
+
+<div class="card md-wide-search">
     <div class="card-body">
+        <div class="row g-3 mb-3" id="packagesFilterPanel">
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('subscription_type') }}</label>
+                <select id="filter_subscription_type" class="form-select form-select-sm">
+                    <option value="">{{ TranslationHelper::translate('all') }}</option>
+                    <option value="monthly">{{ TranslationHelper::translate('Monthly') }}</option>
+                    <option value="annual">{{ TranslationHelper::translate('Annual') }}</option>
+                </select>
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('Status') }}</label>
+                <select id="filter_status" class="form-select form-select-sm">
+                    <option value="">{{ TranslationHelper::translate('all') }}</option>
+                    <option value="1">{{ TranslationHelper::translate('Active') }}</option>
+                    <option value="0">{{ TranslationHelper::translate('inactive') }}</option>
+                </select>
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('from') }} - {{ TranslationHelper::translate('to') }}</label>
+                <div class="d-flex gap-1">
+                    <input type="date" id="filter_date_from" class="form-control form-control-sm">
+                    <input type="date" id="filter_date_to" class="form-control form-control-sm">
+                </div>
+            </div>
+            <div class="col-xl-auto col-lg-4 col-md-6 col-12 d-flex align-items-end">
+                <button type="button" id="filter_reset" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fa-solid fa-rotate-right"></i> {{ TranslationHelper::translate('reset') }}
+                </button>
+            </div>
+        </div>
+
         <!--begin::Table-->
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -70,7 +131,12 @@
         },
         ajax: {
             url : "{!! route('admin.packages.getData') !!}",
-            data: {},
+            data: function (d) {
+                d.filter_subscription_type = $('#filter_subscription_type').val();
+                d.filter_status = $('#filter_status').val();
+                d.filter_date_from = $('#filter_date_from').val();
+                d.filter_date_to = $('#filter_date_to').val();
+            },
             type: "POST",
             dataType: "JSON"
         },
@@ -88,6 +154,7 @@
         ],
         language: {
             "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_packages_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
             "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
             "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
@@ -100,6 +167,15 @@
             }
         },
         dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
+    });
+
+    $('#filter_subscription_type, #filter_status, #filter_date_from, #filter_date_to').on('change', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+    $('#filter_reset').on('click', function () {
+        $('#filter_subscription_type, #filter_status').val('');
+        $('#filter_date_from, #filter_date_to').val('');
+        $('#data-table').DataTable().draw(true);
     });
 </script>
 @endsection

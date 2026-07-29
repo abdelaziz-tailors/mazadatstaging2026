@@ -24,7 +24,7 @@ class SliderController extends Controller
 
     public function get_data(Request $request)
     {
-        $sliders = Slider::select('id', 'image', 'link', 'position', 'is_active')
+        $sliders = Slider::select('id', 'image', 'link', 'position', 'is_active', 'created_at')
             ->orderBy('position')
             ->orderByDesc('id');
 
@@ -38,6 +38,9 @@ class SliderController extends Controller
             ->editColumn('is_active', function (Slider $item) {
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.sliders.active_toogler', $item->id)]);
+            })
+            ->editColumn('created_at', function (Slider $item) {
+                return optional($item->created_at)->format('Y-m-d');
             })
             ->addColumn('action', function (Slider $item) {
                 return view('dashboard.pages.sliders.actions')->with(['item' => $item]);

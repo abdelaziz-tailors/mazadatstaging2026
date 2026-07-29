@@ -34,6 +34,35 @@ class UserCartAuctionResource extends JsonResource
             'payment_status' => $this->payment_status,
             'status' => $this->status,
             'total_price' => $this->total,
+            'shipping_address' => $this->shipping_address ? [
+                'address' => $this->shipping_address,
+                'city_id' => $this->shipping_city_id,
+                'city' => $this->shippingCityName(),
+                'lat' => $this->shipping_lat,
+                'lng' => $this->shipping_lng,
+            ] : null,
+            'payment_proof' => $this->payment_proof ? asset($this->payment_proof) : null,
         ];
+    }
+
+    /**
+     * City.name is stored as a per-locale JSON blob ({"ar": ..., "en": ...}),
+     * same convention as everywhere else this app resolves a localized name.
+     */
+    private function shippingCityName(): ?string
+    {
+        $city = $this->shippingCity;
+
+        if (! $city) {
+            return null;
+        }
+
+        $decoded = json_decode($city->name, true);
+
+        if (is_array($decoded)) {
+            return $decoded[app()->getLocale()] ?? $decoded['ar'] ?? null;
+        }
+
+        return $city->name;
     }
 }

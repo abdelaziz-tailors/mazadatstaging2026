@@ -30,13 +30,53 @@ class PackageController extends Controller
     public function index()
     {
         $this->authorizable('view packages');
-        return view('dashboard.pages.packages.index');
+
+        $total = Package::count();
+        $active = Package::where('is_active', 1)->count();
+
+        $thisMonthCount = Package::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+        $lastMonthCount = Package::whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+        if ($lastMonthCount > 0) {
+            $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => $total,
+            'active' => $active,
+            'active_pct' => $total > 0 ? round($active / $total * 100, 1) : 0,
+            'avg_monthly_price' => round((float) Package::whereNotNull('monthly_price')->avg('monthly_price'), 2),
+            'max_auctions_limit' => (int) Package::max('auctions_limit'),
+            'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($totalTrendPct),
+        ];
+
+        return view('dashboard.pages.packages.index', compact('stats'));
     }
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Package::select('id', 'coin','price','name->'.app()->getLocale().' as name', 'is_active', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price')
-         ->get();
+        $packages = Package::select('id', 'coin','price','name->'.app()->getLocale().' as name', 'is_active', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price');
+
+        if ($request->filled('filter_subscription_type')) {
+            $packages->where('subscription_type', $request->filter_subscription_type);
+        }
+
+        if ($request->filled('filter_status') && in_array($request->filter_status, ['1', '0'], true)) {
+            $packages->where('is_active', $request->filter_status);
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $packages->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $packages->whereDate('created_at', '<=', $request->filter_date_to);
+        }
+
+        $packages = $packages->get();
+
         return Datatables::of($packages)
             ->editColumn('subscription_type', function(Package $item) {
                 if ($item->subscription_type) {
@@ -88,6 +128,7 @@ class PackageController extends Controller
         Package::create([
             'name' => json_encode($request->name),
             'description' => json_encode($request->description),
+            'features' => json_encode($request->features),
             'coin'=>$request->coin,
             'price'=>$request->price,
             'subscription_type' => $request->subscription_type,
@@ -116,6 +157,21 @@ class PackageController extends Controller
     }
 
     /**
+     * Read-only details page for a single package (linked from the "view"
+     * icon in the packages table).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function show($id)
+    {
+        $this->authorizable('view packages');
+        $packages = Package::findorfail($id);
+
+        return view('dashboard.pages.packages.show', compact(['packages']));
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  \App\Http\Requests\Dashboard\City\UpdateCityRequest  $request
@@ -129,6 +185,7 @@ class PackageController extends Controller
         $packages->update([
             'name' => json_encode($request->name),
             'description' => json_encode($request->description),
+            'features' => json_encode($request->features),
             'coin'=>$request->coin,
             'price'=>$request->price,
             'subscription_type' => $request->subscription_type,

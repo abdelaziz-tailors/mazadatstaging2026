@@ -136,6 +136,16 @@ class LiveVideo extends Model
         return (float) $this->video_items()->where('user_finished_id', $buyerId)->sum('finished_price');
     }
 
+    /**
+     * Total sales for this auction across all buyers — the sum of finished_price
+     * for every sold item (unsold items have a null finished_price, which SUM
+     * ignores). Used by the organizer's "my auctions" list.
+     */
+    public function totalSales(): float
+    {
+        return (float) $this->video_items()->sum('finished_price');
+    }
+
     public function tax_value(?int $buyerUserId = null): float
     {
         return (float) ($this->sub_total($buyerUserId) * ((float) ($this->tax_amount ?? 0)) / 100);

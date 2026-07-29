@@ -143,6 +143,38 @@ class PartnerDashboardScope
         return $query;
     }
 
+    /**
+     * A partner only sees vendors they personally created (admin_id set on
+     * store()). The super-admin sees every vendor, including ones with no
+     * admin_id at all — e.g. self-registered from the mobile app, which
+     * never sets admin_id (see RegisterController) — so this must stay
+     * unscoped for anyone who isn't a partner.
+     */
+    public static function scopeVendors(Builder $query): Builder
+    {
+        if (self::isPartner()) {
+            $query->where('admin_id', Auth::guard('admin')->user()->id);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Same ownership rule as scopeVendors(), applied to a single already-
+     * loaded vendor (edit/update entry points) — the super-admin may manage
+     * any vendor, a partner only their own.
+     */
+    public static function ensureOwnVendor(\App\Models\User\User $vendor): void
+    {
+        if (! self::isPartner()) {
+            return;
+        }
+
+        if ((int) ($vendor->admin_id ?? 0) !== (int) Auth::guard('admin')->user()->id) {
+            abort(403, 'Unauthorized access.');
+        }
+    }
+
     public static function ensureOwnItemService(\App\Models\ItemService $service): void
     {
         if (! self::isPartner()) {

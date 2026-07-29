@@ -18,9 +18,14 @@ class LoginController extends Controller
 
     public function __invoke(LoginRequest $request) {
 
-        
-        if ($token = Auth::attempt(['phone' => $request->phone, 'password' => request('password')])) {
+        $loginField = filter_var($request->phone, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
+        if ($token = Auth::attempt([$loginField => $request->phone, 'password' => request('password')])) {
+
+                if (! $this->userTypeMatches(Auth::user()->user_type, $request->user_type)) {
+                    Auth::logout();
+                    return $this->failed_response(TranslationHelper::translate('account type not match'), 422);
+                }
 
                 $user =Auth::user()->createToken('MyApp')->accessToken;
                 $user_data=Auth::user();
@@ -30,5 +35,14 @@ class LoginController extends Controller
         }
         return $this->failed_response(TranslationHelper::translate('phone or password not correct'));
 
+    }
+
+    private function userTypeMatches(?string $actualType, ?string $requestedType): bool
+    {
+        if ($actualType === $requestedType) {
+            return true;
+        }
+
+        return $actualType === 'buyer_vendor' && in_array($requestedType, ['buyer', 'vendor'], true);
     }
 }

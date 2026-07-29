@@ -26,16 +26,82 @@
         </div>
     </div>
 </div>
-<div class="card">
+
+@include('dashboard.partials.stat-row', ['cards' => [
+    [
+        'icon' => 'fa-solid fa-building',
+        'value' => $stats['new_this_month'],
+        'label' => TranslationHelper::translate('new_this_month'),
+        'color' => 'purple',
+        'trend' => ['direction' => $stats['new_this_month_trend_direction'], 'text' => $stats['new_this_month_trend_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-xmark',
+        'value' => $stats['inactive'],
+        'label' => TranslationHelper::translate('inactive_partners'),
+        'color' => 'danger',
+        'trend' => ['direction' => 'down', 'text' => $stats['inactive_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-circle-check',
+        'value' => $stats['active'],
+        'label' => TranslationHelper::translate('active_partners'),
+        'color' => 'success',
+        'trend' => ['direction' => 'up', 'text' => $stats['active_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-users',
+        'value' => $stats['total'],
+        'label' => TranslationHelper::translate('total_partners'),
+        'color' => 'primary',
+        'trend' => ['direction' => $stats['total_trend_direction'], 'text' => $stats['total_trend_pct'] . '%'],
+    ],
+]])
+
+<div class="card md-wide-search">
     <div class="card-body">
+        <div class="row g-3 mb-3" id="partnersFilterPanel">
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('name') }}</label>
+                <input type="text" id="filter_name" class="form-control form-control-sm">
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('email') }}</label>
+                <input type="text" id="filter_email" class="form-control form-control-sm">
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('Status') }}</label>
+                <select id="filter_status" class="form-select form-select-sm">
+                    <option value="">{{ TranslationHelper::translate('all') }}</option>
+                    <option value="1">{{ TranslationHelper::translate('Active') }}</option>
+                    <option value="0">{{ TranslationHelper::translate('inactive') }}</option>
+                </select>
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('from') }} - {{ TranslationHelper::translate('to') }}</label>
+                <div class="d-flex gap-1">
+                    <input type="date" id="filter_date_from" class="form-control form-control-sm">
+                    <input type="date" id="filter_date_to" class="form-control form-control-sm">
+                </div>
+            </div>
+            <div class="col-xl-auto col-lg-4 col-md-6 col-12 d-flex align-items-end">
+                <button type="button" id="filter_reset" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fa-solid fa-rotate-right"></i> {{ TranslationHelper::translate('reset') }}
+                </button>
+            </div>
+        </div>
+
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>{{ TranslationHelper::translate('name') }}</th>
                         <th>{{ TranslationHelper::translate('email') }}</th>
-                        {{-- <th>{{ TranslationHelper::translate('national_identity') }}</th> --}}
+                        <th>{{ TranslationHelper::translate('national_identity') }}</th>
+                        <th>{{ TranslationHelper::translate('commercial_register') }}</th>
+                        <th>{{ TranslationHelper::translate('Status') }}</th>
+                        <th>{{ TranslationHelper::translate('created at') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>
                 </thead>
@@ -58,6 +124,13 @@
         },
         ajax: {
             url : '{!! route("admin.partners.getData") !!}',
+            data: function (d) {
+                d.filter_name = $('#filter_name').val();
+                d.filter_email = $('#filter_email').val();
+                d.filter_status = $('#filter_status').val();
+                d.filter_date_from = $('#filter_date_from').val();
+                d.filter_date_to = $('#filter_date_to').val();
+            },
             type: "POST",
             dataType: "JSON"
         },
@@ -73,11 +146,15 @@
             },
             {data: 'name', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'email', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            // {data: 'national_id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true, 'defaultContent': ''},
+            {data: 'national_id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true, 'defaultContent': ''},
+            {data: 'commercial_register', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'status', 'searchable': false, 'orderable': false, 'exportable': true, 'printable': true},
+            {data: 'created_at', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
         ],
         language: {
             "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_partners_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
             "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
             "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
@@ -90,6 +167,18 @@
             }
         },
         dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
+    });
+
+    $('#filter_name, #filter_email').on('keyup', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+    $('#filter_status, #filter_date_from, #filter_date_to').on('change', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+    $('#filter_reset').on('click', function () {
+        $('#filter_name, #filter_email, #filter_date_from, #filter_date_to').val('');
+        $('#filter_status').val('');
+        $('#data-table').DataTable().draw(true);
     });
 </script>
 @endsection

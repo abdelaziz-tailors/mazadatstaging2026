@@ -24,9 +24,14 @@ class AuctionSubscriptionController extends Controller
 
         $plans = Package::where('is_active', 1)
             // ->whereNotNull('subscription_type')
-            ->select('id', 'name->'.app()->getLocale().' as name', 'description->'.app()->getLocale().' as description',
+            ->select('id', 'name->'.app()->getLocale().' as name', 'description->'.app()->getLocale().' as description', 'features',
                       'auctions_limit', 'monthly_price', 'annual_price', 'image')
-            ->get();
+            ->get()
+            ->map(function (Package $plan) {
+                $plan->features = $plan->featuresList();
+
+                return $plan;
+            });
 
         return $this->success_response(TranslationHelper::translate('Successfully'), $plans);
     }
@@ -48,33 +53,87 @@ class AuctionSubscriptionController extends Controller
 
         $package = Package::findOrFail($request->package_id);
 
-        // if (!$package->subscription_type) {
-        //     return $this->failed_response(TranslationHelper::translate('This package is not available for auction subscriptions'));
-        // }
+        $subscription = $this->createPendingSubscription(
+            auth('api')->user()->id,
+            $package,
+            $request->subscription_type,
+            $request->file('transaction_image')
+        );
 
-        // Calculate expiration date
-        $expiresAt = $request->subscription_type === 'monthly'
+        return $this->success_response(
+            TranslationHelper::translate('Subscription created successfully. Waiting for admin approval.'),
+            $subscription
+        );
+    }
+
+    /**
+     * Renew the user's current (or most recent) auction subscription.
+     * Defaults to the same package and billing cycle they're already on;
+     * package_id/subscription_type may optionally be passed to switch plans
+     * while renewing. Creates a new pending subscription — same
+     * admin-approval workflow as a first-time subscribe.
+     */
+    public function renew(Request $request): JsonResponse
+    {
+        if (!auth('api')->user()) {
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $latestSubscription = UserSubscription::where('user_id', auth('api')->user()->id)
+            ->latest()
+            ->first();
+
+        if (!$latestSubscription) {
+            return $this->failed_response(TranslationHelper::translate('No subscription to renew'));
+        }
+
+        $request->validate([
+            'package_id' => 'nullable|exists:packages,id',
+            'subscription_type' => 'nullable|in:monthly,annual',
+            'transaction_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        $package = Package::findOrFail($request->package_id ?? $latestSubscription->package_id);
+        $subscriptionType = $request->subscription_type ?? $latestSubscription->subscription_type;
+
+        $subscription = $this->createPendingSubscription(
+            auth('api')->user()->id,
+            $package,
+            $subscriptionType,
+            $request->file('transaction_image')
+        );
+
+        return $this->success_response(
+            TranslationHelper::translate('Subscription renewal requested successfully. Waiting for admin approval.'),
+            $subscription
+        );
+    }
+
+    /**
+     * Shared by subscribe() and renew(): a new subscription always starts
+     * 'pending' and awaits admin approval, regardless of whether it's a
+     * first-time signup or a renewal of an existing plan.
+     */
+    private function createPendingSubscription(int $userId, Package $package, string $subscriptionType, $transactionImage): UserSubscription
+    {
+        $expiresAt = $subscriptionType === 'monthly'
             ? Carbon::now()->addMonth()
             : Carbon::now()->addYear();
 
-        // Get price based on subscription type
-        $price = $request->subscription_type === 'monthly'
+        $price = $subscriptionType === 'monthly'
             ? $package->monthly_price
             : $package->annual_price;
 
-        // Handle transaction image if provided
         $imageName = null;
-        if ($request->hasFile('transaction_image')) {
-            $image = $request->file('transaction_image');
-            $imageName = 'user/transaction_image/'.rand(11111, 99999).'_'.$image->getClientOriginalName();
-            $image->move(public_path('../storage/app/public/user/transaction_image'), $imageName);
+        if ($transactionImage) {
+            $imageName = 'user/transaction_image/'.rand(11111, 99999).'_'.$transactionImage->getClientOriginalName();
+            $transactionImage->move(public_path('../storage/app/public/user/transaction_image'), $imageName);
         }
 
-        // Create subscription with pending status
-        $subscription = UserSubscription::create([
-            'user_id' => auth('api')->user()->id,
+        return UserSubscription::create([
+            'user_id' => $userId,
             'package_id' => $package->id,
-            'subscription_type' => $request->subscription_type,
+            'subscription_type' => $subscriptionType,
             'auctions_limit' => $package->auctions_limit,
             'remaining_auctions' => $package->auctions_limit,
             'expires_at' => $expiresAt,
@@ -82,11 +141,6 @@ class AuctionSubscriptionController extends Controller
             'image' => $imageName,
             'status' => 'pending', // Set status to pending for admin approval
         ]);
-
-        return $this->success_response(
-            TranslationHelper::translate('Subscription created successfully. Waiting for admin approval.'),
-            $subscription
-        );
     }
 
     /**
@@ -113,16 +167,23 @@ class AuctionSubscriptionController extends Controller
             );
         }
 
+        $package = $latestSubscription->package;
+        if ($package) {
+            $package->features = $package->featuresList();
+        }
+
         $response = [
             'has_subscription' => true,
             'subscription' => [
                 'id' => $latestSubscription->id,
                 'status' => $latestSubscription->status,
                 'subscription_type' => $latestSubscription->subscription_type,
+                'price' => $latestSubscription->price,
                 'auctions_limit' => $latestSubscription->auctions_limit,
                 'remaining_auctions' => $latestSubscription->remaining_auctions,
+                'started_at' => $latestSubscription->created_at ? $latestSubscription->created_at->format('Y-m-d') : null,
                 'expires_at' => $latestSubscription->expires_at ? $latestSubscription->expires_at->format('Y-m-d H:i:s') : null,
-                'package' => $latestSubscription->package,
+                'package' => $package,
                 'rejection_reason' => $latestSubscription->rejection_reason,
             ]
         ];

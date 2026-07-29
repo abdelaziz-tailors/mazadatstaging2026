@@ -3,8 +3,18 @@
         && $order->status !== 'delivered'
         && $order->settled_at === null;
 
+    /*
+     * OrderItem.seller_id (not LiveVideoItem.seller_id) is the
+     * authoritative, already-resolved seller for this sale —
+     * attachWonItem() sets it to the item's own seller_id, or falls back
+     * to the item's user_id (the organizer) when the piece is the
+     * organizer's own and was never given an explicit seller_id. Filtering
+     * on liveVideoItem->seller_id here instead hid this entire section for
+     * any such piece — same root cause already fixed in
+     * OrderService::sellerInvoiceSummariesForOrder()/ForLiveVideo().
+     */
     $sellerOrderItems = $order->items->filter(
-        fn ($orderItem) => $orderItem->liveVideoItem?->seller_id
+        fn ($orderItem) => $orderItem->seller_id
     );
 @endphp
 

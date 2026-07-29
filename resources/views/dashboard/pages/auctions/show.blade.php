@@ -68,6 +68,10 @@
                                             <p class="col-sm-10">{{$video->quantity}}</p>
                                         </div>
                                         <div class="row">
+                                            <p class="col-sm-2 text-muted text-sm-end mb-0 mb-sm-3">{{ TranslationHelper::translate('products_count') }} </p>
+                                            <p class="col-sm-10">{{$video->video_items()->count()}}</p>
+                                        </div>
+                                        <div class="row">
                                             <p class="col-sm-2 text-muted text-sm-end mb-0 mb-sm-3">{{ TranslationHelper::translate('Auctions start price') }} </p>
                                             <p class="col-sm-10">{{$video->start_price}}</p>
                                         </div>

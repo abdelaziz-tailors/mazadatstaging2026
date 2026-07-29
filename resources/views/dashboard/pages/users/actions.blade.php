@@ -1,19 +1,21 @@
-<div class="btn-group">
-            @if (Auth::guard('admin')->user()->can('edit user'))
-                <a class="dropdown-item" href="{{ route('admin.users.edit', $item->id) }}">
-                    <i style="color: #2196f3" class="fas fa-edit"></i>
-                </a>
-            @endif
+<div class="d-flex align-items-center gap-2">
+    <a class="md-icon-btn" href="{{ route('admin.users.show', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+        <i class="fas fa-eye"></i>
+    </a>
 
-        @if (Auth::guard('admin')->user()->can('delete user'))
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i style="color: #e42f2f" class="fas fa-trash"></i>
-            </a>
-        @endif
+    @if (Auth::guard('admin')->user()->can('edit user'))
+        <a class="md-icon-btn" href="{{ route('admin.users.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+            <i class="fas fa-pen"></i>
+        </a>
+    @endif
+
+    @if (Auth::guard('admin')->user()->can('delete user'))
+        <a class="md-icon-btn md-icon-btn-danger" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('delete') }}">
+            <i class="fas fa-trash"></i>
+        </a>
+    @endif
 </div>
 
-  <!-- Modal -->
 @if (Auth::guard('admin')->user()->can('delete user'))
   <!-- Modal -->
   <div class="modal fade" id="deleteModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">

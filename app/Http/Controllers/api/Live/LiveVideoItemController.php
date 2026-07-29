@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\FirebaseController;
 use App\Http\Requests\api\Provider\Auth\CompeletProfileDoctorRequest;
 use App\Http\Requests\api\Provider\Profile\UpdateFcmRequest;
+use App\Http\Requests\api\Video\item\AddPieceRequest;
 use App\Http\Requests\api\Video\item\StoreItemRequest;
 use App\Http\Requests\api\Video\item\updateItemRequest;
+use App\Http\Requests\api\Video\item\UpdatePieceRequest;
 use App\Http\Requests\api\Video\UpdateVideoRequest;
 use App\Http\Resources\NotificationResource;
 use App\Http\Resources\User\MyLiveVideoResource;
@@ -17,6 +19,7 @@ use App\Http\Resources\User\VideoCommentResource;
 use App\Http\Resources\User\VideoItemResource;
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use App\Models\LiveVideoItemPiece;
 use App\Models\VideoComment;
 use App\Services\LiveVideoItemPieceService;
 use App\Services\OrderService;
@@ -365,5 +368,97 @@ class LiveVideoItemController extends Controller
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
     }
 
+    /**
+     * Only the organizer who owns the auction (LiveVideo.user_id) this
+     * item belongs to may add/edit/delete its pieces — not just any
+     * authenticated user.
+     */
+    private function userOwnsItemsAuction(LiveVideoItem $item): bool
+    {
+        $item->loadMissing('videoLive');
+
+        return $item->videoLive
+            && auth('api')->user()
+            && (int) $item->videoLive->user_id === (int) auth('api')->user()->id;
+    }
+
+    public function addPiece(AddPieceRequest $request, $id): JsonResponse
+    {
+        if (!auth('api')->user()){
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $item = LiveVideoItem::find($id);
+        if (!$item){
+            return $this->failed_response(TranslationHelper::translate('Item not found'), 404);
+        }
+
+        if (!$this->userOwnsItemsAuction($item)){
+            return response()->json(['success' => false, 'code' => 403, 'message' => TranslationHelper::translate('Un-Authorized Access')], 403);
+        }
+
+        LiveVideoItemPieceService::addPiece($item, $request->only(['age', 'weight', 'identifier', 'baham_count']));
+
+        $item->load('pieces');
+
+        $data = new VideoItemResource($item);
+        return $this->success_response(TranslationHelper::translate('Piece Added Successfully'), $data);
+    }
+
+    public function updatePiece(UpdatePieceRequest $request, $id): JsonResponse
+    {
+        if (!auth('api')->user()){
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $piece = LiveVideoItemPiece::find($id);
+        if (!$piece){
+            return $this->failed_response(TranslationHelper::translate('Piece not found'), 404);
+        }
+
+        $item = $piece->item;
+        if (!$item || !$this->userOwnsItemsAuction($item)){
+            return response()->json(['success' => false, 'code' => 403, 'message' => TranslationHelper::translate('Un-Authorized Access')], 403);
+        }
+
+        $attributes = [];
+        foreach (['age', 'weight', 'identifier', 'baham_count'] as $field) {
+            if ($request->has($field)) {
+                $attributes[$field] = $request->input($field);
+            }
+        }
+
+        LiveVideoItemPieceService::updatePiece($piece, $attributes);
+
+        $item->load('pieces');
+
+        $data = new VideoItemResource($item);
+        return $this->success_response(TranslationHelper::translate('Piece Updated Successfully'), $data);
+    }
+
+    public function deletePiece($id): JsonResponse
+    {
+        if (!auth('api')->user()){
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $piece = LiveVideoItemPiece::find($id);
+        if (!$piece){
+            return $this->failed_response(TranslationHelper::translate('Piece not found'), 404);
+        }
+
+        $item = $piece->item;
+        if (!$item || !$this->userOwnsItemsAuction($item)){
+            return response()->json(['success' => false, 'code' => 403, 'message' => TranslationHelper::translate('Un-Authorized Access')], 403);
+        }
+
+        $itemId = $item->id;
+        LiveVideoItemPieceService::deletePiece($piece);
+
+        $item = LiveVideoItem::with('pieces')->find($itemId);
+
+        $data = new VideoItemResource($item);
+        return $this->success_response(TranslationHelper::translate('Piece Deleted Successfully'), $data);
+    }
 
 }

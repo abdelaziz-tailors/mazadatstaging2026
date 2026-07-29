@@ -123,7 +123,7 @@
                 <div class="col-12">
                     <h6 class="mb-3">{{ TranslationHelper::translate('items') }}</h6>
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
+                        <table class="table table-bordered">
                             <thead>
                                 <tr>
                                     {{-- <th>#</th> --}}

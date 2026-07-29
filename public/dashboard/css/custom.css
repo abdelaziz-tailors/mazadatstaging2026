@@ -158,6 +158,12 @@ input[type=text], input[type=password] {
 }
 
 textarea.form-control {
+  /* .form-control above hardcodes height:40px for single-line inputs, which
+     also clamped every textarea to a 2-line box regardless of its "rows"
+     attribute (e.g. the About page's description field). Textareas need
+     their own auto height so "rows" actually controls their size. */
+  height: auto;
+  min-height: 120px;
   resize: vertical;
 }
 

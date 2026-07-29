@@ -23,7 +23,34 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-        return view('dashboard.pages.orders.index', compact('request'));
+        $base = Order::query();
+        PartnerDashboardScope::scopeOrders($base);
+        $total = (clone $base)->count();
+
+        $thisMonthCount = (clone $base)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->count();
+        $lastMonthCount = (clone $base)
+            ->whereYear('created_at', now()->subMonthNoOverflow()->year)
+            ->whereMonth('created_at', now()->subMonthNoOverflow()->month)
+            ->count();
+        if ($lastMonthCount > 0) {
+            $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => $total,
+            'pending' => (clone $base)->where('payment_status', 'unpaid')->count(),
+            'paid' => (clone $base)->where('payment_status', 'paid')->count(),
+            'shipping' => (clone $base)->where('status', 'shipping')->count(),
+            'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($totalTrendPct),
+        ];
+
+        return view('dashboard.pages.orders.index', compact('request', 'stats'));
     }
 
     public function get_data(Request $request)
@@ -33,6 +60,33 @@ class OrderController extends Controller
             ->withCount('items');
 
         PartnerDashboardScope::scopeOrders($orders);
+
+        if ($request->filled('filter_order_number')) {
+            $orders->where('order_number', 'like', '%'.$request->filter_order_number.'%');
+        }
+
+        if ($request->filled('filter_buyer')) {
+            $buyerName = $request->filter_buyer;
+            $orders->whereHas('buyer', function ($query) use ($buyerName) {
+                $query->where('name', 'like', '%'.$buyerName.'%');
+            });
+        }
+
+        if ($request->filled('filter_status')) {
+            $orders->where('status', $request->filter_status);
+        }
+
+        if ($request->filled('filter_payment_status')) {
+            $orders->where('payment_status', $request->filter_payment_status);
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $orders->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $orders->whereDate('created_at', '<=', $request->filter_date_to);
+        }
 
         return Datatables::of($orders)
             ->editColumn('order_number', function (Order $order) {
@@ -47,6 +101,9 @@ class OrderController extends Controller
             })
             ->addColumn('status', function (Order $order) {
                 return view('dashboard.pages.orders.status')->with(['order' => $order]);
+            })
+            ->addColumn('order_date', function (Order $order) {
+                return optional($order->created_at)->format('Y-m-d') ?? '—';
             })
             ->addColumn('city', function (Order $order) {
                 return self::formatCityName($order->shippingCity?->name);

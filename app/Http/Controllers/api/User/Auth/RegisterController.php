@@ -39,6 +39,7 @@ class RegisterController extends Controller
                 'phone' => $request->phone,
                 'user_name' => $request->user_name,
                 'user_type' => $request->user_type ?? 'buyer',
+                'city_id' => $request->city,
                 'commercial_register' => $commercialRegisterName,
                 'password' => bcrypt($request->password),
                 'otp' => $numbers,

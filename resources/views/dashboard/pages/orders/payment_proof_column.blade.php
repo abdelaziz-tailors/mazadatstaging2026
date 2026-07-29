@@ -3,7 +3,7 @@
     @php $ext = strtolower(pathinfo($proofPath, PATHINFO_EXTENSION)); @endphp
     @if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true))
         <a href="{{ asset($proofPath) }}" target="_blank" rel="noopener" title="{{ TranslationHelper::translate('view_payment_proof') }}">
-            <img src="{{ asset($proofPath) }}" alt="" style="max-height: 48px; max-width: 72px; object-fit: cover; border-radius: 4px;">
+            <img src="{{ asset($proofPath) }}" alt="" class="md-thumb">
         </a>
     @else
         <a href="{{ asset($proofPath) }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary py-0">

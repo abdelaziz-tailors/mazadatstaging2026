@@ -19,7 +19,7 @@ use Carbon\Carbon;
 class RegisterController extends Controller
 {
     use HelperTrait, ResponseTrait;
-
+    
     public function __invoke(SocialRegisterRequest $request) {
         $fullName = $request->input('name');
         $username = $this->createUniqueUsername($fullName);

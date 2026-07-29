@@ -1,19 +1,21 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
+<div class="d-flex align-items-center gap-2">
     @if (Auth::guard('admin')->user()->can('edit notification'))
-        <a class="dropdown-item" href="{{ route('admin.notifications.view', $item->id) }}">
-          <i class="fas fa-edit"></i> {{ TranslationHelper::translate('View') }}
+        <a class="md-icon-btn" href="{{ route('admin.notifications.view', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+            <i class="fas fa-eye"></i>
         </a>
     @endif
 
-
     @if (Auth::guard('admin')->user()->can('delete notification'))
-        <a class="dropdown-item" href="#deleteCountryModal-{{ $item->id }}" data-bs-toggle="modal">
-          <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
-        </a>
+        <div class="dropdown">
+            <button type="button" class="md-icon-btn" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-ellipsis-vertical"></i>
+            </button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="#deleteCountryModal-{{ $item->id }}" data-bs-toggle="modal">
+                    <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
+                </a>
+            </div>
+        </div>
     @endif
 </div>
 

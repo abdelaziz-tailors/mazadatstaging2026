@@ -37,12 +37,15 @@ class CategoryController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Category::query()->select('id','name->'.app()->getLocale().' as name', 'is_active');
+        $packages = Category::query()->select('id','name->'.app()->getLocale().' as name', 'is_active', 'created_at');
         PartnerDashboardScope::scopeCategories($packages);
         return Datatables::of($packages)
             ->editColumn('is_active', function(Category $item) {
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.categories.active_toogler', $item->id)]);
+            })
+            ->editColumn('created_at', function(Category $item) {
+                return optional($item->created_at)->format('Y-m-d');
             })
             ->addColumn('action', function(Category $item) {
                 return view('dashboard.pages.categories.actions')

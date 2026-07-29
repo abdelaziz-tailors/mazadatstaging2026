@@ -30,7 +30,7 @@
     <div class="card-body">
         <!--begin::Table-->
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped table-bordered">
+            <table id="data-table" class="table table-bordered">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -71,6 +71,7 @@
         ],
         language: {
             "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_roles_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
             "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
             "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
@@ -82,7 +83,7 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>'
     });
 </script>
 @endsection

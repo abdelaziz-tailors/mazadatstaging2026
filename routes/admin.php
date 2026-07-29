@@ -29,6 +29,8 @@ use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\SliderController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
 use App\Http\Controllers\Dashboard\SellerSubmissionController;
+use App\Http\Controllers\Dashboard\ContactMessageController;
+use App\Http\Controllers\Dashboard\PartnerFinanceController;
 
 Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeViewPath', 'dashboardLocale']], function () {
     Route::group(['prefix' => 'admin', 'as'=>'admin.'], function () {
@@ -38,12 +40,14 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             // Dashboard Home
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
             Route::get('/appointment', [DashboardController::class, 'appointment'])->name('appointment.index');
+            Route::get('/search', [\App\Http\Controllers\Dashboard\SearchController::class, 'index'])->name('search.index');
 
             // Editor Upload Image
             Route::post('upload-image', [UploadImageController::class, 'index'])->name('upload.image');
 
             // Administrators
             Route::resource('admins', AdminController::class)->except(['show']);
+            Route::get('admins/show/{id}', [AdminController::class, 'show'])->name('admins.show');
             Route::post('admins/getData', [AdminController::class, 'get_data'])->name('admins.getData');
             Route::get('admins/change-password/{id}', [AdminController::class, 'change_password_form'])->name('admins.change-password');
             Route::post('admins/save-password/{id}', [AdminController::class, 'save_password'])->name('admins.save_password');
@@ -60,14 +64,18 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::post('roles/getData', [RoleController::class, 'get_data'])->name('roles.getData');
             //users
             Route::resource('users', UserController::class)->except(['show']);
+            Route::get('users/show/{id}', [UserController::class, 'show'])->name('users.show');
             Route::post('users/getData', [UserController::class, 'get_data'])->name('users.getData');
             Route::post('users/active_toogler/{id}', [UserController::class, 'active_toogler'])->name('users.active_toogler');
 
             Route::resource('vendors', VendorController::class)->except(['show']);
+            Route::get('vendors/show/{id}', [VendorController::class, 'show'])->name('vendors.show');
             Route::post('vendors/getData', [VendorController::class, 'get_data'])->name('vendors.getData');
             Route::post('vendors/active_toogler/{id}', [VendorController::class, 'active_toogler'])->name('vendors.active_toogler');
             //partners
             Route::resource('partners', PartnerController::class)->except(['show']);
+            Route::get('partners/show/{id}', [PartnerController::class, 'show'])->name('partners.show');
+            Route::post('partners/active_toogler/{id}', [PartnerController::class, 'active_toogler'])->name('partners.active_toogler');
             Route::post('partners/getData', [PartnerController::class, 'get_data'])->name('partners.getData');
             Route::get('partners/change-password/{id}', [PartnerController::class, 'change_password_form'])->name('partners.change-password');
             Route::post('partners/save-password/{id}', [PartnerController::class, 'save_password'])->name('partners.save_password');
@@ -127,6 +135,7 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             // packages
 
             Route::resource('/packages', PackageController::class)->except(['show']);
+            Route::get('packages/show/{id}', [PackageController::class, 'show'])->name('packages.show');
             Route::post('packages/active_toogler/{id}', [PackageController::class, 'active_toogler'])->name('packages.active_toogler');
             Route::post('packages/getData', [PackageController::class, 'get_data'])->name('packages.getData');
             // packages
@@ -209,6 +218,16 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::post('notifications/getData', [NotificationsController::class, 'get_data'])->name('notifications.getData');
             Route::get('notifications/view/{id}', [NotificationsController::class, 'view'])->name('notifications.view');
             //notifications
+
+            // contact messages
+            Route::resource('/contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
+            Route::post('contact-messages/getData', [ContactMessageController::class, 'get_data'])->name('contact-messages.getData');
+            // contact messages
+
+            // partner finance
+            Route::get('partner-finance/invoices', [PartnerFinanceController::class, 'invoices'])->name('partner-finance.invoices');
+            Route::get('partner-finance/wallet', [PartnerFinanceController::class, 'wallet'])->name('partner-finance.wallet');
+            // partner finance
 
         });
 

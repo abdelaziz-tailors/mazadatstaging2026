@@ -24,7 +24,7 @@ class UserSubscription extends Model
 
     public function package()
     {
-        return $this->belongsTo(Package::class, 'package_id')->select('id', 'name->'.app()->getLocale().' as name','description->'.app()->getLocale().' as description', 'coin','price','image', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price');
+        return $this->belongsTo(Package::class, 'package_id')->select('id', 'name->'.app()->getLocale().' as name','description->'.app()->getLocale().' as description', 'features', 'coin','price','image', 'subscription_type', 'auctions_limit', 'monthly_price', 'annual_price');
     }
 
     /**

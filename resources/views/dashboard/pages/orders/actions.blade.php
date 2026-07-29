@@ -1,3 +1,3 @@
-<a class="btn btn-sm bg-primary-light" href="{{ route('admin.orders.edit', $order->id) }}">
-    <i class="fe fe-eye"></i> {{ TranslationHelper::translate('show') }}
+<a class="md-icon-btn" href="{{ route('admin.orders.edit', $order->id) }}" title="{{ TranslationHelper::translate('view') }}">
+    <i class="fas fa-eye"></i>
 </a>

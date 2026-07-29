@@ -32,6 +32,21 @@ class AdminController extends Controller
         return view('dashboard.pages.admins.index');
     }
 
+    /**
+     * Read-only details page for a single admin (linked from the "view"
+     * icon in the admins table).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function show($id)
+    {
+        $this->authorizable('view admins');
+        $admin = Admin::findOrFail($id);
+
+        return view('dashboard.pages.admins.show', compact('admin'));
+    }
+
     // get index data by ajax
     public function get_data (Request $request) {
         $admins = Admin::where('type', 'admin');
@@ -45,11 +60,17 @@ class AdminController extends Controller
                     return NULL;
                 }
             })
+            ->editColumn('image', function(Admin $item) {
+                return view('dashboard.partials.avatar', ['path' => $item->image, 'name' => $item->name]);
+            })
+            ->editColumn('created_at', function(Admin $item) {
+                return optional($item->created_at)->format('Y-m-d');
+            })
             ->addColumn('action', function(Admin $item) {
                 return view('dashboard.pages.admins.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'email' ,'role', 'action'])
+            ->rawColumns(['id', 'image', 'name', 'email' ,'role', 'action'])
             ->make(true);
     }
 

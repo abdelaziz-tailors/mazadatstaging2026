@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\NafathVerificationRequest;
+use App\Models\User\User;
 use App\Services\NafathService;
+use App\Services\NotificationService;
+use App\Helpers\TranslationHelper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,6 +28,7 @@ class NafathController extends Controller
         $data = $request->validate([
             'nationalId' => ['required', 'string'],
             'service' => ['required', 'string'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         $result = $this->nafathService->sendMfaRequest(
@@ -32,6 +37,13 @@ class NafathController extends Controller
         );
 
         if ($result['success']) {
+            NafathVerificationRequest::create([
+                'request_id' => $result['request_id'],
+                'user_id' => $data['user_id'] ?? null,
+                'national_id' => $data['nationalId'],
+                'status' => 'WAITING',
+            ]);
+
             return response()->json([
                 'request_id' => $result['request_id'],
                 'transId' => $result['data']['transId'] ?? null,
@@ -97,7 +109,8 @@ class NafathController extends Controller
         $payload = $verify['payload'];
         $status = $payload->status ?? null; // COMPLETED | REJECTED
 
-        // Optional: persist by requestId, dispatch job, etc.
+        $this->persistVerificationResult($data['requestId'], $status);
+
         return response()->json([
             'received' => true,
             'requestId' => $data['requestId'],
@@ -105,5 +118,39 @@ class NafathController extends Controller
             'status' => $status,
             'payload' => $payload,
         ], 200);
+    }
+
+    /**
+     * Update the stored request's status and, on the first successful
+     * verification for that user, mark them verified and notify them.
+     */
+    private function persistVerificationResult(string $requestId, ?string $status): void
+    {
+        $verificationRequest = NafathVerificationRequest::where('request_id', $requestId)->first();
+
+        if (! $verificationRequest) {
+            return;
+        }
+
+        $verificationRequest->update(['status' => $status]);
+
+        if ($status !== 'COMPLETED' || ! $verificationRequest->user_id) {
+            return;
+        }
+
+        $user = User::find($verificationRequest->user_id);
+
+        if (! $user || $user->nafath_verified_at) {
+            return;
+        }
+
+        $user->update(['nafath_verified_at' => now()]);
+
+        NotificationService::notify(
+            $user->id,
+            'identity_verified',
+            TranslationHelper::translate('identity verified title'),
+            TranslationHelper::translate('identity verified body')
+        );
     }
 }

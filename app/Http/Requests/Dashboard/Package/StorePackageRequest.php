@@ -31,9 +31,18 @@ class StorePackageRequest extends FormRequest
         $name['en'] = $name['en'] ?? ($name['ar'] ?? '');
         $description['en'] = $description['en'] ?? ($description['ar'] ?? '');
 
+        // Admin only fills one textarea (one feature bullet per line); mirror
+        // it to 'en' the same way name/description already do above, since
+        // there's no separate English input for this either.
+        $featuresAr = array_values(array_filter(array_map(
+            'trim',
+            preg_split('/\r\n|\r|\n/', (string) $this->input('features_text', ''))
+        )));
+
         $this->merge([
             'name' => $name,
             'description' => $description,
+            'features' => ['ar' => $featuresAr, 'en' => $featuresAr],
         ]);
     }
 
@@ -48,6 +57,8 @@ class StorePackageRequest extends FormRequest
         $rules['auctions_limit'] = 'nullable|integer|min:0';
         $rules['monthly_price'] = 'nullable|numeric|min:0';
         $rules['annual_price'] = 'nullable|numeric|min:0';
+        $rules['features.ar'] = 'nullable|array';
+        $rules['features.ar.*'] = 'string';
 
         return $rules;
     }

@@ -17,6 +17,8 @@ class Kernel extends ConsoleKernel
         Commands\CheckLiveVideoStatus::class,
         Commands\CheckLiveVideoEnd::class,
         Commands\CheckRecordedVideoStart::class,
+        Commands\SendUpcomingAuctionReminders::class,
+        Commands\SendSubscriptionExpiryReminders::class,
     ];
 
     protected function schedule(Schedule $schedule)
@@ -26,6 +28,8 @@ class Kernel extends ConsoleKernel
         $schedule->command('livevideo:check')->everyMinute();
         $schedule->command('livevideoEnd:check')->everyMinute();
         $schedule->command('recordedvideostart:check')->everyMinute();
+        $schedule->command('notifications:upcoming-auction-reminders')->everyFiveMinutes();
+        $schedule->command('notifications:subscription-expiry-reminders')->hourly();
     }
 
     /**

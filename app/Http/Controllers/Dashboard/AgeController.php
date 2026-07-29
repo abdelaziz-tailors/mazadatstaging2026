@@ -31,12 +31,15 @@ class AgeController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Age::select('id','name->'.app()->getLocale().' as name', 'is_active');
+        $packages = Age::select('id','name->'.app()->getLocale().' as name', 'is_active', 'created_at');
             // ->where('admin_id',Auth::guard('admin')->user()->id);
         return Datatables::of($packages)
             ->editColumn('is_active', function(Age $item) {
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.ages.active_toogler', $item->id)]);
+            })
+            ->editColumn('created_at', function(Age $item) {
+                return optional($item->created_at)->format('Y-m-d');
             })
             ->addColumn('action', function(Age $item) {
                 return view('dashboard.pages.ages.actions')

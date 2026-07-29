@@ -12,6 +12,7 @@ use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Support\Facades\Storage;
 use App\Helpers\TranslationHelper;
 use App\Traits\AuthorizeTrait;
+use App\Traits\ActionTrait;
 
 use App\Models\Admin;
 use Spatie\Permission\Models\Role;
@@ -23,7 +24,7 @@ use App\Models\User\User;
 
 class PartnerController extends Controller
 {
-    use AuthorizeTrait;
+    use AuthorizeTrait, ActionTrait;
 
     /**
      * Display a listing of the resource.
@@ -33,18 +34,87 @@ class PartnerController extends Controller
     public function index()
     {
         $this->authorizable('view partners');
-        return view('dashboard.pages.partners.index');
+
+        $base = Admin::where('type', 'partner');
+        $total = (clone $base)->count();
+        $active = (clone $base)->whereHas('user', function ($query) {
+            $query->where('is_active', 1);
+        })->count();
+        $inactive = $total - $active;
+
+        $thisMonthCount = (clone $base)->whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+        $lastMonthCount = (clone $base)->whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+        if ($lastMonthCount > 0) {
+            $newThisMonthTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $newThisMonthTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => $total,
+            'total_trend_direction' => $newThisMonthTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($newThisMonthTrendPct),
+            'active' => $active,
+            'active_pct' => $total > 0 ? round($active / $total * 100, 1) : 0,
+            'inactive' => $inactive,
+            'inactive_pct' => $total > 0 ? round($inactive / $total * 100, 1) : 0,
+            'new_this_month' => $thisMonthCount,
+            'new_this_month_trend_direction' => $newThisMonthTrendPct >= 0 ? 'up' : 'down',
+            'new_this_month_trend_pct' => abs($newThisMonthTrendPct),
+        ];
+
+        return view('dashboard.pages.partners.index', compact('stats'));
     }
 
     // get index data by ajax
     public function get_data (Request $request) {
-        $admins = Admin::where('type', 'partner');
+        $admins = Admin::with('user')->where('type', 'partner');
+
+        if ($request->filled('filter_name')) {
+            $admins->where('name', 'like', '%'.$request->filter_name.'%');
+        }
+
+        if ($request->filled('filter_email')) {
+            $admins->where('email', 'like', '%'.$request->filter_email.'%');
+        }
+
+        if ($request->filled('filter_status') && in_array($request->filter_status, ['1', '0'], true)) {
+            $status = $request->filter_status;
+            $admins->whereHas('user', function ($query) use ($status) {
+                $query->where('is_active', $status);
+            });
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $admins->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $admins->whereDate('created_at', '<=', $request->filter_date_to);
+        }
+
         return Datatables::of($admins)
+            ->editColumn('created_at', function(Admin $item) {
+                return optional($item->created_at)->format('Y-m-d');
+            })
+            ->addColumn('commercial_register', function(Admin $item) {
+                $path = $item->user->commercial_register ?? null;
+                if (!$path) {
+                    return '-';
+                }
+                return '<a href="' . Storage::disk('public')->url($path) . '" target="_blank">' . TranslationHelper::translate('commercial_register') . '</a>';
+            })
+            ->addColumn('status', function(Admin $item) {
+                $isActive = $item->user->is_active ?? false;
+                $badge = $isActive ? 'success' : 'danger';
+                $label = $isActive ? TranslationHelper::translate('Active') : TranslationHelper::translate('Inactive');
+                return '<span class="badge rounded-pill bg-' . $badge . '">' . $label . '</span>';
+            })
             ->addColumn('action', function(Admin $item) {
                 return view('dashboard.pages.partners.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'email', 'national_id', 'action'])
+            ->rawColumns(['id', 'name', 'email', 'national_id', 'commercial_register', 'status', 'action'])
             ->make(true);
     }
 
@@ -114,6 +184,38 @@ class PartnerController extends Controller
         // dd($admin);
         Toastr::success(TranslationHelper::translate('New Partner Created Successfully'));
         return redirect()->route('admin.partners.index');
+    }
+
+    /**
+     * Read-only details page for a single partner (linked from the "view"
+     * icon in the partners table).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function show($id)
+    {
+        $this->authorizable('view partners');
+        $admin = Admin::with('user')->findorfail($id);
+
+        return view('dashboard.pages.partners.show', compact(['admin']));
+    }
+
+    /**
+     * Toggle the partner's active status. Partners are "Admin" records with
+     * no "is_active" column of their own — the status shown/toggled is
+     * actually the linked User record's (created alongside the Admin in
+     * store(), via admin.user_id).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function active_toogler($id)
+    {
+        $this->authorizable('edit partner');
+        $admin = Admin::findorfail($id);
+        $user = User::findorfail($admin->user_id);
+        $this->trait_active_toogler($user);
     }
 
     /**

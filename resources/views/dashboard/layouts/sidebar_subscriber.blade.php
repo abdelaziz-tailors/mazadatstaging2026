@@ -3,53 +3,76 @@
         <div id="sidebar-menu" class="sidebar-menu">
             <ul>
                 <li class="menu-title">
-                    <span>{{ TranslationHelper::translate('subscriber_dashboard') }}</span>
+                    <span>{{ TranslationHelper::translate('subscriber_main_menu') }}</span>
                 </li>
+
                 <li class="{{ Request::is(app()->getLocale() . '/admin') ? 'active' : '' }}">
                     <a href="{{ route('admin.dashboard.index') }}">
-                        <i class="fe fe-home"></i> <span>{{ TranslationHelper::translate('dashboard') }}</span>
+                        <i class="fa-solid fa-house"></i>
+                        <span>{{ TranslationHelper::translate('dashboard') }}</span>
                     </a>
                 </li>
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin/videos/create') ? 'active' : '' }}">
                     <a href="{{ route('admin.videos.create') }}">
-                        <i class="fe fe-plus-circle"></i>
+                        <i class="fa-solid fa-circle-plus"></i>
                         <span>{{ TranslationHelper::translate('new Auction') }}</span>
                     </a>
                 </li>
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin/videos') && ! request('archive') ? 'active' : '' }}">
                     <a href="{{ route('admin.videos.index') }}">
-                        <i class="fe fe-video"></i>
-                        <span>{{ TranslationHelper::translate('Auctions') }}</span>
-                    </a>
-                </li>
-
-                {{-- <li class="{{ request('archive') ? 'active' : '' }}">
-                    <a href="{{ route('admin.videos.index', ['archive' => 1]) }}">
-                        <i class="fe fe-archive"></i>
-                        <span>{{ TranslationHelper::translate('subscriber_dashboard_archive') }}</span>
-                    </a>
-                </li> --}}
-
-                <li class="{{ Request::is(app()->getLocale() . '/admin/orders*') ? 'active' : '' }}">
-                    <a href="{{ route('admin.orders.index') }}">
-                        <i class="fe fe-shopping-cart"></i>
-                        <span>{{ TranslationHelper::translate('subscriber_dashboard_orders_payments') }}</span>
+                        <i class="fa-solid fa-gavel"></i>
+                        <span>{{ TranslationHelper::translate('subscriber_my_auctions') }}</span>
                     </a>
                 </li>
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin/seller-submissions*') ? 'active' : '' }}">
                     <a href="{{ route('admin.seller-submissions.index') }}">
-                        <i class="fe fe-document"></i>
-                        <span>{{ TranslationHelper::translate('seller_submissions') }}</span>
+                        <i class="fa-solid fa-file-signature"></i>
+                        <span>{{ TranslationHelper::translate('subscriber_piece_offer_requests') }}</span>
+                    </a>
+                </li>
+
+                <li class="{{ Request::is(app()->getLocale() . '/admin/orders*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.orders.index') }}">
+                        <i class="fa-solid fa-cart-shopping"></i>
+                        <span>{{ TranslationHelper::translate('subscriber_dashboard_orders_payments') }}</span>
+                    </a>
+                </li>
+
+                <li class="{{ Request::is(app()->getLocale() . '/admin/partner-finance/invoices*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.partner-finance.invoices') }}">
+                        <i class="fa-solid fa-file-invoice"></i>
+                        <span>{{ TranslationHelper::translate('subscriber_invoices') }}</span>
                     </a>
                 </li>
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin/item-services*') ? 'active' : '' }}">
                     <a href="{{ route('admin.item-services.index') }}">
-                        <i class="fe fe-tool"></i>
+                        <i class="fa-solid fa-wrench"></i>
                         <span>{{ TranslationHelper::translate('item_services') }}</span>
+                    </a>
+                </li>
+
+                <li class="{{ Request::is(app()->getLocale() . '/admin/partner-finance/wallet*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.partner-finance.wallet') }}">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>{{ TranslationHelper::translate('subscriber_wallet') }}</span>
+                    </a>
+                </li>
+
+                <li class="{{ Request::is(app()->getLocale() . '/admin/profile*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.my-profile') }}">
+                        <i class="fa-solid fa-user"></i>
+                        <span>{{ TranslationHelper::translate('profile') }}</span>
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{{ route('admin.auth.logout') }}">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>{{ TranslationHelper::translate('logout') }}</span>
                     </a>
                 </li>
 

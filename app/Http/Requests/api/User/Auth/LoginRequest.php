@@ -29,6 +29,7 @@ class LoginRequest extends FormRequest
         return [
             'phone' => 'required',
             'password' => 'required',
+            'user_type' => 'required|in:buyer,vendor,buyer_vendor,seller',
         ];
     }
 
@@ -37,6 +38,8 @@ class LoginRequest extends FormRequest
         return [
             'phone.required' => TranslationHelper::translate('please Enter phone'),
             'password.required' => TranslationHelper::translate('please_enter_password'),
+            'user_type.required' => TranslationHelper::translate('please enter user type'),
+            'user_type.in' => TranslationHelper::translate('please enter user  type (buyer, vendor, buyer_vendor, seller)'),
         ];
     }
 

@@ -1,24 +1,22 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-{{--        @if (Auth::guard('admin')->user()->can('edit category'))--}}
-            <a class="dropdown-item" href="{{ route('admin.categories.edit', $item->id) }}">
-                <i class="fas fa-edit"></i> {{ TranslationHelper::translate('edit') }}
-            </a>
-{{--        @endif--}}
+<div class="d-flex align-items-center gap-2">
+    <a class="md-icon-btn" href="{{ route('admin.categories.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+        <i class="fas fa-pen"></i>
+    </a>
 
-{{--    @if (Auth::guard('admin')->user()->can('delete category'))--}}
-        <a class="dropdown-item" href="#deleteCountryModal-{{ $item->id }}" data-bs-toggle="modal">
-          <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
-        </a>
-{{--    @endif--}}
+    <div class="dropdown">
+        <button type="button" class="md-icon-btn" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-vertical"></i>
+        </button>
+        <div class="dropdown-menu">
+            <a class="dropdown-item" href="#deleteCountryModal-{{ $item->id }}" data-bs-toggle="modal">
+                <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
+            </a>
+        </div>
+    </div>
 </div>
 
-{{--@if (Auth::guard('admin')->user()->can('delete package'))--}}
-  <!-- Modal -->
-  <div class="modal fade" id="deleteCountryModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+<!-- Modal -->
+<div class="modal fade" id="deleteCountryModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -35,5 +33,4 @@
         </div>
       </div>
     </div>
-  </div>
-{{--@endif--}}
+</div>

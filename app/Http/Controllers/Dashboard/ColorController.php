@@ -28,17 +28,25 @@ class ColorController extends Controller
 
     // get index data by ajax
     public function get_data ( Request $request) {
-        $packages = Color::select('id','name->'.app()->getLocale().' as name', 'is_active');
+        $packages = Color::select('id','name->'.app()->getLocale().' as name', 'is_active', 'color', 'created_at');
         return Datatables::of($packages)
             ->editColumn('is_active', function(Color $item) {
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.colors.active_toogler', $item->id)]);
             })
+            ->editColumn('color', function(Color $item) {
+                return $item->color
+                    ? '<span class="d-inline-block" style="width: 20px; height: 20px; border-radius: 50%; background-color: '.e($item->color).'; border: 1px solid var(--md-border-soft, #ddd);" title="'.e($item->color).'"></span>'
+                    : '-';
+            })
+            ->editColumn('created_at', function(Color $item) {
+                return optional($item->created_at)->format('Y-m-d');
+            })
             ->addColumn('action', function(Color $item) {
                 return view('dashboard.pages.colors.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name','action'])
+            ->rawColumns(['id', 'name', 'color', 'action'])
             ->make(true);
     }
 

@@ -40,7 +40,7 @@
                     <input type="file" name="image" id="image" class="form-control" />
                 </div>
                 <div class="col-lg-1 form-group">
-                    <img src="{{ Storage::disk('public')->url(Auth::guard('admin')->user()->image) }}" alt="{{ Auth::guard('admin')->user()->name }}" class="avatar-img rounded-circle img-fluid" />
+                    @include('dashboard.partials.avatar', ['path' => Auth::guard('admin')->user()->image, 'name' => Auth::guard('admin')->user()->name, 'size' => 64])
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">{{ TranslationHelper::translate('save') }}</button>

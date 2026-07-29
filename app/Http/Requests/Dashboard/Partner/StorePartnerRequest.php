@@ -18,6 +18,23 @@ class StorePartnerRequest extends FormRequest
     }
 
     /**
+     * The form only collects the 9-digit local mobile number (matching the
+     * "5X XXX XXXX" placeholder next to a fixed "+966" badge in the UI) —
+     * normalize it to the same "+966XXXXXXXXX" format already used by every
+     * other phone value in the users/admins tables before validating. Same
+     * convention as App\Http\Requests\Dashboard\Vendor\StoreVendorRequest.
+     */
+    protected function prepareForValidation()
+    {
+        if ($this->filled('phone')) {
+            $digits = preg_replace('/\D/', '', $this->phone);
+            $digits = ltrim($digits, '0');
+
+            $this->merge(['phone' => '+966'.$digits]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array
@@ -28,7 +45,7 @@ class StorePartnerRequest extends FormRequest
             'name' => 'required',
             'email' => 'required|email|unique:admins,email,NULL,id,deleted_at,NULL',
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
-            'phone' => 'required',
+            'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/'],
             'commercial_register' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'national_id' => 'nullable|string|max:32',
             'password' => 'required|min:6',
@@ -50,6 +67,7 @@ class StorePartnerRequest extends FormRequest
             'email.email' => TranslationHelper::translate('Please Enter Valid Partner E-mail Address'),
             'email.unique' => TranslationHelper::translate('E-mail Address Registered For Another Admin'),
             'phone.required' => TranslationHelper::translate('Please Enter Partner Phone'),
+            'phone.regex' => TranslationHelper::translate('please_enter_valid_phone_with_country_code'),
             'role_id.required' => TranslationHelper::translate('Please Choose Partner Role'),
             'password.required' => TranslationHelper::translate('Please Enter Partner Account Password'),
             'password.min' => TranslationHelper::translate('Please Enter Partner Account Password'),

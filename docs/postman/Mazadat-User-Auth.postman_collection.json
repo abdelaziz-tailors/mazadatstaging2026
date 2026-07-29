@@ -1,0 +1,1322 @@
+{
+	"info": {
+		"name": "Mazadat - User API",
+		"description": "User-facing endpoints: authentication (login by phone or email + password), home-screen auction search/filter, wallet balance, invoice PDF download, and notifications. See docs/api/user-login.md, docs/api/auctions-search-filter.md, docs/api/invoice-pdf-download.md and docs/api/notifications.md for full field/response documentation. Also see docs/api/my-auctions-sales.md for the organizer auctions/sales field. Also see docs/api/user-package-subscription.md for the subscription status/renew endpoints.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://mazadat.anaamworld.com.sa/api"
+		},
+		{
+			"key": "api_key",
+			"value": ""
+		},
+		{
+			"key": "token",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "Login",
+			"item": [
+				{
+					"name": "Login with phone",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"0555555555\",\n  \"password\": \"secret123\",\n  \"user_type\": \"buyer\"\n}"
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const body = pm.response.json();",
+									"    if (body.success && body.data && body.data.token) {",
+									"        pm.collectionVariables.set('token', body.data.token);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login with email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"user@example.com\",\n  \"password\": \"secret123\",\n  \"user_type\": \"buyer\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Login - vendor account",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"0555555555\",\n  \"password\": \"secret123\",\n  \"user_type\": \"vendor\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Login - account type mismatch (expect 422)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"0555555555\",\n  \"password\": \"secret123\",\n  \"user_type\": \"vendor\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Login - missing user_type (validation error)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"0555555555\",\n  \"password\": \"secret123\"\n}"
+						}
+					}
+				},
+				{
+					"name": "Login - wrong password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"login"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phone\": \"0555555555\",\n  \"password\": \"wrong-password\",\n  \"user_type\": \"buyer\"\n}"
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Home - Auctions",
+			"item": [
+				{
+					"name": "Search auctions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/search?q=إبل",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "إبل"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search auctions - missing q (validation error)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"search"
+							]
+						}
+					}
+				},
+				{
+					"name": "Filter auctions - inprogress (live now)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/filter?status=inprogress",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "inprogress"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Filter auctions - upcoming",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/filter?status=upcoming",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "upcoming"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Filter auctions - archive",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/filter?status=archive",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "archive"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Filter auctions - invalid status (validation error)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/home/auctions/filter?status=not_a_real_status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"home",
+								"auctions",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "not_a_real_status"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Profile - Balance",
+			"item": [
+				{
+					"name": "Get wallet balance / dues / active bids",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/balance",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"balance"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get wallet (balance, totals, cursor-paginated transactions)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/wallet?per_page=15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"wallet"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "15",
+									"description": "Optional, 1-100, defaults to 15."
+								},
+								{
+									"key": "cursor",
+									"value": "",
+									"description": "Optional. Pass the previous response's data.pagination.next_cursor to fetch the next page.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Requires auth (Bearer token). Returns:\n- `data.balance`: the user's real, current wallet balance (User.wallet_balance).\n- `data.total_deposits`: real SUM() of every wallet_transactions row for this user with a positive amount, across their entire history.\n- `data.total_withdrawals`: real SUM() of the absolute value of every row with a negative amount, across their entire history.\n- `data.transactions`: cursor-paginated list (newest first), each with `id`, `type` (buyer_debit/seller_credit/partner_credit/adjustment), `amount` (signed), `balance_after`, `description`, `order_number` (nullable), `created_at`.\n- `data.pagination`: `per_page`, `next_cursor` (pass back as the `cursor` query param to page forward, null on the last page), `prev_cursor`, `has_more_pages`.\n\nCursor pagination (not offset-based) is used specifically for performance on long transaction histories."
+					}
+				}
+			]
+		},
+		{
+			"name": "Partners",
+			"item": [
+				{
+					"name": "List partners (with active_auctions_count)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/partners",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"partners"
+							]
+						},
+						"description": "Public endpoint (no auth required), paginated (10 per page). Each partner in `data` includes `active_auctions_count` (integer) — the number of that partner's own auctions currently live right now (`live_videos.status = 'start'`, matching the LiveVideo.user_id owned by this partner). 0 if none are live at the moment; always a real, live-computed count, never cached or hardcoded."
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoice",
+			"item": [
+				{
+					"name": "Download invoice PDF",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/auction/user-invoice/1/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"auction",
+								"user-invoice",
+								"1",
+								"pdf"
+							]
+						}
+					}
+				},
+				{
+					"name": "Download invoice PDF - order not found / not yours",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/auction/user-invoice/999999/pdf",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"auction",
+								"user-invoice",
+								"999999",
+								"pdf"
+							]
+						}
+					}
+				},
+				{
+					"name": "Seller invoice list (with pdf_url per invoice)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/auction/seller-invoice-list",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"auction",
+								"seller-invoice-list"
+							]
+						}
+					}
+				},
+				{
+					"name": "Download seller invoice PDF (use the pdf_url from the list response as-is)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "No headers needed — this route is public, protected by a signed URL (seller_id/expires/signature query params) valid for 24 hours, not by Authorization. Paste the full pdf_url returned by \"Seller invoice list\" here; do not build this URL by hand.",
+						"url": {
+							"raw": "{{base_url}}/user/auction/seller-invoice/1/pdf?seller_id=108&expires=1783670400&signature=REPLACE_WITH_REAL_SIGNATURE_FROM_LIST_RESPONSE",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"auction",
+								"seller-invoice",
+								"1",
+								"pdf"
+							],
+							"query": [
+								{
+									"key": "seller_id",
+									"value": "108"
+								},
+								{
+									"key": "expires",
+									"value": "1783670400"
+								},
+								{
+									"key": "signature",
+									"value": "REPLACE_WITH_REAL_SIGNATURE_FROM_LIST_RESPONSE"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Download seller invoice PDF - invalid/tampered signature",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"description": "Same URL as above with the signature deliberately wrong — expect 403 (Laravel's signed-route validation), not \"invoice not found\".",
+						"url": {
+							"raw": "{{base_url}}/user/auction/seller-invoice/1/pdf?seller_id=108&expires=1783670400&signature=invalid",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"auction",
+								"seller-invoice",
+								"1",
+								"pdf"
+							],
+							"query": [
+								{
+									"key": "seller_id",
+									"value": "108"
+								},
+								{
+									"key": "expires",
+									"value": "1783670400"
+								},
+								{
+									"key": "signature",
+									"value": "invalid"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "List notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/notifications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"notifications"
+							]
+						}
+					}
+				},
+				{
+					"name": "Unread count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/notifications/unread-count",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"notifications",
+								"unread-count"
+							]
+						}
+					}
+				},
+				{
+					"name": "Mark one as read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/notifications/1/mark-read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"notifications",
+								"1",
+								"mark-read"
+							]
+						}
+					}
+				},
+				{
+					"name": "Mark all as read",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/notifications/mark-all-read",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"notifications",
+								"mark-all-read"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Organizer - My Auctions",
+			"item": [
+				{
+					"name": "My auctions (with sales)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/live/my-list",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"live",
+								"my-list"
+							]
+						}
+					}
+				},
+				{
+					"name": "My auctions - status inprogress (live now)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/live/my-list?status=inprogress",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"live",
+								"my-list"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "inprogress"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "My auctions - status upcoming",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/live/my-list?status=upcoming",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"live",
+								"my-list"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "upcoming"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "My auctions - status archive (ended)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/live/my-list?status=archive",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"live",
+								"my-list"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "archive"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "My auctions - invalid status (validation error)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/live/my-list?status=not_a_real_status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"live",
+								"my-list"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "not_a_real_status"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Auction Subscription",
+			"item": [
+				{
+					"name": "Get plans",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/subscription-plans",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription-plans"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get my subscription status (expiry + package features)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/subscription-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription-status"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get subscription history",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/subscription-history",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription-history"
+							]
+						}
+					}
+				},
+				{
+					"name": "Subscribe",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "package_id",
+									"value": "3",
+									"type": "text"
+								},
+								{
+									"key": "subscription_type",
+									"value": "annual",
+									"type": "text"
+								},
+								{
+									"key": "transaction_image",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/user/auction-subscription",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription"
+							]
+						}
+					}
+				},
+				{
+					"name": "Renew (same plan)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{base_url}}/user/subscription/renew",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription",
+								"renew"
+							]
+						}
+					}
+				},
+				{
+					"name": "Renew (switch plan)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "package_id",
+									"value": "5",
+									"type": "text"
+								},
+								{
+									"key": "subscription_type",
+									"value": "monthly",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/user/subscription/renew",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"subscription",
+								"renew"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Organizer - Stats",
+			"item": [
+				{
+					"name": "Get organizer dashboard stats (buyers, pending commissions, monthly profit)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/organizer-stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"organizer-stats"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get organizer dashboard stats - non-organizer account (expect 403)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "{{api_key}}"
+							},
+							{
+								"key": "Accept-Language",
+								"value": "ar"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{buyer_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/user/organizer-stats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"user",
+								"organizer-stats"
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

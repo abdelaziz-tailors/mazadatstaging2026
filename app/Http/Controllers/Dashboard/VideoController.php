@@ -67,18 +67,45 @@ class VideoController extends Controller
             ->addColumn('buyer', function(LiveVideo $item) {
                 return $item->user_auction->name ?? '';
             })
-            ->addColumn('auction_time', function(LiveVideo $item) {
-                return date('Y-m-d',strtotime($item->date_start_at));
+            ->addColumn('start_at', function(LiveVideo $item) {
+                return $this->formatAuctionDateTime($item->date_start_at, $item->time_start_at);
+            })
 
+            ->addColumn('end_at', function(LiveVideo $item) {
+                return $this->formatAuctionDateTime($item->date_end_at, $item->time_end_at);
             })
 
             ->addColumn('action', function(LiveVideo $item) {
                 return view('dashboard.pages.videos.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'phone','email', 'status', 'action'])
+            ->rawColumns(['id', 'name', 'phone','email', 'status', 'start_at', 'end_at', 'action'])
             ->startsWithSearch()
             -> make(true);
+    }
+
+    /**
+     * date_start_at/date_end_at and time_start_at/time_end_at are stored as
+     * separate date/time columns — combined here for display as a two-line
+     * cell: the date, then the time with Arabic ص/م (rather than PHP's
+     * un-localized AM/PM).
+     */
+    private function formatAuctionDateTime(?string $date, ?string $time): string
+    {
+        if (!$date) {
+            return '<span class="text-muted">—</span>';
+        }
+
+        $dateFormatted = e(\Carbon\Carbon::parse($date)->format('Y/m/d'));
+        $timeHtml = '';
+
+        if ($time) {
+            $parsedTime = \Carbon\Carbon::parse($time);
+            $meridiem = $parsedTime->format('A') === 'AM' ? 'ص' : 'م';
+            $timeHtml = '<small class="text-muted d-block">' . e($parsedTime->format('h:i')) . ' ' . $meridiem . '</small>';
+        }
+
+        return '<div>' . $dateFormatted . '</div>' . $timeHtml;
     }
     function show($id){
         $video = LiveVideo::findOrFail($id);

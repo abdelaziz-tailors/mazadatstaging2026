@@ -60,6 +60,7 @@ class MyLiveVideoResource extends JsonResource
             'terms_conditions_en' => $this->terms_conditions ??'',
             'terms_conditions_ar' => $this->terms_conditions_ar ??'',
             'city'=> New CitiesResource($this->city),
+            'sales' => $this->totalSales(),
             'views_count'=>count($this->all_views),
             'video_type'=>$this['type'],
             'partners_type'=>$this['partners_type'],

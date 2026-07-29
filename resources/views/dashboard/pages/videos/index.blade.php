@@ -33,14 +33,15 @@
 
         <!--begin::Table-->
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>{{ TranslationHelper::translate('Auctions Title') }}</th>
                         <th>{{ TranslationHelper::translate('User') }}</th>
                         <th>{{ TranslationHelper::translate('Status') }}</th>
-                        <th>{{ TranslationHelper::translate('Auction time') }}</th>
+                        <th>{{ TranslationHelper::translate('date_start') }}</th>
+                        <th>{{ TranslationHelper::translate('date_end') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
 
                     </tr>
@@ -83,7 +84,8 @@
             {data: 'title', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'user_name', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
             {data: 'status', 'searchable': false, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'auction_time', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'start_at', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
+            {data: 'end_at', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
             {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
 
         ],

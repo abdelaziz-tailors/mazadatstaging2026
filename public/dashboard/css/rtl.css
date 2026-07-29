@@ -24,6 +24,25 @@ body, h1, h2, h3, h4, h5, h6 {
 .user-menu {
     float: left;
 }
+/* header-left/toggle_btn float right in RTL (above) and .user-menu floats
+   left — the search box needs to flip the same way, floating right next to
+   the logo/toggle side instead of the LTR-default left, or it would collide
+   with .user-menu on the same side.
+   NOTE: theme.css (which sets the LTR-default "float: left") loads AFTER
+   this file in the <head> (see dashboard/layouts/app.blade.php), so a
+   same-specificity rule here would silently lose to it regardless of
+   locale. The extra "body" ancestor bumps specificity just enough to win
+   deterministically without needing !important. */
+body .md-header-search {
+    float: right;
+    margin-inline-start: 0;
+    margin-inline-end: 20px;
+}
+@media (max-width: 767px) {
+    body .md-header-search {
+        margin-inline-end: 8px;
+    }
+}
 .sidebar {
     left: auto;
     right: 0;
@@ -83,6 +102,13 @@ body, h1, h2, h3, h4, h5, h6 {
     .sidebar {
         margin-left: 0;
         margin-right: -225px;
+    }
+    /* custom.css's ".slide-nav .sidebar" open rule only resets margin-left
+       (an LTR leftover) — in RTL the sidebar is offset with margin-right
+       above, so opening it needs the matching margin-right override here,
+       otherwise the overlay shows but the sidebar itself never slides in. */
+    .slide-nav .sidebar {
+        margin-right: 0;
     }
     .page-wrapper {
         margin-right: 0;

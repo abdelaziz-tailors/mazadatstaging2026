@@ -82,6 +82,7 @@ class VerifyAccountController extends Controller
                 'phone' => $pendingRegistration->phone,
                 'user_name' => $pendingRegistration->user_name,
                 'user_type' => $pendingRegistration->user_type ?? 'buyer',
+                'city_id' => $pendingRegistration->city_id,
                 'commercial_register' => $pendingRegistration->commercial_register,
                 'password' => $pendingRegistration->password,
                 'is_verified' => true,

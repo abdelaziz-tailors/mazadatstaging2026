@@ -1,15 +1,19 @@
-<div class="btn-group">
-        <a class="dropdown-item" href="{{ route('admin.vendors.edit', $item->id) }}">
-            <i style="color: #2196f3" class="fas fa-edit"></i>
-        </a>
+<div class="d-flex align-items-center gap-2">
+    <a class="md-icon-btn" href="{{ route('admin.vendors.show', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+        <i class="fas fa-eye"></i>
+    </a>
 
-        <div class="dropdown-divider"></div>
-        <a class="dropdown-item" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
-            <i style="color: #e42f2f" class="fas fa-trash"></i>
-        </a>
+    <a class="md-icon-btn" href="{{ route('admin.vendors.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+        <i class="fas fa-pen"></i>
+    </a>
+
+    <a class="md-icon-btn md-icon-btn-danger" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('delete') }}">
+        <i class="fas fa-trash"></i>
+    </a>
 </div>
-  <!-- Modal -->
-  <div class="modal fade" id="deleteModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+
+<!-- Modal -->
+<div class="modal fade" id="deleteModal-{{ $item->id }}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -26,4 +30,4 @@
         </div>
       </div>
     </div>
-  </div>
+</div>

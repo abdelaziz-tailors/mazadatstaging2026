@@ -407,6 +407,15 @@ class LiveVideoController extends Controller
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
     }
 
+    /**
+     * The caller's own auctions, optionally filtered into one of three
+     * status buckets — "upcoming", "inprogress" (live now), or "archive"
+     * (ended) — matching the exact same bucket semantics already used by
+     * the public AuctionSearchController::filter() endpoint:
+     * - inprogress: status = 'start'
+     * - archive: status = 'end'
+     * - upcoming: status is null or anything other than 'start'/'end'
+     */
     public function myList(Request $request): JsonResponse
     {
         if (!auth('api')->user()) {
@@ -414,10 +423,32 @@ class LiveVideoController extends Controller
         }
 
         if ($request->has('status')) {
-            $data = LiveVideo::where('user_id', auth('api')->user()->id)->where('status', $request->status)->get();
-        } else {
-            $data = LiveVideo::where('user_id', auth('api')->user()->id)->get();
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'status' => 'in:inprogress,upcoming,archive',
+            ], [
+                'status.in' => TranslationHelper::translate('please choose a valid status (inprogress, upcoming, archive)'),
+            ]);
+
+            if ($validator->fails()) {
+                return $this->failed_response($validator->errors()->first());
+            }
         }
+
+        $data = LiveVideo::query()
+            ->where('user_id', auth('api')->user()->id)
+            ->when($request->status === 'inprogress', function ($query) {
+                $query->where('status', 'start');
+            })
+            ->when($request->status === 'archive', function ($query) {
+                $query->where('status', 'end');
+            })
+            ->when($request->status === 'upcoming', function ($query) {
+                $query->where(function ($q) {
+                    $q->whereNull('status')->orWhereNotIn('status', ['start', 'end']);
+                });
+            })
+            ->get();
+
         $data = MyLiveVideoResource::collection($data);
 
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);

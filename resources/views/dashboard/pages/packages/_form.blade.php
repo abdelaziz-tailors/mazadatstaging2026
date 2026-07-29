@@ -4,10 +4,12 @@
         @php
             $names = json_decode($packages->name, true);
             $description = json_decode($packages->description, true);
+            $features = json_decode($packages->features, true);
         @endphp
     @else
         @php $names = []; @endphp
         @php $description = []; @endphp
+        @php $features = []; @endphp
         @php $instructions = []; @endphp
     @endif
     <div class="col-12 d-flex">
@@ -51,6 +53,11 @@
                     {!! Form::label('description[ar]', TranslationHelper::translate('Description', 'ar'), ['class'=>'form-label']) !!}
                     {!! Form::textarea('description[ar]', (is_array($description) && array_key_exists('ar', $description)) ? $description['ar'] : NULL, ['class' => 'form-control']) !!}
                 </div>
+                <div class="col-lg-12 form-group">
+                    {!! Form::label('features_text', TranslationHelper::translate('package_features'), ['class'=>'form-label']) !!}
+                    <small class="form-text text-muted d-block mb-1">{{ TranslationHelper::translate('one_feature_per_line') }}</small>
+                    {!! Form::textarea('features_text', (is_array($features) && array_key_exists('ar', $features)) ? implode("\n", $features['ar']) : NULL, ['class' => 'form-control', 'rows' => 6]) !!}
+                </div>
                 <div class="row">
 
 
@@ -66,10 +73,10 @@
                         {!! Form::number('price', isset($packages) ? $packages->price : NULL, ['class' => 'form-control', 'step' => '0.01']) !!}
                     </div> --}}
 
-                    {{-- <div class="col-lg-6 form-group">
+                    <div class="col-lg-6 form-group">
                         {!! Form::label('subscription_type', TranslationHelper::translate('Subscription Type'), ['class'=>'form-label']) !!}
                         {!! Form::select('subscription_type', ['' => TranslationHelper::translate('Select Type'), 'monthly' => TranslationHelper::translate('Monthly'), 'annual' => TranslationHelper::translate('Annual')], isset($packages) ? $packages->subscription_type : NULL, ['class' => 'form-control']) !!}
-                    </div> --}}
+                    </div>
 
                     <div class="col-lg-6 form-group">
                         {!! Form::label('auctions_limit', TranslationHelper::translate('Auctions Limit'), ['class'=>'form-label']) !!}

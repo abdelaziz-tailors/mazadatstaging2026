@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Dashboard\Name\StoreNameRequest;
-use App\Http\Requests\Dashboard\Name\UpdateNameRequest;
+use App\Http\Requests\Dashboard\ItemService\StoreItemServiceRequest;
+use App\Http\Requests\Dashboard\ItemService\UpdateItemServiceRequest;
 use App\Models\Admin;
 use App\Models\ItemService;
 use App\Support\PartnerDashboardScope;
@@ -70,7 +70,7 @@ class ItemServiceController extends Controller
         return view('dashboard.pages.item-services.create', $this->formContext());
     }
 
-    public function store(StoreNameRequest $request)
+    public function store(StoreItemServiceRequest $request)
     {
         $adminId = $this->resolveOwnerAdminId($request);
 
@@ -98,7 +98,7 @@ class ItemServiceController extends Controller
         ));
     }
 
-    public function update(UpdateNameRequest $request, $id)
+    public function update(UpdateItemServiceRequest $request, $id)
     {
         $data = ItemService::findOrFail($id);
         PartnerDashboardScope::ensureOwnItemService($data);

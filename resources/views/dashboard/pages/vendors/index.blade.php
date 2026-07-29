@@ -6,15 +6,6 @@
 <!--begin::Page Vendor Stylesheets(used by this page)-->
 <link href="{{asset('dashboard/plugins/datatables/datatables.min.css')}}" rel="stylesheet" type="text/css"/>
 <!--end::Page Vendor Stylesheets-->
-    <style>
-
-        .dt-buttons{
-            margin-top: -166px;
-            z-index: 100000;
-            position: absolute;
-            left: 868px;
-        }
-    </style>
 @endpush
 
 
@@ -43,76 +34,76 @@
         </div>
     </div>
 </div>
-<div class="card">
+
+@include('dashboard.partials.stat-row', ['cards' => [
+    [
+        'icon' => 'fa-solid fa-building',
+        'value' => $stats['new_this_month'],
+        'label' => TranslationHelper::translate('new_this_month'),
+        'color' => 'purple',
+        'trend' => ['direction' => $stats['new_this_month_trend_direction'], 'text' => $stats['new_this_month_trend_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-xmark',
+        'value' => $stats['inactive'],
+        'label' => TranslationHelper::translate('inactive_vendors'),
+        'color' => 'danger',
+        'trend' => ['direction' => 'down', 'text' => $stats['inactive_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-circle-check',
+        'value' => $stats['active'],
+        'label' => TranslationHelper::translate('active_vendors'),
+        'color' => 'success',
+        'trend' => ['direction' => 'up', 'text' => $stats['active_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-store',
+        'value' => $stats['total'],
+        'label' => TranslationHelper::translate('total_vendors'),
+        'color' => 'primary',
+        'trend' => ['direction' => $stats['total_trend_direction'], 'text' => $stats['total_trend_pct'] . '%'],
+    ],
+]])
+
+<div class="card md-wide-search">
 
     <div class="card-body">
-        <div class="row"style="margin-top:20px;margin-bottom:20px">
-            <div class="col-md-4">
+        <div class="row g-3 mb-3" id="vendorsFilterPanel">
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('User Name') }}</label>
+                <input type="text" id="filter_username" class="form-control form-control-sm">
             </div>
-            <div class="col-md-4">
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('Email') }}</label>
+                <input type="text" id="filter_email" class="form-control form-control-sm">
             </div>
-{{--            <div class="col-md-2" style="margin-right: -49px;--}}
-{{--    margin-left: 48px;">--}}
-{{--                <button class="btn btn-success"><i class="fa fa-table"></i>  {{ TranslationHelper::translate('Export as Excel ') }}</button>--}}
-{{--            </div>--}}
-{{--            <div class="col-md-2">--}}
-{{--                <button class="btn btn-danger"><i class="fa fa-file-pdf"></i>  {{ TranslationHelper::translate('Export as PDF ') }}</button>--}}
-{{--            </div>--}}
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('Status') }}</label>
+                <select id="filter_status" class="form-select form-select-sm">
+                    <option value="">{{ TranslationHelper::translate('all') }}</option>
+                    <option value="1">{{ TranslationHelper::translate('Active') }}</option>
+                    <option value="0">{{ TranslationHelper::translate('inactive') }}</option>
+                </select>
+            </div>
+            <div class="col-xl col-lg-4 col-md-6 col-12">
+                <label class="form-label small mb-1">{{ TranslationHelper::translate('from') }} - {{ TranslationHelper::translate('to') }}</label>
+                <div class="d-flex gap-1">
+                    <input type="date" id="filter_date_from" class="form-control form-control-sm">
+                    <input type="date" id="filter_date_to" class="form-control form-control-sm">
+                </div>
+            </div>
+            <div class="col-xl-auto col-lg-4 col-md-6 col-12 d-flex align-items-end">
+                <button type="button" id="filter_reset" class="btn btn-outline-secondary btn-sm w-100">
+                    <i class="fa-solid fa-rotate-right"></i> {{ TranslationHelper::translate('reset') }}
+                </button>
+            </div>
         </div>
-
-        <div class="row">
-{{--            <div class="col-md-3">--}}
-{{--                <div class="form-group">--}}
-{{--                    <label>{{ TranslationHelper::translate('Search By') }}--}}
-{{--                    </label>--}}
-{{--                    <select name="" id=""--}}
-{{--                            class="form-select form-control ">--}}
-{{--                        <option>{{ TranslationHelper::translate('Search By') }}</option>--}}
-{{--                        <option>{{ TranslationHelper::translate('Name') }}</option>--}}
-{{--                        <option>{{ TranslationHelper::translate('User Name') }}</option>--}}
-{{--                        <option>{{ TranslationHelper::translate('Age') }}</option>--}}
-{{--                    </select>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-{{--            <div class="col-md-4">--}}
-{{--                <div class="form-group">--}}
-{{--                    <label>{{ TranslationHelper::translate('Search') }}--}}
-{{--                    </label>--}}
-{{--                    <input type="text" class="form-control " placeholder="{{ TranslationHelper::translate('') }}" >--}}
-{{--                </div>--}}
-{{--            </div>--}}
-{{--            <div class="col-md-2">--}}
-{{--                <div class="form-group">--}}
-{{--                    <label>{{ TranslationHelper::translate('Status') }}--}}
-{{--                    </label>--}}
-{{--                    <select name="status" id="status"--}}
-{{--                            class="form-select form-control {{$errors->has('status')? 'is-invalid':''}}">--}}
-{{--                        <option {{old('status')==null ?'selected':''}} value="">{{ TranslationHelper::translate('Status') }}</option>--}}
-{{--                        <option--}}
-{{--                            value="2" {{old('status')=='2'?'selected':''}}>{{ TranslationHelper::translate('Active') }}</option>--}}
-{{--                        <option value="1" {{old('status')=='1'?'selected':''}}>{{ TranslationHelper::translate('Pending') }}</option>--}}
-{{--                    </select>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-
-{{--            <div class="col-md-1">--}}
-{{--                <div class="form-group">--}}
-{{--                    <label>--}}
-{{--                    </label>--}}
-{{--                    <br>--}}
-{{--                    <button class="btn btn-success"><i class="fa fa-search"></i>  </button>--}}
-{{--                </div>--}}
-{{--            </div>--}}
-        </div>
-
-    </div>
-
-
 
         <div class="table-responsive">
 
 
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th># </th>
@@ -153,6 +144,11 @@
             url : '{!! route("admin.vendors.getData") !!}',
             data: function (d) {
                 d.status = $('#status').val();
+                d.filter_username = $('#filter_username').val();
+                d.filter_email = $('#filter_email').val();
+                d.filter_status = $('#filter_status').val();
+                d.filter_date_from = $('#filter_date_from').val();
+                d.filter_date_to = $('#filter_date_to').val();
             },
             type: "POST",
             dataType: "JSON"
@@ -169,6 +165,7 @@
         ],
         language: {
             "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_vendors_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
             "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
             "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
@@ -180,18 +177,18 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex justify-content-between"<l><B><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>',
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f><B>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>',
         buttons: [
 
             {
                 extend:    'excel',
-                text:      '<i class="fa fa-table"></i>  Export as Excel  ',
+                text:      '<i class="fa fa-table"></i> {{ TranslationHelper::translate("export_as_excel_") }}',
                 titleAttr: 'Excel',
                 className: 'btn btn-success  btn-md mr-2 btn-excel'
             },
             {
                 extend:    'pdf',
-                text:      '<i class="fas fa-file-pdf"></i>  Export as  PDF',
+                text:      '<i class="fas fa-file-pdf"></i> {{ TranslationHelper::translate("export_as_pdf_") }}',
                 titleAttr: 'PDF',
                 className: 'btn btn-danger btn-md mr-2 btn-pdf'
             },
@@ -202,6 +199,18 @@
 
     });
     $('#status').on('keyup change', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+
+    $('#filter_username, #filter_email').on('keyup', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+    $('#filter_status, #filter_date_from, #filter_date_to').on('change', function () {
+        $('#data-table').DataTable().draw(true);
+    });
+    $('#filter_reset').on('click', function () {
+        $('#filter_username, #filter_email, #filter_date_from, #filter_date_to').val('');
+        $('#filter_status').val('');
         $('#data-table').DataTable().draw(true);
     });
 

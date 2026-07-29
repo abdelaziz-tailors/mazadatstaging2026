@@ -1,23 +1,37 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-        @if (Auth::guard('admin')->user()->can('edit partner'))
-            <a class="dropdown-item" href="{{ route('admin.partners.edit', $item->id) }}">
-            <i class="fas fa-edit"></i> {{ TranslationHelper::translate('edit') }}
-            </a>
-            <a class="dropdown-item" href="{{ route('admin.partners.change-password', $item->id) }}">
-            <i class="fas fa-key"></i> {{ TranslationHelper::translate('change_password') }}
-            </a>
-        @endif
+<div class="d-flex align-items-center gap-2">
+    @if (Auth::guard('admin')->user()->can('view partners'))
+        <a class="md-icon-btn" href="{{ route('admin.partners.show', $item->id) }}" title="{{ TranslationHelper::translate('view') }}">
+            <i class="fas fa-eye"></i>
+        </a>
+    @endif
 
-        @if (Auth::guard('admin')->user()->can('delete partner'))
-            <div class="dropdown-divider"></div>
-            <a class="dropdown-item" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
-            </a>
-        @endif
+    @if (Auth::guard('admin')->user()->can('edit partner'))
+        <a class="md-icon-btn" href="{{ route('admin.partners.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+            <i class="fas fa-pen"></i>
+        </a>
+    @endif
+
+    <div class="dropdown">
+        <button type="button" class="md-icon-btn" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-ellipsis-vertical"></i>
+        </button>
+        <div class="dropdown-menu">
+            @if (Auth::guard('admin')->user()->can('edit partner'))
+                <a class="dropdown-item" href="{{ route('admin.partners.change-password', $item->id) }}">
+                    <i class="fas fa-key"></i> {{ TranslationHelper::translate('change_password') }}
+                </a>
+                <a class="dropdown-item {{ ($item->user->is_active ?? false) ? 'text-danger' : '' }}" href="#" data-toggle-url="{{ route('admin.partners.active_toogler', $item->id) }}" onclick="event.preventDefault(); $.post(this.dataset.toggleUrl, {_token: '{{ csrf_token() }}'}).done(function(){ $('#data-table').DataTable().draw(false); });">
+                    <i class="fas fa-ban"></i>
+                    {{ ($item->user->is_active ?? false) ? TranslationHelper::translate('deactivate') : TranslationHelper::translate('activate') }}
+                </a>
+            @endif
+
+            @if (Auth::guard('admin')->user()->can('delete partner'))
+                <a class="dropdown-item text-danger" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
+                    <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
+                </a>
+            @endif
+        </div>
     </div>
 </div>
 

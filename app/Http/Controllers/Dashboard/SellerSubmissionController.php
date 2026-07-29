@@ -22,8 +22,37 @@ class SellerSubmissionController extends Controller
 
     public function index()
     {
+        $base = SellerSubmission::query();
+        PartnerDashboardScope::scopeSellerSubmissions($base);
+
+        $total = (clone $base)->count();
+        $approved = (clone $base)->where('status', 'approved')->count();
+        $rejected = (clone $base)->where('status', 'rejected')->count();
+        $underReview = (clone $base)->whereNotIn('status', ['approved', 'rejected'])->count();
+
+        $thisMonthCount = (clone $base)->whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+        $lastMonthCount = (clone $base)->whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+        if ($lastMonthCount > 0) {
+            $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => $total,
+            'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($totalTrendPct),
+            'approved' => $approved,
+            'approved_pct' => $total > 0 ? round($approved / $total * 100, 1) : 0,
+            'rejected' => $rejected,
+            'rejected_pct' => $total > 0 ? round($rejected / $total * 100, 1) : 0,
+            'under_review' => $underReview,
+            'under_review_pct' => $total > 0 ? round($underReview / $total * 100, 1) : 0,
+        ];
+
         return view('dashboard.pages.seller-submissions.index', [
             'isPartnerDashboard' => PartnerDashboardScope::isPartner(),
+            'stats' => $stats,
         ]);
     }
 
@@ -52,7 +81,7 @@ class SellerSubmissionController extends Controller
                     'needs edit' => 'warning',
                     default => 'secondary',
                 };
-                return '<span class="badge bg-' . $badge . '">' . $item->status . '</span>';
+                return '<span class="badge bg-' . $badge . '">' . TranslationHelper::translate($item->status) . '</span>';
             })
             ->editColumn('created_at', function (SellerSubmission $item) {
                 return Carbon::parse($item->created_at)->format('Y-m-d H:i');

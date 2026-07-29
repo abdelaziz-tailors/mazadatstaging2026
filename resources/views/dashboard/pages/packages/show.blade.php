@@ -1,98 +1,56 @@
 @extends('dashboard.layouts.app')
 
-@section('title') {{ TranslationHelper::translate($department->name) }} @endsection
+@php
+    $names = json_decode($packages->name, true);
+    $descriptions = json_decode($packages->description, true);
+    $name = (is_array($names) && array_key_exists('ar', $names)) ? $names['ar'] : ($packages->name ?? '');
+    $description = (is_array($descriptions) && array_key_exists('ar', $descriptions)) ? $descriptions['ar'] : null;
+@endphp
 
-@push('css')
-<!--begin::Page Vendor Stylesheets(used by this page)-->
-<link href="{{asset('dashboard/plugins/datatables/datatables.min.css')}}" rel="stylesheet" type="text/css"/>
-<!--end::Page Vendor Stylesheets-->
-@endpush
-
+@section('title') {{ $name }} @endsection
 
 @section('content')
-<div class="page-header">
-    <div class="row">
-        <div class="col">
-            <h3 class="page-title" >
-                {{ $department->name }}
-                @if(Auth::guard('admin')->user()->can('add category') &&
-                    ($department->slug != 'medical_store') && ($department->categories_count == 0)
-                )
-                    <a href='{{ route('admin.categories.create') }}?department_id={{ $department->id }}' class='btn btn-primary float-end'><i class="fas fa-plus"></i> {{ TranslationHelper::translate('New Category') }}</a>
-                @endif
-                @if(Auth::guard('admin')->user()->can('edit category'))
-                    <a href='{{ route('admin.departments.edit', $department->id) }}' class='btn btn-warning float-end mx-1'><i class="fas fa-edit"></i> {{ TranslationHelper::translate('Edit Department') }}</a>
-                @endif
-            </h3>
-            <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{route('admin.dashboard.index')}}">{{ TranslationHelper::translate('dashboard') }}</a></li>
-                <li class="breadcrumb-item"><a href="{{route('admin.departments.show', $department->id)}}">{{ $department->name }}</a></li>
-                <li class="breadcrumb-item active">{{ TranslationHelper::translate('Categories') }}</li>
-            </ul>
-        </div>
-    </div>
-</div>
+@include('dashboard.partials.page-header', [
+    'title' => $name,
+    'icon' => 'fa-solid fa-box',
+    'breadcrumbs' => [
+        ['label' => TranslationHelper::translate('Packages'), 'route' => route('admin.packages.index')],
+        ['label' => $name],
+    ],
+])
+
 <div class="card">
     <div class="card-body">
-        <!--begin::Table-->
-        <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>{{ TranslationHelper::translate('name') }}</th>
-                        <th>{{ TranslationHelper::translate('is_active') }}</th>
-                        <th>{{ TranslationHelper::translate('actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('name') }}</p>
+            <p class="col-sm-10">{{ $name ?: '-' }}</p>
         </div>
-        <!--end::Table-->
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('description') }}</p>
+            <p class="col-sm-10">{{ $description ?: '-' }}</p>
+        </div>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('subscription_type') }}</p>
+            <p class="col-sm-10">
+                {{ $packages->subscription_type ? TranslationHelper::translate($packages->subscription_type == 'monthly' ? 'Monthly' : 'Annual') : '-' }}
+            </p>
+        </div>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('auctions_limit') }}</p>
+            <p class="col-sm-10">{{ $packages->auctions_limit ?? '-' }}</p>
+        </div>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('monthly_price') }}</p>
+            <p class="col-sm-10">{{ $packages->monthly_price !== null ? number_format($packages->monthly_price, 2) : '-' }}</p>
+        </div>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('annual_price') }}</p>
+            <p class="col-sm-10">{{ $packages->annual_price !== null ? number_format($packages->annual_price, 2) : '-' }}</p>
+        </div>
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('Status') }}</p>
+            <p class="col-sm-10">{{ $packages->is_active ? TranslationHelper::translate('Active') : TranslationHelper::translate('Inactive') }}</p>
+        </div>
     </div>
-    <!--end::Card body-->
 </div>
-<!--end::Card-->
-
-@endsection
-
-@section('scripts_lib')
-<script src="{{asset('dashboard/plugins/datatables/datatables.min.js')}}"></script>
-<script>
-    $('#data-table').DataTable({
-        autoFill: true,
-        processing: true,
-        serverSide: true,
-        search: {
-            "caseInsensitive": true,
-            "smart": true
-        },
-        ajax: {
-            url : "{!! route('admin.categories.getData') !!}",
-            data: {department_id: {{ $department->id }}},
-            type: "POST",
-            dataType: "JSON"
-        },
-        columns: [
-            {data: 'id', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'name', 'searchable': true, 'orderable': true, 'exportable': true, 'printable': true},
-            {data: 'is_active', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false},
-            {data: 'action', 'searchable': false, 'orderable': false, 'exportable': false, 'printable': false}
-        ],
-        language: {
-            "search": "{{ TranslationHelper::translate('search') }}",
-            "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
-            "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
-            "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
-            "infoEmpty": "{{ TranslationHelper::translate('nothing_found') }}",
-            "infoFiltered": "({{ TranslationHelper::translate('filtered_from') }} _MAX_)",
-            "loadingRecords": "{{TranslationHelper::translate('loading')}}...",
-            "paginate": {
-                "previous": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-right'></i>" @else "<i class='fas fa-angle-left'></i>" @endif,
-                "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
-            }
-        },
-        dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
-    });
-</script>
 @endsection

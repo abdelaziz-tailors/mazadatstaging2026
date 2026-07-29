@@ -1,15 +1,11 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-        <a class="dropdown-item" href="{{ route('admin.item-services.edit', $item->id) }}">
-            <i class="fas fa-edit"></i> {{ TranslationHelper::translate('edit') }}
-        </a>
-        <a class="dropdown-item" href="#deleteItemServiceModal-{{ $item->id }}" data-bs-toggle="modal">
-            <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
-        </a>
-    </div>
+<div class="d-flex align-items-center gap-2">
+    <a class="md-icon-btn" href="{{ route('admin.item-services.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+        <i class="fas fa-pen"></i>
+    </a>
+
+    <a class="md-icon-btn md-icon-btn-danger" href="#deleteItemServiceModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('delete') }}">
+        <i class="fas fa-trash"></i>
+    </a>
 </div>
 
 <div class="modal fade" id="deleteItemServiceModal-{{ $item->id }}" tabindex="-1">

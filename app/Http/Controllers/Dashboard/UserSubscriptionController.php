@@ -27,7 +27,27 @@ class UserSubscriptionController extends Controller
     public function index()
     {
         // $this->authorizable('view user subscriptions');
-        return view('dashboard.pages.user-subscriptions.index');
+
+        $thisMonthCount = UserSubscription::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+        $lastMonthCount = UserSubscription::whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+        if ($lastMonthCount > 0) {
+            $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+        } else {
+            $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+        }
+
+        $stats = [
+            'total' => UserSubscription::count(),
+            'approved' => UserSubscription::where('status', 'approved')->count(),
+            // old records may predate the 'status' column, and are treated as
+            // pending elsewhere in this controller (see editColumn('status') below)
+            'pending' => UserSubscription::where('status', 'pending')->orWhereNull('status')->count(),
+            'rejected' => UserSubscription::where('status', 'rejected')->count(),
+            'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+            'total_trend_pct' => abs($totalTrendPct),
+        ];
+
+        return view('dashboard.pages.user-subscriptions.index', compact('stats'));
     }
 
     /**
@@ -35,19 +55,41 @@ class UserSubscriptionController extends Controller
      */
     public function get_data(Request $request)
     {
-        $subscriptions = UserSubscription::with(['user', 'package'])
+        $subscriptions = UserSubscription::with(['user'])
             ->select('user_subscriptions.*');
+
+        if ($request->filled('filter_user')) {
+            $userName = $request->filter_user;
+            $subscriptions->whereHas('user', function ($query) use ($userName) {
+                $query->where('name', 'like', '%'.$userName.'%');
+            });
+        }
+
+        if ($request->filled('filter_subscription_type')) {
+            $subscriptions->where('subscription_type', $request->filter_subscription_type);
+        }
+
+        if ($request->filled('filter_status')) {
+            if ($request->filter_status === 'pending') {
+                $subscriptions->where(function ($query) {
+                    $query->where('status', 'pending')->orWhereNull('status');
+                });
+            } else {
+                $subscriptions->where('status', $request->filter_status);
+            }
+        }
+
+        if ($request->filled('filter_date_from')) {
+            $subscriptions->whereDate('created_at', '>=', $request->filter_date_from);
+        }
+
+        if ($request->filled('filter_date_to')) {
+            $subscriptions->whereDate('created_at', '<=', $request->filter_date_to);
+        }
 
         return Datatables::of($subscriptions)
             ->editColumn('user_id', function(UserSubscription $item) {
                 return $item->user ? $item->user->name : '-';
-            })
-            ->editColumn('package_id', function(UserSubscription $item) {
-                if ($item->package) {
-                    $name = json_decode($item->package->name, true);
-                    return $name[app()->getLocale()] ?? '-';
-                }
-                return '-';
             })
             ->editColumn('subscription_type', function(UserSubscription $item) {
                 if ($item->subscription_type) {

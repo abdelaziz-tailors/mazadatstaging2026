@@ -19,10 +19,41 @@
     </div>
 </div>
 
+@include('dashboard.partials.stat-row', ['cards' => [
+    [
+        'icon' => 'fa-solid fa-circle-xmark',
+        'value' => $stats['rejected'],
+        'label' => TranslationHelper::translate('rejected_submissions'),
+        'color' => 'danger',
+        'trend' => ['direction' => 'down', 'text' => $stats['rejected_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-circle-check',
+        'value' => $stats['approved'],
+        'label' => TranslationHelper::translate('approved_submissions'),
+        'color' => 'success',
+        'trend' => ['direction' => 'up', 'text' => $stats['approved_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-clock',
+        'value' => $stats['under_review'],
+        'label' => TranslationHelper::translate('submissions_under_review'),
+        'color' => 'warning',
+        'trend' => ['direction' => 'up', 'text' => $stats['under_review_pct'] . '%'],
+    ],
+    [
+        'icon' => 'fa-solid fa-clipboard-list',
+        'value' => $stats['total'],
+        'label' => TranslationHelper::translate('total_submissions'),
+        'color' => 'primary',
+        'trend' => ['direction' => $stats['total_trend_direction'], 'text' => $stats['total_trend_pct'] . '%'],
+    ],
+]])
+
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                 <tr>
                     <th>#</th>
@@ -78,7 +109,22 @@
             dataType: "JSON"
         },
         order: [[0, 'desc']],
-        columns: @json($sellerSubmissionDtColumns)
+        columns: @json($sellerSubmissionDtColumns),
+        language: {
+            "search": "{{ TranslationHelper::translate('search') }}",
+            "searchPlaceholder": "{{ TranslationHelper::translate('search_seller_submissions_placeholder') }}",
+            "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",
+            "zeroRecords": "{{ TranslationHelper::translate('nothing_found') }}",
+            "info": "{{ TranslationHelper::translate('showing_page') }} _PAGE_ {{ TranslationHelper::translate('of') }} _PAGES_",
+            "infoEmpty": "{{ TranslationHelper::translate('nothing_found') }}",
+            "infoFiltered": "({{ TranslationHelper::translate('filtered_from') }} _MAX_)",
+            "loadingRecords": "{{ TranslationHelper::translate('loading') }}...",
+            "paginate": {
+                "previous": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-right'></i>" @else "<i class='fas fa-angle-left'></i>" @endif,
+                "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
+            }
+        },
+        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>'
     });
 </script>
 @endsection

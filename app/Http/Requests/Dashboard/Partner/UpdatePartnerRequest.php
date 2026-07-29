@@ -19,6 +19,21 @@ class UpdatePartnerRequest extends FormRequest
     }
 
     /**
+     * Same normalization as StorePartnerRequest — the shared partners._form
+     * partial only collects the 9-digit local number next to a fixed
+     * "+966" badge on both create and edit.
+     */
+    protected function prepareForValidation()
+    {
+        if ($this->filled('phone')) {
+            $digits = preg_replace('/\D/', '', $this->phone);
+            $digits = ltrim($digits, '0');
+
+            $this->merge(['phone' => '+966'.$digits]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array
@@ -33,7 +48,7 @@ class UpdatePartnerRequest extends FormRequest
             'name' => 'required',
             'email' => 'required|email|unique:admins,email,'.request()->route('partner').',id,deleted_at,NULL',
             'user_name' => 'required|string|unique:users,user_name,'.$admin->user_id,
-            'phone' => 'required',
+            'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/'],
             'commercial_register' => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'national_id' => 'nullable|string|max:32',
             'image' => 'nullable|mimes:png,jpg,jpeg',
@@ -54,6 +69,7 @@ class UpdatePartnerRequest extends FormRequest
             'email.email' => TranslationHelper::translate('Please Enter Valid Partner E-mail Address'),
             'email.unique' => TranslationHelper::translate('E-mail Address Registered For Another Admin'),
             'phone.required' => TranslationHelper::translate('Please Enter Partner Phone'),
+            'phone.regex' => TranslationHelper::translate('please_enter_valid_phone_with_country_code'),
             'commercial_register.mimes' => TranslationHelper::translate('please_add_valid_commercial_register'),
             'commercial_register.max' => TranslationHelper::translate('_commercial_register_max_size_10_mb_'),
             'role_id.required' => TranslationHelper::translate('Please Choose Partner Role'),

@@ -111,7 +111,7 @@
         <div class="table-responsive">
 
 
-            <table id="data-table" class="table table-striped">
+            <table id="data-table" class="table">
                 <thead>
                     <tr>
                         <th># </th>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Dashboard\User\StoreUserRequest;
 use App\Http\Requests\Dashboard\User\UpdateUserRequest;
 use App\Mail\ApproveEmail;
 use App\Mail\SupendedEmail;
@@ -35,19 +36,83 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $this->authorizable('view users');
-        return view('dashboard.pages.users.index',compact('request'));
+
+        if ($request->filled('user_type')) {
+            $base = User::where('user_type', $request->user_type);
+
+            $thisMonthCount = (clone $base)->whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+            $lastMonthCount = (clone $base)->whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+            if ($lastMonthCount > 0) {
+                $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+            } else {
+                $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+            }
+
+            $stats = [
+                'active' => (clone $base)->where('is_active', 1)->count(),
+                'inactive' => (clone $base)->where('is_active', 0)->count(),
+                'verified' => (clone $base)->where('is_verified', 1)->count(),
+                'total' => (clone $base)->count(),
+                'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+                'total_trend_pct' => abs($totalTrendPct),
+            ];
+        } else {
+            $buyers = User::where('user_type', 'buyer')->count();
+            $vendors = User::where('user_type', 'vendor')->count();
+            $sellers = User::where('user_type', 'seller')->count();
+            $total = User::count();
+
+            $thisMonthCount = User::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
+            $lastMonthCount = User::whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
+            if ($lastMonthCount > 0) {
+                $totalTrendPct = round((($thisMonthCount - $lastMonthCount) / $lastMonthCount) * 100, 1);
+            } else {
+                $totalTrendPct = $thisMonthCount > 0 ? 100.0 : 0.0;
+            }
+
+            $stats = [
+                'buyers' => $buyers,
+                'buyers_pct' => $total > 0 ? round($buyers / $total * 100, 1) : 0,
+                'vendors' => $vendors,
+                'vendors_pct' => $total > 0 ? round($vendors / $total * 100, 1) : 0,
+                'sellers' => $sellers,
+                'sellers_pct' => $total > 0 ? round($sellers / $total * 100, 1) : 0,
+                'total' => $total,
+                'total_trend_direction' => $totalTrendPct >= 0 ? 'up' : 'down',
+                'total_trend_pct' => abs($totalTrendPct),
+            ];
+        }
+
+        return view('dashboard.pages.users.index',compact('request', 'stats'));
     }
 
 
     // get index data by ajax
     public function get_data (Request $request) {
-        // dd($re/)
+        $providers = User::query();
+        if ($request->filled('user_type')) {
+            $providers->where('user_type', $request->user_type);
+        }
 
+        if ($request->filled('filter_username')) {
+            $providers->where('name', 'like', '%'.$request->filter_username.'%');
+        }
 
+        if ($request->filled('filter_email')) {
+            $providers->where('email', 'like', '%'.$request->filter_email.'%');
+        }
 
+        if ($request->filled('filter_status') && in_array($request->filter_status, ['1', '0'], true)) {
+            $providers->where('is_active', $request->filter_status);
+        }
 
-            $providers = User::where('user_type','buyer_vendor');
+        if ($request->filled('filter_date_from')) {
+            $providers->whereDate('created_at', '>=', $request->filter_date_from);
+        }
 
+        if ($request->filled('filter_date_to')) {
+            $providers->whereDate('created_at', '<=', $request->filter_date_to);
+        }
 
         return Datatables::of($providers)
 
@@ -73,9 +138,11 @@ class UserController extends Controller
             })
             ->editColumn('image', function(User $item) {
 
-                return view('dashboard.pages.users.image')
-                    ->with(['item' => $item]);
+                return view('dashboard.partials.avatar', ['path' => $item->image, 'name' => $item->name, 'size' => 40])->render();
 
+            })
+            ->addColumn('account_type', function(User $item) {
+                return $item->account_type ? TranslationHelper::translate($item->account_type) : '-';
             })
             ->editColumn('specialty', function(User $item) {
 
@@ -86,135 +153,51 @@ class UserController extends Controller
                 return view('dashboard.pages.users.actions')
                     ->with(['item' => $item]);
             })
-            ->rawColumns(['id', 'name', 'phone','email', 'status', 'action'])
+            ->rawColumns(['id', 'name', 'phone','email', 'status', 'action', 'image'])
             ->startsWithSearch()
             -> make(true);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new buyer. Admin-only entry point (the
+     * admin is the one accepting responsibility for the account, so unlike
+     * the public signup flow there's no terms-and-conditions checkbox here).
      *
      * @return \Illuminate\Contracts\View\View
      */
-//    public function create()
-//    {
-//        $this->authorizable('add provider');
-//        $countries = Country::select('id', 'name->'.app()->getLocale().' as name', 'image', 'phone_code')->where('is_active', 1)->get();
-//        $department = Department::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-//        $job= JobTitle::select('id', 'name->'.app()->getLocale().' as name')->where('type',0)->where('is_active', 1)->get();
-//        $job_bats= JobTitle::select('id', 'name->'.app()->getLocale().' as name')->where('type',2)->where('is_active', 1)->get();
-//        $city= City::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
-//        $contract_pdf = Contract::where('id', '93')->first();
-//        $contract_pdf=Storage::disk('public')->url($contract_pdf->pdf);
-//
-//        return view('dashboard.pages.providers.create', compact(['countries','department','job','city','contract_pdf','job_bats']));
-//    }
+    public function create()
+    {
+        $this->authorizable('add user');
+
+        $cities = City::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
+
+        return view('dashboard.pages.users.create', compact('cities'));
+    }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created buyer in storage.
      *
-     * @param  \App\Http\Requests\Dashboard\Admin\StoreProviderRequest  $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\RedirectResponse
      */
-//    public function store(StoreProviderRequest $request)
-//    {
-//
-//
-//        if($request->hasfile('clinic_photos')) {
-//
-//            foreach ($request->file('clinic_photos') as $image) {
-//                $name = 'clinic_photos/'.rand(11111, 99999) .'_'.$image->getClientOriginalName();
-//                $image->move(public_path('../storage/app/public/clinic_photos/'), $name);
-//                $data[] = $name;
-//            }
-//
-//        }else{
-//
-//            $data[]=null;
-//        }
-//        if (!empty($request->logo)){
-//
-//            $fileName = 'logo/'.rand(11111, 99999) .'_'.$request->logo->getClientOriginalName();
-//            $request->logo->move(public_path('../storage/app/public/logo/'), $fileName);
-//        }else{
-//            $fileName=null;
-//        }
-//        if (!empty($request->scientific_certificate_image)){
-//
-//            $Scientific_certificate_image = 'Scientific_certificate/'.rand(11111, 99999) .'_'.$request->scientific_certificate_image->getClientOriginalName();
-//            $request->scientific_certificate_image->move(public_path('../storage/app/public/Scientific_certificate/'), $Scientific_certificate_image);
-//        }else{
-//            $Scientific_certificate_image=null;
-//        }
-//        if (!empty($request->syndicate_image)){
-//
-//            $Syndicate_image = 'Syndicate_image/'.rand(11111, 99999) .'_'.$request->syndicate_image->getClientOriginalName();
-//            $request->syndicate_image->move(public_path('../storage/app/public/Syndicate_image/'), $Syndicate_image);
-//        }else{
-//            $Syndicate_image=null;
-//        }
-//
-//        if (!empty($request->contract)){
-//
-//            $contract = 'contract/'.rand(11111, 99999) .'_'.$request->contract->getClientOriginalName();
-//            $request->contract->move(public_path('../storage/app/public/contract/'), $contract);
-//        }else{
-//            $contract=null;
-//        }
-//
-//        if (!empty($request->doctor_image)){
-//
-//            $doctor_image = 'doctor_image/'.rand(11111, 99999) .'_'.$request->doctor_image->getClientOriginalName();
-//            $request->doctor_image->move(public_path('../storage/app/public/contract/'), $doctor_image);
-//        }else{
-//            $doctor_image=null;
-//        }
-//        if (!empty($request->license)){
-//
-//            $license = 'license/'.rand(11111, 99999) .'_'.$request->license->getClientOriginalName();
-//            $request->license->move(public_path('../storage/app/public/license/'), $license);
-//        }else{
-//            $license=null;
-//        }
-//
-//
-//
-//        $doctor_job= json_encode($request->job);
-//
-//
-//
-//        $user = User::create([
-//            'name' => $request->name,
-//            'email' => $request->email,
-//            'phone' => $request->phone,
-//            'password' => $request->password,
-//            'department_id' => $request->department,
-//            'doctor_professional_id' => $doctor_job,
-//            'city_id' => $request->city,
-//            'location' => $request->location,
-//            'lat' => $request->lat,
-//            'lng' => $request->lng,
-//            'type' => 'doctor',
-//            'syndicate' => $request->Syndicate,
-//            'scientific_certificate' => $request->Scientific_certificate,
-//            'syndicate_image' => $Syndicate_image,
-//            'scientific_certificate_image' => $Scientific_certificate_image,
-//            'clinic_photos' =>json_encode($data),
-//            'logo' => $fileName,
-//            'contract' => $contract,
-//            'seal_name' => $request->seal_name,
-//            'contact_by'=>$request->hear_about,
-//            'add_id'=>$request->doctor_id,
-//            'link'=>$request->link,
-//            'doctor_image'=>$doctor_image,
-//            'lab_license' => $license,
-//            'profile_completed' => 1,
-//
-//
-//        ]);
-//        Toastr::success(TranslationHelper::translate(' Created Successfully'));
-//        return redirect()->route('admin.providers.index','type='.$user->type);
-//    }
+    public function store(StoreUserRequest $request)
+    {
+        $this->authorizable('add user');
+
+        User::create([
+            'name' => $request->name,
+            'user_name' => $request->user_name,
+            'phone' => $request->phone,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'city_id' => $request->city_id,
+            'user_type' => 'buyer',
+            'is_active' => 1,
+        ]);
+
+        Toastr::success(TranslationHelper::translate('New Buyer Created Successfully'));
+
+        return redirect()->route('admin.users.index', ['user_type' => 'buyer']);
+    }
 
     /**
      * Show the form for editing the specified resource.
@@ -228,6 +211,21 @@ class UserController extends Controller
         $user = User::findorfail($id);
 
         return view('dashboard.pages.users.edit', compact(['user']));
+    }
+
+    /**
+     * Read-only details page for a single user (linked from the "view"
+     * icon in the users table).
+     *
+     * @param  int  $id
+     * @return \Illuminate\Contracts\View\View
+     */
+    public function show($id)
+    {
+        $this->authorizable('view users');
+        $user = User::findorfail($id);
+
+        return view('dashboard.pages.users.show', compact(['user']));
     }
 
     /**

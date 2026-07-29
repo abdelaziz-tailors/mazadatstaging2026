@@ -30,7 +30,7 @@
     <div class="card-body">
         <!--begin::Table-->
         <div class="table-responsive">
-            <table id="data-table" class="table table-striped table-bordered">
+            <table id="data-table" class="table table-bordered">
                 <thead>
                     <tr>
                         <th>#</th>

@@ -1,20 +1,15 @@
-<div class="btn-group">
-    <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        <i class="fas fa-cogs"></i>
-    </button>
-    <div class="dropdown-menu">
-        @if (Auth::guard('admin')->user()->can('edit role'))
-            <a class="dropdown-item" href="{{ route('admin.roles.edit', $item->id) }}">
-                <i class="fas fa-edit"></i> {{ TranslationHelper::translate('edit') }}
-            </a>
-        @endif
+<div class="d-flex align-items-center gap-2">
+    @if (Auth::guard('admin')->user()->can('edit role'))
+        <a class="md-icon-btn" href="{{ route('admin.roles.edit', $item->id) }}" title="{{ TranslationHelper::translate('edit') }}">
+            <i class="fas fa-pen"></i>
+        </a>
+    @endif
 
-        @if (Auth::guard('admin')->user()->can('delete role') && $item->id > 1)
-            <a class="dropdown-item" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i class="fas fa-trash"></i> {{ TranslationHelper::translate('delete') }}
-            </a>
-        @endif
-    </div>
+    @if (Auth::guard('admin')->user()->can('delete role') && $item->id > 1)
+        <a class="md-icon-btn md-icon-btn-danger" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal" title="{{ TranslationHelper::translate('delete') }}">
+            <i class="fas fa-trash"></i>
+        </a>
+    @endif
 </div>
 
 @if (Auth::guard('admin')->user()->can('delete role') && $item->id > 1)

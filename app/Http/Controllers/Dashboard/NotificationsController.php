@@ -41,9 +41,15 @@ class NotificationsController extends Controller
 
     // get index data by ajax
     public function get_data (Request $request) {
-        $country = Notification::select('id','title')->get();
+        $country = Notification::select('id','title', 'description', 'created_at')->get();
         return Datatables::of($country)
-
+            ->editColumn('description', function(Notification $item) {
+                $description = $item->description ?? '';
+                return \Illuminate\Support\Str::limit($description, 60);
+            })
+            ->editColumn('created_at', function(Notification $item) {
+                return optional($item->created_at)->format('Y-m-d');
+            })
             ->addColumn('action', function(Notification $item) {
                 return view('dashboard.pages.notifications.actions')
                     ->with(['item' => $item]);

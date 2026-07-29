@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "barryvdh/laravel-dompdf": "^2.2",
         "barryvdh/laravel-translation-manager": "^0.6.3",
         "brian2694/laravel-toastr": "^5.57",
         "doctrine/dbal": "^4.4",
@@ -20,6 +21,7 @@
         "laravel_payment/telr": "^1.2",
         "laravelcollective/html": "^6.4",
         "larswiegers/laravel-translations-checker": "^0.7.0",
+        "lcobucci/clock": "^3.0",
         "livewire/livewire": "^2.11",
         "mcamara/laravel-localization": "^1.8",
         "spatie/laravel-permission": "^5.10",

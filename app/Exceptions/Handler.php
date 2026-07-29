@@ -41,14 +41,19 @@ class Handler extends ExceptionHandler
         });
     }
 
+    /**
+     * The "auth" middleware alias is only ever used as "auth:api" in this
+     * app (routes/api/user.php) — the admin dashboard has its own separate
+     * AuthAdmin middleware that never throws AuthenticationException. So
+     * every caller reaching this is an API client; always return JSON,
+     * regardless of $request->expectsJson() (many real clients — Postman
+     * with no explicit Accept header, a browser tab opened directly on a
+     * download link — don't set it, and used to silently 302-redirect here
+     * instead of getting a usable error).
+     */
     protected function unauthenticated($request, AuthenticationException $exception)
     {
-        if ($request->expectsJson())
-        {
-            return response()->json(['success'=>false, 'code'=>401, 'message'=>TranslationHelper::translate('un_authenticated_access')], 401);
-        }
-
-        return redirect('/');
+        return response()->json(['success'=>false, 'code'=>401, 'message'=>TranslationHelper::translate('un_authenticated_access')], 401);
     }
 
         /**

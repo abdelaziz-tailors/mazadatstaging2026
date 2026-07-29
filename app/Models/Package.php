@@ -15,4 +15,15 @@ class Package extends Model
     {
         return $this->hasMany(UserSubscription::class, 'package_id');
     }
+
+    /**
+     * Localized feature bullet list, stored as {"ar": [...], "en": [...]}
+     * (same shape/pattern as name/description). Empty array if unset.
+     */
+    public function featuresList(?string $locale = null): array
+    {
+        $decoded = json_decode($this->features ?? '', true);
+
+        return $decoded[$locale ?? app()->getLocale()] ?? [];
+    }
 }
