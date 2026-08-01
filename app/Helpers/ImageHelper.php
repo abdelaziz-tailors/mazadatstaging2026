@@ -12,7 +12,7 @@ if (! function_exists('checkImageExists')) {
     		return Storage::disk('public')->url($url);
 
     	return @asset('').'assets/img/logo.png';
-	}
+	}   
 }
 
 if (! function_exists('checkFullImageExists')) {
