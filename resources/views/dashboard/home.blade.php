@@ -44,19 +44,34 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="card-body">
+                <div class="card-body d-flex flex-column" style="gap:0">
                     @if ($salesTrend)
-                        <div>
-                            <span class="md-chart-stat-value">{{ number_format($salesTrend['value'], 0) }}</span>
-                            <span class="md-chart-stat-label">{{ TranslationHelper::translate('sar') }} · {{ TranslationHelper::translate('gross_sales') }}</span>
-                        </div>
-                        <div class="md-chart-stat-trend {{ $salesTrend['direction'] }}">
-                            <i class="fa-solid fa-arrow-{{ $salesTrend['direction'] === 'up' ? 'up' : 'down' }}"></i>
-                            {{ $salesTrend['pct'] }}%
-                            <span class="md-chart-stat-trend-caption">{{ TranslationHelper::translate('vs_previous_period') }}</span>
+                        <div class="md-sales-trend-top">
+
+                            <div class="md-sales-trend-meta">
+                                <div class="md-sales-trend-label">{{ TranslationHelper::translate('gross_sales') }}</div>
+                                <div class="md-chart-stat-trend {{ $salesTrend['direction'] }}">
+                                    <span class="md-chart-stat-trend-caption">{{ TranslationHelper::translate('vs_previous_period') }}</span>
+                                    <i class="px-1 fa-solid fa-arrow-{{ $salesTrend['direction'] === 'up' ? 'trend-up' : 'trend-down' }}"></i>
+                                        {{ $salesTrend['direction'] === 'up' ? '▲' : '▼' }} {{ $salesTrend['pct'] }}%
+                                </div>
+                            </div>
+
+
+                            <div class="md-sales-trend-amount">
+                                <span class="md-chart-stat-value">{{ number_format($salesTrend['value'], 0) }}</span>
+                                <span class="md-sales-trend-currency">{{ TranslationHelper::translate('sar') }}</span>
+                            </div>
+                            
                         </div>
                     @endif
-                    <div id="salesChart"></div>
+                    <div id="salesChart" class="mt-auto"></div>
+                    <div class="md-sales-trend-footer">
+                        <a href="{{ route('admin.auctions.index') }}" class="md-sales-trend-link">
+                            {{ TranslationHelper::translate('view_sales_reports') }}
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -74,19 +89,31 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body d-flex flex-column" style="gap:0">
                         @if ($registrationsTrend)
-                            <div>
-                                <span class="md-chart-stat-value">{{ number_format($registrationsTrend['value'], 0) }}</span>
-                                <span class="md-chart-stat-label">{{ TranslationHelper::translate('new_users') }}</span>
-                            </div>
-                            <div class="md-chart-stat-trend {{ $registrationsTrend['direction'] }}">
-                                <i class="fa-solid fa-arrow-{{ $registrationsTrend['direction'] === 'up' ? 'up' : 'down' }}"></i>
-                                {{ $registrationsTrend['pct'] }}%
-                                <span class="md-chart-stat-trend-caption">{{ TranslationHelper::translate('vs_previous_period') }}</span>
+                            <div class="md-sales-trend-top">
+                               
+                                <div class="md-sales-trend-meta">
+                                    <div class="md-sales-trend-label">{{ TranslationHelper::translate('new_users') }}</div>
+                                    <div class="md-chart-stat-trend {{ $registrationsTrend['direction'] }}">
+                                        <span class="md-chart-stat-trend-caption">{{ TranslationHelper::translate('vs_previous_period') }}</span>
+
+                                        <i class="px1 fa-solid fa-arrow-{{ $registrationsTrend['direction'] === 'up' ? 'trend-up' : 'trend-down' }}"></i>
+                                        {{ $registrationsTrend['direction'] === 'up' ? '▲' : '▼' }} {{ $registrationsTrend['pct'] }}%
+                                    </div>
+                                </div>
+                                 <div class="md-sales-trend-amount">
+                                    <span class="md-chart-stat-value">{{ number_format($registrationsTrend['value'], 0) }}</span>
+                                </div>
                             </div>
                         @endif
-                        <div id="registrationsChart"></div>
+                        <div id="registrationsChart" class="mt-auto"></div>
+                        <div class="md-sales-trend-footer">
+                            <a href="{{ route('admin.users.index') }}" class="md-sales-trend-link">
+                                {{ TranslationHelper::translate('view_all_users') }}
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -104,37 +131,44 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="card-body md-donut-card-body">
+                <div class="card-body d-flex flex-column" style="gap:0">
                     @if (array_sum($statusChart) > 0)
-                        <div class="md-status-donut-row">
+                        <div class="md-status-donut-row" style="gap:5rem">
                             <div class="md-status-donut-wrap">
                                 <div id="statusDonutChart"></div>
                                 <div class="md-status-donut-total">
-                                    <div class="md-status-donut-total-value">{{ array_sum($statusChart) }}</div>
                                     <div class="md-status-donut-total-label">{{ TranslationHelper::translate('total') }}</div>
+                                    <div class="md-status-donut-total-value">{{ array_sum($statusChart) }}</div>
                                 </div>
                             </div>
                             <ul class="md-status-legend-list">
                                 <li>
-                                    <span class="legend-dot" style="background: var(--md-success)"></span>
-                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('active') }}</span>
                                     <span class="md-status-legend-count">{{ $statusChart['active'] }}</span>
+                                    <span class="legend-dot" style="background:#34c38f"></span>
+                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('active') }}</span>
                                 </li>
                                 <li>
-                                    <span class="legend-dot" style="background: var(--md-warning)"></span>
-                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('scheduled') }}</span>
                                     <span class="md-status-legend-count">{{ $statusChart['scheduled'] }}</span>
+                                    <span class="legend-dot" style="background:#f1b44c"></span>
+                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('scheduled') }}</span>
                                 </li>
                                 <li>
-                                    <span class="legend-dot" style="background: var(--md-danger)"></span>
-                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('ended') }}</span>
                                     <span class="md-status-legend-count">{{ $statusChart['ended'] }}</span>
+                                    <span class="legend-dot" style="background:#4a90d9"></span>
+                                    <span class="md-status-legend-label">{{ TranslationHelper::translate('ended') }}</span>
                                 </li>
                             </ul>
+                            
                         </div>
                     @else
                         <p class="text-muted text-center mb-0 py-5">{{ TranslationHelper::translate('no_results_found') }}</p>
                     @endif
+                    <div class="md-sales-trend-footer mt-auto">
+                        <a href="{{ route('admin.videos.index') }}" class="md-sales-trend-link">
+                            {{ TranslationHelper::translate('view_all_auctions') }}
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -282,14 +316,23 @@
         // they overlapped and became unreadable. A label formatter that only
         // returns text for every Nth category (blank string otherwise) is
         // deterministic regardless of that, and guarantees real spacing.
+        const mdTrendGrid = {
+            borderColor: '#ffffff',
+            strokeDashArray: 0,
+            xaxis: { lines: { show: false } },
+            yaxis: { lines: { show: true } },
+            padding: { top: 0, right: 55, bottom: 0, left: 0 },
+        };
         const mdTrendXaxis = (categories) => {
             const desiredTicks = mdIsSmallScreen ? 4 : 8;
             const step = Math.max(1, Math.ceil(categories.length / desiredTicks));
             return {
                 categories,
                 tickAmount: desiredTicks,
+                axisBorder: { show: false },
+                axisTicks: { show: false },
                 labels: {
-                    style: { colors: '#6b7385', fontSize: '11px' },
+                    style: { colors: '#9aab9e', fontSize: '11px' },
                     formatter: (value) => {
                         const idx = categories.indexOf(value);
                         return (idx % step === 0) ? value : '';
@@ -304,22 +347,15 @@
         // ring — the card only mounts the chart div at all when there's real
         // data for the selected date range (see the condition wrapping this block).
         new ApexCharts(document.querySelector("#statusDonutChart"), {
-            chart: { type: 'donut', height: 160, width: 160, ...mdChartTheme, animations: { enabled: false }, toolbar: { show: false } },
+            chart: { type: 'donut', height: 200, width: 200, ...mdChartTheme, animations: { enabled: false }, toolbar: { show: false } },
             series: [{{ $statusChart['active'] }}, {{ $statusChart['scheduled'] }}, {{ $statusChart['ended'] }}],
             labels: ["{{ TranslationHelper::translate('active') }}", "{{ TranslationHelper::translate('scheduled') }}", "{{ TranslationHelper::translate('ended') }}"],
-            colors: ['#34c38f', '#f1b44c', '#f15b5b'],
+            colors: ['#34c38f', '#f1b44c', '#4a90d9'],
             legend: { show: false },
-            // The counts + total already live in the side legend and the
-            // center overlay (see the .md-status-donut-total div layered on
-            // top of this chart in the blade template) — in-ring labels
-            // would just duplicate that.
             dataLabels: { enabled: false },
             tooltip: { y: { formatter: (val) => val } },
-            // A visible stroke between slices keeps them visually separated at
-            // any container size — without it, small/squeezed mobile widths
-            // made adjacent slice edges blend into each other.
-            stroke: { show: true, width: 2, colors: ['#ffffff'] },
-            plotOptions: { pie: { donut: { size: '70%' } } },
+            stroke: { show: true, width: 3, colors: ['#ffffff'] },
+            plotOptions: { pie: { donut: { size: '65%' } } },
         }).render();
         @endif
 
@@ -339,29 +375,51 @@
             var niceMax = Math.ceil(rawMax / tickAmount) * tickAmount;
 
             new ApexCharts(document.querySelector("#registrationsChart"), {
-                chart: { type: 'area', height: 200, toolbar: { show: false }, ...mdChartTheme },
+                chart: { type: 'area', height: 190, toolbar: { show: false }, ...mdChartTheme },
                 series: [{ name: "{{ TranslationHelper::translate('user_registrations') }}", data: data }],
                 xaxis: mdTrendXaxis(@json($registrationsChart['labels'])),
-                yaxis: { labels: { style: { colors: '#6b7385' } }, min: 0, max: niceMax, tickAmount: tickAmount },
-                colors: ['#1f4a38'],
-                fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0, stops: [0, 90, 100] } },
+                yaxis: {
+                    opposite: true,
+                    labels: { style: { colors: '#9aab9e', fontSize: '11px' } },
+                    min: 0,
+                    max: niceMax,
+                    tickAmount: tickAmount,
+                },
+                colors: ['#2d8653'],
+                fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.5, gradientToColors: ['#c8e6c9'], opacityFrom: 0.55, opacityTo: 0.05, stops: [0, 100] } },
                 stroke: { curve: 'smooth', width: 2 },
+                markers: { size: 4, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
                 dataLabels: { enabled: false },
-                grid: { borderColor: '#2a3143' },
+                grid: mdTrendGrid,
+                tooltip: { y: { formatter: (val) => val + ' {{ TranslationHelper::translate("new_users") }}' } },
             }).render();
         })();
         @endif
 
         new ApexCharts(document.querySelector("#salesChart"), {
-            chart: { type: 'area', height: 200, toolbar: { show: false }, ...mdChartTheme },
+            chart: { type: 'area', height: 190, toolbar: { show: false }, ...mdChartTheme },
             series: [{ name: "{{ TranslationHelper::translate('Sales') }}", data: @json($salesChart['values']) }],
             xaxis: mdTrendXaxis(@json($salesChart['labels'])),
-            yaxis: { labels: { style: { colors: '#6b7385' } } },
-            colors: ['#1f4a38'],
-            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0, stops: [0, 90, 100] } },
+            yaxis: {
+                opposite: true,
+                labels: {
+                    style: { colors: '#9aab9e', fontSize: '11px' },
+                    formatter: function(val) {
+                        if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+                        if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+                        return val;
+                    }
+                },
+                min: 0,
+                tickAmount: 5,
+            },
+            colors: ['#2d8653'],
+            fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.5, gradientToColors: ['#c8e6c9'], opacityFrom: 0.55, opacityTo: 0.05, stops: [0, 100] } },
             stroke: { curve: 'smooth', width: 2 },
+            markers: { size: 4, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
             dataLabels: { enabled: false },
-            grid: { borderColor: '#2a3143' },
+            grid: mdTrendGrid,
+            tooltip: { y: { formatter: (val) => Number(val).toLocaleString('ar-SA') + ' {{ TranslationHelper::translate("sar") }}' } },
         }).render();
     </script>
 @endsection

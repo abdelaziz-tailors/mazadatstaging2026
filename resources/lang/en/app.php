@@ -1602,4 +1602,7 @@
   'no_won_items_for_this_live_auction' => 'No won items for this live auction',
   'end_time' => 'End time',
   'auction_test2' => 'Auction Test2',
+  'view_sales_reports' => 'View sales reports',
+  'view_all_users' => 'View all users',
+  'view_all_auctions' => 'View all auctions',
 );

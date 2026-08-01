@@ -1610,4 +1610,7 @@
   'no_won_items_for_this_live_auction' => 'No won items for this live auction',
   'end_time' => 'وقت الانتهاء',
   'auction_test2' => 'Auction Test2',
+  'view_sales_reports' => 'عرض تقارير المبيعات',
+  'view_all_users' => 'عرض كل المستخدمين',
+  'view_all_auctions' => 'عرض جميع المزادات',
 );

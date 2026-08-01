@@ -696,6 +696,57 @@ a:hover {
     white-space: normal;
   }
 }
+
+/* ---------- Sales Trend card redesign ---------- */
+.md-sales-trend-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.md-sales-trend-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  direction: rtl;
+}
+.md-sales-trend-currency {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--md-text-muted);
+}
+.md-sales-trend-meta {
+  text-align: start;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.md-sales-trend-label {
+  font-size: 13px;
+  color: var(--md-text-muted);
+  font-weight: 500;
+}
+.md-sales-trend-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--md-border);
+  margin-top: 8px;
+}
+.md-sales-trend-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-brand-strong, #1a4731);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  direction: rtl;
+}
+.md-sales-trend-link:hover {
+  text-decoration: underline;
+  color: var(--md-brand-strong, #1a4731);
+}
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
@@ -716,22 +767,14 @@ a:hover {
   display: inline-block;
 }
 
-/* Auction-status donut card: a count-per-status legend list beside the ring,
-   with a total overlaid in the ring's center. The card matches its taller
-   siblings' height (.chart-card.h-100), so this centers the donut+legend
-   block within that extra vertical space instead of it sitting at the top. */
-.md-donut-card-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 220px;
-}
+/* Auction-status donut card */
 .md-status-donut-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 24px;
-  padding: 10px 0;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  flex: 1;
 }
 .md-status-legend-list {
   list-style: none;
@@ -739,18 +782,19 @@ a:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  flex: 0 1 auto;
+  gap: 18px;
+  flex: 1;
   min-width: 0;
 }
 .md-status-legend-list li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  direction: rtl;
 }
 .md-status-legend-list .legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
@@ -766,24 +810,19 @@ a:hover {
 .md-status-legend-count {
   font-weight: 700;
   color: var(--md-text);
-  font-size: 14px;
+  font-size: 16px;
+  min-width: 28px;
+  text-align: start;
 }
 .md-status-donut-wrap {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 200px;
+  height: 200px;
   flex-shrink: 0;
 }
 .md-status-donut-total {
   position: absolute;
-  /* ApexCharts' rendered donut ring doesn't sit dead-center in its 160x160
-     container box (its own internal layout reserves a bit of space that a
-     plain top:0 overlay doesn't account for) — this offset was measured
-     directly against the real rendered ring, not guessed. */
-  top: -22px;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -791,21 +830,26 @@ a:hover {
   pointer-events: none;
 }
 .md-status-donut-total-value {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--md-text);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 .md-status-donut-total-label {
   font-size: 12px;
   color: var(--md-text-muted);
+  margin-bottom: 2px;
 }
 @media (max-width: 575px) {
   .md-status-donut-row {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
   .md-status-legend-list {
     width: 100%;
+  }
+  .md-status-donut-wrap {
+    width: 180px;
+    height: 180px;
   }
 }
 
