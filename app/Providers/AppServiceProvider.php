@@ -9,7 +9,7 @@ use App\Support\PartnerDashboardScope;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\File;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -32,6 +32,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+
+        $paths = File::directories(database_path('migrations'));
+
+        foreach ($paths as $path) {
+            $this->loadMigrationsFrom($path);
+        }
+    
         // Real, live "items awaiting admin review" count for the header
         // notifications bell — shared with every dashboard page (not just
         // the home page) since the header itself is rendered by the shared
