@@ -133,7 +133,7 @@
                 </div>
                 <div class="card-body d-flex flex-column" style="gap:0">
                     @if (array_sum($statusChart) > 0)
-                        <div class="md-status-donut-row" style="gap:5rem">
+                        <div class="md-status-donut-row">
                             <div class="md-status-donut-wrap">
                                 <div id="statusDonutChart"></div>
                                 <div class="md-status-donut-total">

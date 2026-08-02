@@ -772,9 +772,10 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 24px;
   padding: 8px 0;
   flex: 1;
+  width: 100%;
 }
 .md-status-legend-list {
   list-style: none;
@@ -783,8 +784,8 @@ a:hover {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  flex: 1;
-  min-width: 0;
+  flex: 0 1 auto;
+  min-width: 150px;
 }
 .md-status-legend-list li {
   display: flex;
@@ -818,7 +819,7 @@ a:hover {
   position: relative;
   width: 200px;
   height: 200px;
-  flex-shrink: 0;
+  flex: 0 0 200px;
 }
 .md-status-donut-total {
   position: absolute;
@@ -843,9 +844,13 @@ a:hover {
 @media (max-width: 575px) {
   .md-status-donut-row {
     flex-direction: column-reverse;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
   }
   .md-status-legend-list {
     width: 100%;
+    min-width: 0;
   }
   .md-status-donut-wrap {
     width: 180px;
