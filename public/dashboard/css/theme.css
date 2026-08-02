@@ -961,45 +961,161 @@ div.dataTables_wrapper table.dataTable thead {
   color: var(--md-text);
 }
 
-/* Dashboard home "quick actions" grid tiles */
+/* Dashboard home "quick actions" reference card */
+.md-quick-actions-card {
+  border: 1px solid rgba(226, 230, 226, 0.95);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(31, 45, 61, 0.05);
+}
+
+.md-quick-actions-card .card-header {
+  padding: 24px 26px 8px;
+  border-bottom: 0;
+  background: transparent;
+}
+
+.md-quick-actions-card .card-title {
+  color: #2f353d;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.md-quick-actions-card .card-body {
+  padding: 16px 20px 24px;
+}
+
+.md-quick-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
 .md-quick-action {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--md-border);
-  border-radius: var(--md-radius-sm);
+  justify-content: flex-start;
+  gap: 20px;
+  min-height: 130px;
+  padding: 22px 24px;
+  border: 1px solid #e9ece8;
+  border-radius: 12px;
   color: var(--md-text);
+  background: #fff;
   text-decoration: none;
-  height: 100%;
-  transition: border-color 0.15s, background-color 0.15s;
+  box-shadow: 0 7px 18px rgba(31, 45, 61, 0.035);
+  direction: rtl;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.md-quick-action:hover {
-  border-color: var(--md-brand);
-  background-color: var(--md-surface-2);
+
+.md-quick-action:hover,
+.md-quick-action:focus {
+  border-color: rgba(47, 117, 69, 0.35);
   color: var(--md-text);
+  box-shadow: 0 10px 24px rgba(31, 45, 61, 0.07);
+  transform: translateY(-1px);
 }
+
 .md-quick-action .stat-icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  border: 2px solid rgba(47, 117, 69, 0.24);
   border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  font-size: 18px;
+  background: #fff !important;
+  color: #2f7545 !important;
+  font-size: 30px;
 }
-.md-quick-action span:not(.stat-icon):not(.badge) {
-  font-weight: 600;
+
+.md-quick-action-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  text-align: right;
 }
-.md-quick-action-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+
+.md-quick-action-title {
+  color: #343943;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.35;
 }
-@media (max-width: 420px) {
+
+.md-quick-action-subtitle {
+  color: #9aa2a6;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.md-quick-action-title,
+.md-quick-action-subtitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.md-quick-action-badge {
+  position: absolute;
+  top: -9px;
+  inset-inline-start: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 0;
+  background: #8c842d !important;
+  color: #fff !important;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(140, 132, 45, 0.25);
+}
+
+@media (max-width: 1399px) {
+  .md-quick-action {
+    gap: 16px;
+    min-height: 118px;
+    padding: 20px;
+  }
+
+  .md-quick-action .stat-icon {
+    flex-basis: 62px;
+    width: 62px;
+    height: 62px;
+    min-width: 62px;
+    font-size: 25px;
+  }
+
+  .md-quick-action-title {
+    font-size: 15px;
+  }
+
+  .md-quick-action-subtitle {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 575px) {
+  .md-quick-actions-card .card-header {
+    padding: 20px 18px 6px;
+  }
+
+  .md-quick-actions-card .card-body {
+    padding: 14px 14px 18px;
+  }
+
   .md-quick-action-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 }
 
@@ -1630,6 +1746,32 @@ html:not([lang="ar"]) .md-sidebar-toggle .md-sidebar-show-icon::before {
 
 .mobile_btn {
   color: var(--md-brand-strong) !important;
+}
+
+.md-dashboard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  margin: 0 1.875rem;
+  border-top: 1px solid var(--md-border);
+  color: var(--md-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.md-dashboard-footer span + span::before {
+  content: "©";
+  margin-inline-end: 8px;
+}
+
+@media (max-width: 575px) {
+  .md-dashboard-footer {
+    min-height: 42px;
+    margin: 0 0.9375rem;
+    font-size: 12px;
+  }
 }
 
 /* ---------- Responsive navbar ---------- */

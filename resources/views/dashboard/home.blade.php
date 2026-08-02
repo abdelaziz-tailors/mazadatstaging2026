@@ -32,7 +32,7 @@
          rightmost. Per the design reference, that order is sales trend →
          user registrations → status donut. --}}
     <div class="row g-3 mt-1">
-        <div class="col-xl-{{ $registrationsChart ? 4 : 8 }} col-12">
+        <div class="col-xl-6 col-lg-6 col-12">
             <div class="card chart-card h-100">
                 <div class="card-header md-chart-card-header">
                     <h4 class="card-title mb-0">{{ TranslationHelper::translate('sales_trend') }}</h4>
@@ -77,7 +77,7 @@
         </div>
 
         @if ($registrationsChart)
-            <div class="col-xl-4 col-12">
+            <div class="col-xl-6 col-lg-6 col-12">
                 <div class="card chart-card h-100">
                     <div class="card-header md-chart-card-header">
                         <h4 class="card-title mb-0">{{ TranslationHelper::translate('user_registrations') }}</h4>
@@ -119,7 +119,7 @@
             </div>
         @endif
 
-        <div class="col-xl-4 col-12">
+        <div class="col-xl-6 col-lg-6 col-12">
             <div class="card chart-card h-100">
                 <div class="card-header md-chart-card-header">
                     <h4 class="card-title mb-0">{{ TranslationHelper::translate('auctions_by_status') }}</h4>
@@ -172,16 +172,11 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    @php
-        $mdLatestColWidth = $latestUsers->isNotEmpty() ? 4 : 6;
-    @endphp
     {{-- Right-to-left reading order: quick actions (rightmost, next to the
          sidebar) → latest auctions → latest users. --}}
-    <div class="row g-3 mt-1">
-        <div class="col-lg-{{ $mdLatestColWidth }} col-12">
-            <div class="card h-100">
+        <div class="col-xl-6 col-lg-6 col-12">
+            <div class="card h-100 md-quick-actions-card">
                 <div class="card-header">
                     <h4 class="card-title mb-0">{{ TranslationHelper::translate('quick_actions') }}</h4>
                 </div>
@@ -189,29 +184,41 @@
                     <div class="md-quick-action-grid">
                         <a href="{{ route('admin.videos.create') }}" class="md-quick-action">
                             <span class="stat-icon stat-icon-success"><i class="fa-solid fa-gavel"></i></span>
-                            <span>{{ TranslationHelper::translate('create_new_auction') }}</span>
+                            <span class="md-quick-action-copy">
+                                <span class="md-quick-action-title">{{ TranslationHelper::translate('create_new_auction') }}</span>
+                                <span class="md-quick-action-subtitle">{{ app()->getLocale() === 'ar' ? 'إضافة مزاد المواشي' : 'Add livestock auction' }}</span>
+                            </span>
                         </a>
                         <a href="{{ route('admin.categories.create') }}" class="md-quick-action">
-                            <span class="stat-icon stat-icon-success"><i class="fa-solid fa-list"></i></span>
-                            <span>{{ TranslationHelper::translate('add_new_category') }}</span>
+                            <span class="stat-icon stat-icon-success"><i class="fa-solid fa-table-cells-large"></i></span>
+                            <span class="md-quick-action-copy">
+                                <span class="md-quick-action-title">{{ TranslationHelper::translate('add_new_category') }}</span>
+                                <span class="md-quick-action-subtitle">{{ app()->getLocale() === 'ar' ? 'إنشاء قسم جديد' : 'Create a new category' }}</span>
+                            </span>
                         </a>
                         <a href="{{ route('admin.seller-submissions.index') }}" class="md-quick-action">
-                            <span class="stat-icon stat-icon-success"><i class="fa-solid fa-clipboard-list"></i></span>
-                            <span>{{ TranslationHelper::translate('review_seller_submissions') }}</span>
+                            <span class="stat-icon stat-icon-success"><i class="fa-solid fa-user"></i></span>
+                            <span class="md-quick-action-copy">
+                                <span class="md-quick-action-title">{{ TranslationHelper::translate('review_seller_submissions') }}</span>
+                                <span class="md-quick-action-subtitle">{{ app()->getLocale() === 'ar' ? 'طلبات في انتظار المراجعة' : 'Requests awaiting review' }}</span>
+                            </span>
                             @if ($pendingReviewCount > 0)
-                                <span class="badge rounded-pill bg-danger ms-1">{{ $pendingReviewCount }}</span>
+                                <span class="badge rounded-pill md-quick-action-badge">{{ $pendingReviewCount }}</span>
                             @endif
                         </a>
                         <a href="{{ route('admin.user-subscriptions.index') }}" class="md-quick-action">
                             <span class="stat-icon stat-icon-success"><i class="fa-solid fa-crown"></i></span>
-                            <span>{{ TranslationHelper::translate('manage_subscriptions') }}</span>
+                            <span class="md-quick-action-copy">
+                                <span class="md-quick-action-title">{{ TranslationHelper::translate('manage_subscriptions') }}</span>
+                                <span class="md-quick-action-subtitle">{{ app()->getLocale() === 'ar' ? 'عرض وإدارة الباقات' : 'View and manage packages' }}</span>
+                            </span>
                         </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-{{ $mdLatestColWidth }} col-12">
+        <div class="col-xl-6 col-lg-6 col-12">
             <div class="card h-100">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h4 class="card-title mb-0">{{ TranslationHelper::translate('latest_auctions') }}</h4>
@@ -270,7 +277,7 @@
         </div>
 
         @if ($latestUsers->isNotEmpty())
-            <div class="col-lg-{{ $mdLatestColWidth }} col-12">
+            <div class="col-xl-6 col-lg-6 col-12">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h4 class="card-title mb-0">{{ TranslationHelper::translate('latest_users') }}</h4>

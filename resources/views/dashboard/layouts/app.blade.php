@@ -131,6 +131,10 @@
             <div class="content container-fluid">
                 @yield('content')
             </div>
+            <footer class="md-dashboard-footer">
+                <span>{{ TranslationHelper::translate('site_name') }}</span>
+                <span>{{ now()->year }}</span>
+            </footer>
         </div>
 
     </div>
