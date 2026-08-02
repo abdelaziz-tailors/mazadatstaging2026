@@ -1613,4 +1613,5 @@
   'view_sales_reports' => 'عرض تقارير المبيعات',
   'view_all_users' => 'عرض كل المستخدمين',
   'view_all_auctions' => 'عرض جميع المزادات',
+  'aviation' => 'طيران',
 );

@@ -51,3 +51,5 @@ RewriteRule ^ server.php
   ExpiresByType application/pdf "access plus 1 year"
   ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
 </IfModule>
+
+AddDefaultCharset UTF-8

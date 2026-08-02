@@ -1320,3 +1320,271 @@ div.dataTables_wrapper {
     text-align: start;
   }
 }
+
+/* ---------- Sidebar visual match ---------- */
+
+:root {
+  --md-sidebar-compact-width: 250px;
+  --md-sidebar-bg: #254b36;
+  --md-sidebar-text: rgba(255, 255, 255, 0.9);
+  --md-sidebar-text-active: #d6ad45;
+}
+
+.header .header-left,
+.sidebar {
+  width: var(--md-sidebar-compact-width);
+}
+
+@media (min-width: 992px) {
+  .page-wrapper {
+    margin-left: var(--md-sidebar-compact-width);
+  }
+
+  html[lang="ar"] .page-wrapper {
+    margin-left: 0;
+    margin-right: var(--md-sidebar-compact-width);
+  }
+
+  .mini-sidebar .page-wrapper {
+    margin-left: 78px;
+  }
+
+  html[lang="ar"] .mini-sidebar .page-wrapper {
+    margin-left: 0;
+    margin-right: 78px;
+  }
+}
+
+.sidebar {
+  overflow: hidden;
+  background: var(--md-sidebar-bg);
+  border-left: 4px solid #d9efe2;
+  border-inline-start: 4px solid #d9efe2;
+  border-inline-end: 1px solid rgba(7, 22, 14, 0.55);
+}
+
+.sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 32% 40%, rgba(75, 130, 82, 0.24), transparent 32%),
+    linear-gradient(160deg, rgba(22, 58, 38, 0.96), rgba(39, 75, 54, 0.99));
+}
+
+.sidebar::after {
+  content: "";
+  position: absolute;
+  left: -28px;
+  right: 0;
+  bottom: -13px;
+  z-index: 0;
+  height: 186px;
+  opacity: 0.34;
+  background:
+    linear-gradient(45deg, transparent 0 33%, rgba(83, 156, 71, 0.65) 33% 47%, transparent 47% 100%) 0 0 / 62px 62px,
+    linear-gradient(135deg, transparent 0 34%, rgba(28, 104, 46, 0.82) 34% 48%, transparent 48% 100%) 13px 18px / 72px 72px,
+    linear-gradient(45deg, transparent 0 38%, rgba(11, 71, 33, 0.78) 38% 52%, transparent 52% 100%) -9px 42px / 84px 84px;
+}
+
+.sidebar .sidebar-inner,
+.sidebar .sidebar-menu,
+.sidebar .sidebar-menu > ul {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.sidebar .sidebar-menu {
+  padding: 16px 22px 0 18px;
+}
+
+.sidebar .sidebar-menu > ul > li {
+  margin: 0 0 18px;
+}
+
+.sidebar .sidebar-menu > ul > li > a {
+  min-height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 17px;
+  padding: 0;
+  color: var(--md-sidebar-text);
+  background: transparent;
+  border-radius: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.sidebar .sidebar-menu > ul > li > a span {
+  min-width: 0;
+  margin: 0;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .sidebar-menu > ul > li > a i {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+  margin: 0;
+  color: inherit;
+  font-size: 13px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.sidebar .sidebar-menu .submenu > a {
+  padding-inline-end: 18px;
+}
+
+.sidebar .sidebar-menu .menu-arrow {
+  display: inline-block;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: auto;
+  width: 12px;
+  height: 12px;
+  color: inherit;
+  font-family: "Font Awesome 6 Free";
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 12px;
+  transform: translateY(-50%);
+  transition: transform 0.15s ease;
+}
+
+.sidebar .sidebar-menu .menu-arrow::before {
+  content: "\f104";
+}
+
+.sidebar .sidebar-menu a.subdrop .menu-arrow {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+html[lang="ar"] .sidebar .sidebar-menu .menu-arrow {
+  left: 0;
+  right: auto;
+}
+
+html:not([lang="ar"]) .sidebar .sidebar-menu .submenu > a {
+  padding-inline-end: 0;
+  padding-inline-start: 18px;
+}
+
+html:not([lang="ar"]) .sidebar .sidebar-menu .menu-arrow {
+  left: auto;
+  right: 0;
+}
+
+html:not([lang="ar"]) .sidebar .sidebar-menu .menu-arrow::before {
+  content: "\f105";
+}
+
+.sidebar .sidebar-menu ul ul {
+  padding-top: 14px;
+  padding-bottom: 4px;
+}
+
+.sidebar .sidebar-menu ul ul a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.78);
+  background: transparent;
+  font-size: 13px !important;
+  line-height: 20px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .sidebar-menu ul ul a i {
+  flex: 0 0 14px;
+  width: 14px;
+  min-width: 14px;
+  margin: 0;
+  font-size: 11px;
+  text-align: center;
+}
+
+.sidebar .sidebar-menu ul ul a span {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[lang="ar"] .sidebar .sidebar-menu ul ul a {
+  direction: rtl;
+}
+
+html:not([lang="ar"]) .sidebar .sidebar-menu ul ul a {
+  direction: ltr;
+}
+
+.sidebar .sidebar-menu ul li a:hover,
+.sidebar .sidebar-menu > ul > li > a:hover,
+.sidebar .sidebar-menu > ul > li.active > a,
+.sidebar .sidebar-menu > ul > li.active > a:hover,
+.sidebar .sidebar-menu ul ul a.active {
+  background: transparent;
+  color: var(--md-sidebar-text-active);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sidebar .menu-title {
+  display: block;
+  margin: 1px 0 10px;
+  padding: 0;
+  color: var(--md-sidebar-text-active);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 22px;
+}
+
+html[lang="ar"] .sidebar .sidebar-menu > ul > li > a {
+  direction: rtl;
+  flex-direction: row;
+  text-align: right;
+}
+
+html:not([lang="ar"]) .sidebar .sidebar-menu > ul > li > a {
+  flex-direction: row;
+  text-align: left;
+}
+
+html[lang="ar"] .sidebar .menu-title {
+  text-align: right;
+}
+
+html:not([lang="ar"]) .sidebar .menu-title {
+  text-align: left;
+}
+
+@media (max-width: 991px) {
+  .sidebar {
+    width: var(--md-sidebar-compact-width);
+    margin-left: calc(var(--md-sidebar-compact-width) * -1);
+  }
+
+  html[lang="ar"] .sidebar {
+    margin-left: 0;
+    margin-right: calc(var(--md-sidebar-compact-width) * -1);
+  }
+
+  .slide-nav .sidebar,
+  html[lang="ar"] .slide-nav .sidebar {
+    margin-left: 0;
+    margin-right: 0;
+  }
+}

@@ -20,6 +20,8 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
+AddDefaultCharset UTF-8
+
 # php -- BEGIN cPanel-generated handler, do not edit
 # Set the “ea-php81” package as the default “PHP” programming language.
 <IfModule mime_module>
