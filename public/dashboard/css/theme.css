@@ -1588,3 +1588,243 @@ html:not([lang="ar"]) .sidebar .menu-title {
     margin-right: 0;
   }
 }
+
+/* ---------- Sidebar toggle icons ---------- */
+
+.md-sidebar-toggle {
+  width: 40px;
+  height: 60px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-brand-strong) !important;
+  font-size: 18px;
+}
+
+.md-sidebar-toggle:hover,
+.md-sidebar-toggle:focus,
+.mobile_btn:hover,
+.mobile_btn:focus {
+  color: var(--md-brand) !important;
+}
+
+.md-sidebar-toggle .md-sidebar-show-icon {
+  display: none;
+}
+
+.mini-sidebar .md-sidebar-toggle .md-sidebar-hide-icon {
+  display: none;
+}
+
+.mini-sidebar .md-sidebar-toggle .md-sidebar-show-icon {
+  display: inline-block;
+}
+
+html:not([lang="ar"]) .md-sidebar-toggle .md-sidebar-hide-icon::before {
+  content: "\f100";
+}
+
+html:not([lang="ar"]) .md-sidebar-toggle .md-sidebar-show-icon::before {
+  content: "\f101";
+}
+
+.mobile_btn {
+  color: var(--md-brand-strong) !important;
+}
+
+/* ---------- Responsive navbar ---------- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 18px 0 0;
+}
+
+.header .header-left,
+#toggle_btn,
+.mobile_btn,
+.md-header-search,
+.header .user-menu {
+  float: none !important;
+}
+
+.header .header-left {
+  flex: 0 0 var(--md-sidebar-compact-width);
+  width: var(--md-sidebar-compact-width);
+  height: 60px;
+  padding: 0 22px;
+}
+
+.header .header-left .logo,
+.header .header-left .logo-small {
+  height: 60px;
+  line-height: 60px;
+}
+
+.header .header-left .logo img {
+  max-width: 100%;
+  max-height: 42px;
+  object-fit: contain;
+}
+
+.md-sidebar-toggle {
+  flex: 0 0 42px;
+  border-radius: 10px;
+}
+
+.md-header-search {
+  flex: 1 1 360px;
+  width: auto;
+  max-width: 460px;
+  min-width: 180px;
+  margin: 0;
+}
+
+.header .user-menu {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  padding: 0;
+}
+
+.user-menu.nav > li > a {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 60px;
+  line-height: 1;
+  padding: 0 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.user-menu.nav > li > a i {
+  line-height: 1;
+}
+
+.header .dropdown-menu {
+  margin-top: 8px;
+}
+
+html[lang="ar"] .header {
+  padding: 0 0 0 18px;
+}
+
+@media (min-width: 992px) {
+  .mini-sidebar .header .header-left {
+    flex-basis: 78px;
+    width: 78px;
+    padding: 0 8px;
+  }
+
+  .mini-sidebar .md-header-search {
+    max-width: 520px;
+  }
+}
+
+@media (max-width: 1199px) {
+  .header {
+    gap: 8px;
+  }
+
+  .md-header-search {
+    max-width: 340px;
+  }
+}
+
+@media (max-width: 991px) {
+  .header {
+    padding: 0 14px;
+  }
+
+  html[lang="ar"] .header {
+    padding: 0 14px;
+  }
+
+  .header .header-left {
+    display: none !important;
+  }
+
+  #toggle_btn {
+    display: none !important;
+  }
+
+  .mobile_btn {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 60px;
+    padding: 0;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .md-header-search {
+    flex-basis: 260px;
+    max-width: 360px;
+  }
+
+  .header .user-menu {
+    gap: 2px;
+  }
+}
+
+@media (max-width: 767px) {
+  .header {
+    height: 60px;
+    gap: 6px;
+    padding: 0 10px;
+  }
+
+  html[lang="ar"] .header {
+    padding: 0 10px;
+  }
+
+  .md-header-search {
+    display: none !important;
+  }
+
+  .user-menu.nav > li > a {
+    width: 42px;
+    padding: 0;
+  }
+
+  .user-menu.nav > li > a .user-img {
+    margin: 0;
+  }
+
+  .md-notif-menu {
+    inset-inline-end: 0 !important;
+    inset-inline-start: auto !important;
+  }
+
+  .header .user-menu .dropdown-menu {
+    position: absolute;
+    max-width: calc(100vw - 20px);
+  }
+}
+
+@media (max-width: 379px) {
+  .header {
+    padding: 0 8px;
+  }
+
+  html[lang="ar"] .header {
+    padding: 0 8px;
+  }
+
+  .mobile_btn,
+  .user-menu.nav > li > a {
+    width: 38px;
+    flex-basis: 38px;
+  }
+}

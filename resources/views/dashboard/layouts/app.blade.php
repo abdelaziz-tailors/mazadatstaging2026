@@ -47,11 +47,12 @@
                 </a>
             </div>
 
-            <a href="javascript:void(0);" id="toggle_btn">
-                <i class="fe fe-text-align-left"></i>
+            <a href="javascript:void(0);" id="toggle_btn" class="md-sidebar-toggle" title="إظهار / إخفاء القائمة">
+                <i class="fa-solid fa-angles-right md-sidebar-hide-icon"></i>
+                <i class="fa-solid fa-angles-left md-sidebar-show-icon"></i>
             </a>
             <a class="mobile_btn" id="mobile_btn">
-                <i class="fa fa-bars"></i>
+                <i class="fa-solid fa-bars-staggered"></i>
             </a>
 
             <form action="{{ route('admin.search.index') }}" method="GET" class="md-header-search">
