@@ -76,7 +76,7 @@ class CityController extends Controller
 
             'is_active' => (request()->has('is_active')) ? true : false]);
         Toastr::success(TranslationHelper::translate('New City Created Successfully'));
-        return redirect('admin/cities');
+        return redirect()->route('admin.cities.index');
     }
 
     /**
@@ -96,6 +96,15 @@ class CityController extends Controller
         return view('dashboard.pages.cities.edit', compact(['city']));
     }
 
+    public function show($id)
+    {
+        if ((int) $id <= 0) {
+            return redirect()->route('admin.cities.index');
+        }
+
+        return redirect()->route('admin.cities.edit', $id);
+    }
+
     /**
      * Update the specified resource in storage.
      *
@@ -113,7 +122,7 @@ class CityController extends Controller
 
         $city->update(['name' => json_encode($request->name), 'is_active' => (request()->has('is_active')) ? true : false]);
         Toastr::success(TranslationHelper::translate('City Updated Successfully'));
-        return redirect('admin/cities');
+        return redirect()->route('admin.cities.index');
     }
 
     /**

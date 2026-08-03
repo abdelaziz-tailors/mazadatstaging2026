@@ -1614,4 +1614,5 @@
   'view_all_users' => 'عرض كل المستخدمين',
   'view_all_auctions' => 'عرض جميع المزادات',
   'aviation' => 'طيران',
+  'city_deleted_successfully' => 'City Deleted Successfully',
 );

@@ -123,6 +123,7 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
 
             // Countries & Cities
             Route::resource('/cities', CityController::class)->except(['show']);
+            Route::get('cities/{id}', [CityController::class, 'show'])->name('cities.show');
             Route::post('cities/active_toogler/{id}', [CityController::class, 'active_toogler'])->name('cities.active_toogler');
             Route::post('cities/getData', [CityController::class, 'get_data'])->name('cities.getData');
 

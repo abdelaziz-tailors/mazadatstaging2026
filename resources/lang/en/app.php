@@ -1606,4 +1606,5 @@
   'view_all_users' => 'View all users',
   'view_all_auctions' => 'View all auctions',
   'aviation' => 'Aviation',
+  'city_deleted_successfully' => 'City Deleted Successfully',
 );
