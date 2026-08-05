@@ -1615,4 +1615,5 @@
   'view_all_auctions' => 'عرض جميع المزادات',
   'aviation' => 'طيران',
   'city_deleted_successfully' => 'City Deleted Successfully',
+  'مزاد_حذف_الكومنت' => 'مزاد حذف الكومنت',
 );

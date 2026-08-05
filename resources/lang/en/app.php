@@ -1607,4 +1607,5 @@
   'view_all_auctions' => 'View all auctions',
   'aviation' => 'Aviation',
   'city_deleted_successfully' => 'City Deleted Successfully',
+  'مزاد_حذف_الكومنت' => 'مزاد حذف الكومنت',
 );
