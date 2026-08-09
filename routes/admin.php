@@ -108,6 +108,7 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::resource('products', ProductController::class)->except(['show']);
             Route::get('products/create/{id}', [ProductController::class, 'create'])->name('products.create');
             Route::get('products/{id}', [ProductController::class, 'index'])->name('products.index');
+            Route::post('products/{id}/transfer-unsold', [ProductController::class, 'transferUnsoldItems'])->name('products.transfer-unsold');
 
             Route::post('products/getData/{id}', [ProductController::class, 'get_data'])->name('products.getData');
             Route::post('products/active_toogler/{id}', [ProductController::class, 'active_toogler'])->name('products.active_toogler');

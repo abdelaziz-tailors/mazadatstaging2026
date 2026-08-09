@@ -62,6 +62,21 @@ class LiveVideoItem extends Model
         return $this->hasMany(LiveVideoItemPiece::class)->orderBy('piece_number');
     }
 
+    public function transferredFrom()
+    {
+        return $this->belongsTo(self::class, 'transferred_from_item_id');
+    }
+
+    public function transferOrigin()
+    {
+        return $this->belongsTo(self::class, 'transfer_origin_item_id');
+    }
+
+    public function transferredCopies()
+    {
+        return $this->hasMany(self::class, 'transferred_from_item_id');
+    }
+
     public function primaryPiece(): ?LiveVideoItemPiece
     {
         if ($this->relationLoaded('pieces')) {

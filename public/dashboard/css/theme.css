@@ -1975,3 +1975,46 @@ html[lang="ar"] .header {
     flex-basis: 38px;
   }
 }
+
+/* ---------- Transfer unsold auction items ---------- */
+
+.md-transfer-items-list {
+  display: grid;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.md-transfer-item-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--md-border);
+  border-radius: 10px;
+  background: var(--md-surface);
+  cursor: pointer;
+}
+
+.md-transfer-item-option input {
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.md-transfer-item-option span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.md-transfer-item-option strong,
+.md-transfer-item-option small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.md-transfer-item-option small {
+  color: var(--md-text-muted);
+}

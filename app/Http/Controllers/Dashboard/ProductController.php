@@ -37,6 +37,7 @@ use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
 use App\Support\PartnerDashboardScope;
 use App\Services\LiveVideoItemPieceService;
+use App\Services\AuctionItemTransferService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -50,13 +51,70 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Contracts\View\View
      */
-    public function index($id, Request $request)
+    public function index(Request $request, $id = null)
     {
+        if (! $id) {
+            return redirect()->route('admin.auctions.index');
+        }
+
         $live = LiveVideo::findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live);
         $request->merge(['id' => $id]);
 
-        return view('dashboard.pages.products.index', compact('request'));
+        $canTransferItems = $live->isEnded();
+        $transferableItems = $canTransferItems
+            ? app(AuctionItemTransferService::class)->transferableItems($live)
+            : collect();
+        $targetAuctions = collect();
+
+        if ($canTransferItems) {
+            $targetAuctions = LiveVideo::query()->where('id', '!=', $live->id);
+            PartnerDashboardScope::scopeLiveVideos($targetAuctions);
+            $targetAuctions = $targetAuctions->orderByDesc('id')->get();
+        }
+
+        return view('dashboard.pages.products.index', compact('request', 'live', 'canTransferItems', 'transferableItems', 'targetAuctions'));
+    }
+
+    public function transferUnsoldItems($id, Request $request, AuctionItemTransferService $transferService)
+    {
+        $source = LiveVideo::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($source);
+
+        $request->validate([
+            'item_ids' => 'required|array|min:1',
+            'item_ids.*' => 'integer|exists:live_video_items,id',
+            'transfer_mode' => 'required|in:existing,new',
+            'target_auction_id' => 'required_if:transfer_mode,existing|nullable|integer|exists:live_videos,id',
+            'new_auction_type' => 'required_if:transfer_mode,new|nullable|in:live,recorded,photo',
+            'new_title_ar' => 'required_if:transfer_mode,new|nullable|string|max:255',
+            'new_date_start_at' => 'required_if:transfer_mode,new|nullable|date',
+            'new_date_end_at' => 'required_if:transfer_mode,new|nullable|date|after_or_equal:new_date_start_at',
+            'new_time_start_at' => 'required_if:transfer_mode,new|nullable',
+            'new_time_end_at' => 'required_if:transfer_mode,new|nullable',
+            'new_start_price' => 'required_if:transfer_mode,new|nullable|numeric|min:0',
+        ]);
+
+        if ($request->transfer_mode === 'existing') {
+            $target = LiveVideo::findOrFail($request->target_auction_id);
+            PartnerDashboardScope::ensureOwnLiveVideo($target);
+            $createdItems = $transferService->transferItems($source, $target, $request->item_ids);
+        } else {
+            [$target, $createdItems] = $transferService->createAuctionAndTransferItems($source, [
+                'title' => $request->new_title_ar,
+                'title_ar' => $request->new_title_ar,
+                'type' => $request->new_auction_type,
+                'date_start_at' => $request->new_date_start_at,
+                'date_end_at' => $request->new_date_end_at,
+                'time_start_at' => $request->new_time_start_at,
+                'time_end_at' => $request->new_time_end_at,
+                'start_price' => $request->new_start_price,
+            ], $request->item_ids);
+        }
+
+        Toastr::success(TranslationHelper::translate('items_transferred_successfully') . ' (' . $createdItems->count() . ')');
+
+        return redirect()->route('admin.products.index', $target->id);
     }
 
 

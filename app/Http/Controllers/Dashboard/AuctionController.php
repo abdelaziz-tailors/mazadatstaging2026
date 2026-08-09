@@ -149,7 +149,10 @@ class AuctionController extends Controller
             })
 
             ->addColumn('pieces_action', function(LiveVideo $item) {
-                return '<a class="md-icon-btn" href="' . route('admin.products.create', $item->id) . '" title="' . TranslationHelper::translate('Add Product') . '"><i class="fas fa-plus"></i></a>';
+                return '<div class="d-flex align-items-center gap-2">'
+                    . '<a class="md-icon-btn" href="' . route('admin.products.index', $item->id) . '" title="' . TranslationHelper::translate('view') . '"><i class="fas fa-eye"></i></a>'
+                    . '<a class="md-icon-btn" href="' . route('admin.products.create', $item->id) . '" title="' . TranslationHelper::translate('Add Product') . '"><i class="fas fa-plus"></i></a>'
+                    . '</div>';
             })
 
             ->addColumn('action', function(LiveVideo $item) {

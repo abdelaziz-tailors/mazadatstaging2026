@@ -61,7 +61,7 @@
                     </div>
                 </div>
                 <div class="mt-2 @if($sellerSource !== 'from_list') d-none @endif" id="seller-from-list-field">
-                    <select class="form-control @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
+                    <select class="form-control select @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
                         <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
                         @forelse($sellers as $sellerUser)
                             <option value="{{ $sellerUser->id }}" {{ old('seller_id', isset($data) ? $data->seller_id : '') == $sellerUser->id ? 'selected' : '' }}>
@@ -81,7 +81,7 @@
             @else
                 <div class="col-lg-6 form-group">
                     <label class="form-label">{{ TranslationHelper::translate('Vendor') }}</label>
-                    <select class="form-control @error('user_id') is-invalid @enderror" id="user_id" name="user_id">
+                    <select class="form-control select @error('user_id') is-invalid @enderror" id="user_id" name="user_id">
                         <option value="">{{ TranslationHelper::translate('Select Vendor') }}</option>
                         @forelse($providers as $provider)
                             <option value="{{ $provider->id }}" {{ old('user_id', isset($data) ? $data->user_id : '') == $provider->id ? 'selected' : '' }}>{{ $provider->name }}</option>
@@ -257,6 +257,13 @@
             radio.addEventListener('change', function () {
                 if (this.value === 'from_list') {
                     sellerField.classList.remove('d-none');
+                    // select2 computes its width while the field is still
+                    // display:none (init runs on page load in script.js),
+                    // so it renders at 0px until re-initialized now that
+                    // the field is actually visible.
+                    if (window.jQuery && jQuery.fn.select2) {
+                        jQuery('#seller_id').select2('destroy').select2({ minimumResultsForSearch: -1, width: '100%' });
+                    }
                 } else {
                     sellerField.classList.add('d-none');
                     document.getElementById('seller_id').value = '';

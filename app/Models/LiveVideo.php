@@ -39,6 +39,11 @@ class LiveVideo extends Model
         return $this->hasMany(LiveVideoItem::class, 'live_video_id');
     }
 
+    public function isEnded(): bool
+    {
+        return $this->status === 'end';
+    }
+
     public function orders()
     {
         return $this->hasMany(Order::class, 'live_video_id');

@@ -268,6 +268,10 @@ Route::group(['middleware' => ['auth:api']], function() {
             Route::post('add-view/{id}', 'LiveVideoController@addView');
             Route::post('leave-view/{id}', 'LiveVideoController@leaveView');
             Route::get('refresh-token/{id}', 'LiveVideoController@refreshAgoraToken');
+
+            Route::get('transferable/{id}', 'LiveVideoItemTransferController@transferable');
+            Route::post('transfer', 'LiveVideoItemTransferController@transfer');
+
             Route::group(['prefix' => 'items'], function(){
                 Route::post('add/{id}', 'LiveVideoItemController@add');
                 Route::post('update/{id}', 'LiveVideoItemController@update');
