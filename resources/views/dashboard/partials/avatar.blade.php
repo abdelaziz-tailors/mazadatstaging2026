@@ -10,10 +10,11 @@
 @php
     $size = $size ?? 40;
     $placeholderIcon = $placeholderIcon ?? 'fa-solid fa-user';
-    $exists = !empty($path) && \Illuminate\Support\Facades\Storage::disk('public')->exists($path);
+    $normalizedPath = ltrim(str_replace(['/storage/', 'storage/'], '', (string) $path), '/');
+    $exists = !empty($normalizedPath) && \Illuminate\Support\Facades\Storage::disk('public')->exists($normalizedPath);
 @endphp
 @if ($exists)
-    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($path) }}"
+    <img src="{{ asset('storage/'.$normalizedPath) }}"
         alt="{{ $name ?? '' }}"
         class="md-avatar"
         style="width: {{ $size }}px; height: {{ $size }}px;">
