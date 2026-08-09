@@ -45,7 +45,7 @@ Route::group(['namespace' => 'App\Http\Controllers\api', 'middleware' => ['APISe
     });
 
     // 1. User App
-    include('api/user.php');
+    include __DIR__.'/api/user.php';
     // 2. Provider App
     // 3. Driver App
 
