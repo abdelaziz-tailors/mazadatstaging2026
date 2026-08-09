@@ -280,6 +280,10 @@ Route::group(['middleware' => ['auth:api']], function() {
                 Route::post('end/{id}', 'LiveVideoItemController@end');
                 Route::get('last-auction/{id}', 'LiveVideoItemController@lastAuction');
                 Route::post('auction-award/{id}', 'LiveVideoItemController@auctionAward');
+                // Mobile transfer aliases: support the /items URL convention
+                // in addition to the legacy /live/transferable routes above.
+                Route::get('transferable/{id}', 'LiveVideoItemTransferController@transferable');
+                Route::post('transfer', 'LiveVideoItemTransferController@transfer');
 
                 // Manage a single piece inside an item's "pieces" array,
                 // independent of the item's other fields. {id} is the

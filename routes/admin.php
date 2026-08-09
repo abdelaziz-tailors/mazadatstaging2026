@@ -29,7 +29,6 @@ use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\SliderController;
 use App\Http\Controllers\Dashboard\UserSubscriptionController;
 use App\Http\Controllers\Dashboard\SellerSubmissionController;
-use App\Http\Controllers\Dashboard\ContactMessageController;
 use App\Http\Controllers\Dashboard\PartnerFinanceController;
 
 Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['localeViewPath', 'dashboardLocale']], function () {
@@ -41,9 +40,6 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::get('/', [DashboardController::class, 'index'])->name('dashboard.index');
             Route::get('/appointment', [DashboardController::class, 'appointment'])->name('appointment.index');
             Route::get('/search', [\App\Http\Controllers\Dashboard\SearchController::class, 'index'])->name('search.index');
-
-            // Editor Upload Image
-            Route::post('upload-image', [UploadImageController::class, 'index'])->name('upload.image');
 
             // Administrators
             Route::resource('admins', AdminController::class)->except(['show']);
@@ -221,10 +217,6 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::get('notifications/view/{id}', [NotificationsController::class, 'view'])->name('notifications.view');
             //notifications
 
-            // contact messages
-            Route::resource('/contact-messages', ContactMessageController::class)->only(['index', 'show', 'destroy']);
-            Route::post('contact-messages/getData', [ContactMessageController::class, 'get_data'])->name('contact-messages.getData');
-            // contact messages
 
             // partner finance
             Route::get('partner-finance/invoices', [PartnerFinanceController::class, 'invoices'])->name('partner-finance.invoices');
