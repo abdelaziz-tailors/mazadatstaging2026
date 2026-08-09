@@ -30,8 +30,11 @@ class LiveVideoItemTransferController extends Controller
         }
 
         $target = null;
-        if ($request->filled('target_auction_id')) {
-            $target = $this->ownedAuction($request->target_auction_id);
+        // target_location_id is accepted as an alias by mobile clients. It
+        // represents the destination auction (live_videos.id), not cities.id.
+        $targetAuctionId = $request->input('target_auction_id', $request->input('target_location_id'));
+        if ($targetAuctionId) {
+            $target = $this->ownedAuction($targetAuctionId);
             if (! $target) {
                 return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
             }
@@ -52,6 +55,27 @@ class LiveVideoItemTransferController extends Controller
         }
 
         try {
+            // Normalize both the single-item mobile payload and the original
+            // array payload before validation.
+            $itemIds = $request->input('item_ids');
+            if ($itemIds === null && $request->filled('item_id')) {
+                $itemIds = [$request->input('item_id')];
+            } elseif (! is_array($itemIds)) {
+                $itemIds = [$itemIds];
+            }
+
+            $targetAuctionId = $request->input('target_auction_id', $request->input('target_location_id'));
+            $transferMode = $request->input('transfer_mode');
+            if (! $transferMode && $targetAuctionId) {
+                $transferMode = 'existing';
+            }
+
+            $request->merge([
+                'item_ids' => $itemIds,
+                'target_auction_id' => $targetAuctionId,
+                'transfer_mode' => $transferMode,
+            ]);
+
             $request->validate([
                 'source_auction_id' => 'required|integer|exists:live_videos,id',
                 'item_ids' => 'required|array|min:1',
