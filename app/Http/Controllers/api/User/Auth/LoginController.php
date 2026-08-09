@@ -18,9 +18,10 @@ class LoginController extends Controller
 
     public function __invoke(LoginRequest $request) {
 
-        $loginField = filter_var($request->phone, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+        $identifier = $request->input('email') ?: $request->input('phone');
+        $loginField = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-        if ($token = Auth::attempt([$loginField => $request->phone, 'password' => request('password')])) {
+        if ($token = Auth::attempt([$loginField => $identifier, 'password' => request('password')])) {
 
                 if (! $this->userTypeMatches(Auth::user()->user_type, $request->user_type)) {
                     Auth::logout();
