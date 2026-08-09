@@ -162,7 +162,7 @@ Route::group(['middleware' => ['auth:api']], function() {
 
             Route::group(['prefix' => 'follow'], function(){
                 Route::get('list', 'FollowUserController@list');
-                Route::get('followers-list', 'FavoritesVideoController@followersList');
+                Route::get('followers-list/{id}', 'FollowUserController@followersList');
 
                 Route::post('add/{id}', 'FollowUserController@add');
                 Route::post('unfollow/{id}', 'FollowUserController@unfollow');
