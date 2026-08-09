@@ -71,7 +71,11 @@ class Handler extends ExceptionHandler
             {
                 if ($request->expectsJson())
                 {
-                    return response()->json(['success' => false, 'message'=>TranslationHelper::translate('try_again_later'), 'code'=>200]);
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'API endpoint not found: '.$request->method().' '.$request->path(),
+                        'code' => 404,
+                    ], 404);
                 }
                 else
                 {
