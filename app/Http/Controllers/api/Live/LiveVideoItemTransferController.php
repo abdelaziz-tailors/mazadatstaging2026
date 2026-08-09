@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\User\MyLiveVideoResource;
 use App\Http\Resources\User\VideoItemResource;
 use App\Models\LiveVideo;
+use App\Models\LiveVideoItem;
 use App\Models\UserSubscription;
 use App\Services\AuctionItemTransferService;
 use App\Traits\ResponseTrait;
@@ -24,7 +25,12 @@ class LiveVideoItemTransferController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
 
-        $source = $this->ownedAuction($id);
+        // When a destination is supplied, mobile clients may pass the item
+        // ID in the URL. Resolve its source auction automatically.
+        $item = LiveVideoItem::find($id);
+        $source = $item && ($request->filled('target_auction_id') || $request->filled('target_location_id'))
+            ? $this->ownedAuction($item->live_video_id)
+            : $this->ownedAuction($id);
         if (! $source) {
             return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
         }
@@ -41,6 +47,10 @@ class LiveVideoItemTransferController extends Controller
         }
 
         $items = $transferService->transferableItems($source, $target);
+
+        if ($item && ($request->filled('target_auction_id') || $request->filled('target_location_id'))) {
+            $items = $items->where('id', (int) $id)->values();
+        }
 
         return $this->success_response(
             TranslationHelper::translate('Added Successfully'),
@@ -75,6 +85,15 @@ class LiveVideoItemTransferController extends Controller
                 'target_auction_id' => $targetAuctionId,
                 'transfer_mode' => $transferMode,
             ]);
+
+            // For a single-item mobile request, derive the source auction
+            // from live_video_items instead of requiring another ID.
+            if (! $request->filled('source_auction_id') && $request->filled('item_id')) {
+                $item = LiveVideoItem::find($request->input('item_id'));
+                if ($item) {
+                    $request->merge(['source_auction_id' => $item->live_video_id]);
+                }
+            }
 
             $request->validate([
                 'source_auction_id' => 'required|integer|exists:live_videos,id',
