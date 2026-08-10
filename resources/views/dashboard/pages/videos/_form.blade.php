@@ -1,5 +1,5 @@
 
-<div class="row">
+<div class="row auction-create-form">
 
                 @if ($errors->any())
                     <div class="col-12">
@@ -13,11 +13,11 @@
                     </div>
                 @endif
 
-                <div class="col-12">
-                    <h5 class="mb-3">{{ TranslationHelper::translate('auction_details') }}</h5>
+                <div class="col-12 auction-section-heading-wrap">
+                    <h5 class="mb-3 auction-section-heading"><i class="fa-solid fa-gavel"></i>{{ TranslationHelper::translate('auction_details') }}</h5>
                 </div>
 
-                <div class="col-lg-5 form-group mb-3">
+                <div class="col-lg-5 form-group mb-3 auction-details-field">
                     {!! Form::label('title_ar', TranslationHelper::translate('title_ar') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::text('title_ar', old('title_ar', $data->title_ar ?? null), ['class' => 'form-control'.($errors->has('title_ar') ? ' is-invalid' : ''), 'required', 'placeholder' => TranslationHelper::translate('title_ar')]) !!}
                     @error('title_ar')
@@ -36,7 +36,7 @@
                 </div>
                 --}}
 
-                <div class="col-lg-5 form-group mb-3">
+                <div class="col-lg-5 form-group mb-3 auction-details-field">
                     {!! Form::label('start_price', TranslationHelper::translate('start_price') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::number('start_price', old('start_price', $data->start_price ?? null), ['step'=>"0.01", 'min'=>'0', 'class' => 'form-control'.($errors->has('start_price') ? ' is-invalid' : ''), 'required']) !!}
                     @error('start_price')
@@ -44,7 +44,7 @@
                     @enderror
                 </div>
 
-                <div class="col-lg-2 form-group mb-3">
+                <div class="col-lg-2 form-group mb-3 auction-details-field">
                     <label class="form-label">{{ TranslationHelper::translate('city') }}</label>
                     <select class="form-control @error('city_id') is-invalid @enderror" id="city_id" name="city_id">
                         <option value="">{{ TranslationHelper::translate('select_city') }}</option>
@@ -58,12 +58,12 @@
                     @enderror
                 </div>
 
-                <div class="col-12"><hr></div>
-                <div class="col-12">
-                    <h5 class="mb-3">{{ TranslationHelper::translate('schedule') }}</h5>
+                <div class="col-12 auction-divider"><hr></div>
+                <div class="col-12 auction-section-heading-wrap">
+                    <h5 class="mb-3 auction-section-heading"><i class="fa-regular fa-calendar"></i>{{ TranslationHelper::translate('schedule') }}</h5>
                 </div>
 
-                <div class="col-lg-6 form-group mb-3">
+                <div class="col-lg-6 form-group mb-3 auction-schedule-field">
                     {!! Form::label('date_start_at', TranslationHelper::translate('date_start') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::date('date_start_at', old('date_start_at', isset($data) ? \Carbon\Carbon::parse($data->date_start_at)->format('Y-m-d') : null), ['class' => 'form-control'.($errors->has('date_start_at') ? ' is-invalid' : ''), 'required']) !!}
                     @error('date_start_at')
@@ -71,7 +71,7 @@
                     @enderror
                 </div>
 
-                <div class="col-lg-6 form-group mb-3">
+                <div class="col-lg-6 form-group mb-3 auction-schedule-field">
                     {!! Form::label('date_end_at', TranslationHelper::translate('date_end') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::date('date_end_at', old('date_end_at', isset($data) ? \Carbon\Carbon::parse($data->date_end_at)->format('Y-m-d') : null), ['class' => 'form-control'.($errors->has('date_end_at') ? ' is-invalid' : ''), 'required']) !!}
                     @error('date_end_at')
@@ -79,7 +79,7 @@
                     @enderror
                 </div>
 
-                <div class="col-lg-6 form-group mb-3">
+                <div class="col-lg-6 form-group mb-3 auction-schedule-field">
                     {!! Form::label('time_start_at', TranslationHelper::translate('time_start') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::time('time_start_at', old('time_start_at', $data->time_start_at ?? null), ['class' => 'form-control'.($errors->has('time_start_at') ? ' is-invalid' : ''), 'required']) !!}
                     @error('time_start_at')
@@ -87,7 +87,7 @@
                     @enderror
                 </div>
 
-                <div class="col-lg-6 form-group mb-3">
+                <div class="col-lg-6 form-group mb-3 auction-schedule-field">
                     {!! Form::label('time_end_at', TranslationHelper::translate('time_end') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::time('time_end_at', old('time_end_at', $data->time_end_at ?? null), ['class' => 'form-control'.($errors->has('time_end_at') ? ' is-invalid' : ''), 'required']) !!}
                     @error('time_end_at')
@@ -95,14 +95,22 @@
                     @enderror
                 </div>
 
-                <div class="col-12"><hr></div>
-                <div class="col-12">
-                    <h5 class="mb-3">{{ TranslationHelper::translate('auction_banner') }}</h5>
+                <div class="col-12 auction-divider"><hr></div>
+                <div class="col-12 auction-section-heading-wrap">
+                    <h5 class="mb-3 auction-section-heading"><i class="fa-regular fa-image"></i>{{ TranslationHelper::translate('auction_banner') }}</h5>
                 </div>
 
-                <div class="form-group col-lg-6 mb-3">
-                    {!! Form::label('image', TranslationHelper::translate('auction_banner'), ['class' => 'form-label']) !!}
-                    <input type="file" multiple id="image_png" name="image[]" class="form-control @error('image') is-invalid @enderror @error('image.*') is-invalid @enderror" accept="image/*" />
+                <div class="form-group col-lg-6 mb-3 auction-banner-field">
+                    <label class="form-label">{{ TranslationHelper::translate('auction_banner') }}</label>
+                    <label class="auction-upload-zone" for="image_png">
+                        <span>
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <strong>اسحب وأفلت الصورة هنا</strong>
+                            <span>أو اضغط لرفع صورة من جهازك</span>
+                            <span>jpg, png, webp — الحد الأقصى 5MB</span>
+                        </span>
+                        <input type="file" multiple id="image_png" name="image[]" class="@error('image') is-invalid @enderror @error('image.*') is-invalid @enderror" accept="image/*" />
+                    </label>
                     @error('image')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
@@ -114,7 +122,7 @@
                 @if (isset($data))
                     @forelse(json_decode($data->image) as $feature)
                         @if (Storage::disk('public')->exists($feature))
-                            <div class="form-group col-lg-1 mb-3">
+                            <div class="form-group col-lg-1 mb-3 auction-banner-preview">
                                 <img src="{{ Storage::disk('public')->url($feature) }}" class="img-fluid" />
                             </div>
                         @endif
@@ -122,39 +130,38 @@
                     @endforelse
                 @endif
 
-                <div class="col-12"><hr></div>
-                <div class="col-12">
-                    <h5 class="mb-1">
+                <div class="col-12 auction-fees-field">
+                    <h5 class="mb-1 auction-fees-heading auction-section-heading">
+                        <i class="fa-solid fa-receipt"></i>
                         {{ TranslationHelper::translate('auction_fees') }}
                         <small class="text-muted">({{ TranslationHelper::translate('optional') }})</small>
                     </h5>
-                    <p class="text-muted small mb-3">{{ TranslationHelper::translate('auction_fees_optional_hint') }}</p>
-                </div>
+                    <p class="text-muted small mb-3 auction-fees-hint">{{ TranslationHelper::translate('auction_fees_optional_hint') }}</p>
 
                 {{-- md-label-2-lines reserves two lines of label height on every
                      field in this row, so a short label like "نسبة الضريبة (%)"
                      and a long one like "رسوم الخدمة (تشمل الاستضافة وأي مصاريف
                      إضافية)" still leave their inputs starting on the same
                      baseline instead of one sitting higher than the other. --}}
-                <div class="col-lg-3 form-group mb-3">
+                <div class="col-lg-3 form-group mb-3 auction-fee-tax">
                     {!! Form::label('tax_amount', TranslationHelper::translate('tax_amount'), ['class'=>'form-label md-label-2-lines']) !!}
                     {!! Form::number('tax_amount', old('tax_amount', isset($data) ? $data->tax_amount : null), ['class' => 'form-control', 'min'=>'0', 'step'=>'0.01', 'placeholder' => TranslationHelper::translate('tax_amount')]) !!}
                     @error('tax_amount')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
                 </div>
 
-                <div class="col-lg-3 form-group mb-3">
+                <div class="col-lg-3 form-group mb-3 auction-fee-commission">
                     {!! Form::label('commission_amount', TranslationHelper::translate('commission_amount'), ['class'=>'form-label md-label-2-lines']) !!}
                     {!! Form::number('commission_amount', old('commission_amount', isset($data) ? $data->commission_amount : null), ['class' => 'form-control', 'min'=>'0', 'step'=>'0.01', 'placeholder' => TranslationHelper::translate('commission_amount')]) !!}
                     @error('commission_amount')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
                 </div>
 
-                <div class="col-lg-3 form-group mb-3">
+                <div class="col-lg-3 form-group mb-3 auction-fee-service">
                     {!! Form::label('service_fee', TranslationHelper::translate('service_fee'), ['class'=>'form-label md-label-2-lines']) !!}
                     {!! Form::number('service_fee', old('service_fee', isset($data) ? $data->service_fee : null), ['class' => 'form-control', 'min'=>'0']) !!}
                     @error('service_fee')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
                 </div>
 
-                <div class="col-lg-3 form-group mb-3">
+                <div class="col-lg-3 form-group mb-3 auction-fees-payer">
                     {!! Form::label('commission_payer', TranslationHelper::translate('commission_payer'), ['class' => 'form-label md-label-2-lines', 'for' => 'commission_payer']) !!}
                     <select name="commission_payer" id="commission_payer" class="form-control @error('commission_payer') is-invalid @enderror">
                         <option value="">{{ TranslationHelper::translate('commission_payer') }}</option>
@@ -170,22 +177,26 @@
                     @enderror
                 </div>
 
-                <div class="col-12"><hr></div>
+                </div>
 
-                <div class="col-6 form-group mb-3">
+                <div class="col-12 auction-divider"><hr></div>
+
+                <div class="col-6 form-group mb-3 auction-video-field">
                     <label class="form-label">{{ TranslationHelper::translate('video_type') }} <span class="text-danger">*</span></label>
-                    <div class="form-check">
+                    <div class="auction-video-options">
+                    <label class="auction-video-option" for="type_live">
                         {!! Form::radio('type', 'live', isset($data) ? $data->type === 'live' : true, ['class' => 'form-check-input', 'id' => 'type_live']) !!}
-                        <label class="form-check-label" for="type_live">{{ TranslationHelper::translate('live') }}</label>
-                    </div>
-                    <div class="form-check">
+                        <span><strong>{{ TranslationHelper::translate('live') }}</strong><small>بث مباشر في الوقت الفعلي</small></span>
+                    </label>
+                    <label class="auction-video-option" for="type_recorded">
                         {!! Form::radio('type', 'recorded', isset($data) ? $data->type === 'recorded' : false, ['class' => 'form-check-input', 'id' => 'type_recorded']) !!}
-                        <label class="form-check-label" for="type_recorded">{{ TranslationHelper::translate('recorded') }}</label>
-                    </div>
+                        <span><strong>{{ TranslationHelper::translate('recorded') }}</strong><small>فيديو مسجل مسبقًا</small></span>
+                    </label>
                     {{-- <div class="form-check">
                         {!! Form::radio('type', 'photo', isset($data) ? $data->type === 'photo' : false, ['class' => 'form-check-input', 'id' => 'type_photo']) !!}
                         <label class="form-check-label" for="type_photo">{{ TranslationHelper::translate('photo_auction') }}</label>
                     </div> --}}
+                    </div>
                     @error('type')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
@@ -222,14 +233,15 @@
                 </div>
                 @endif
 
-                <div class="col-12"><hr></div>
-                <div class="col-12">
-                    <h5 class="mb-3">{{ TranslationHelper::translate('terms_conditions') }}</h5>
+                <div class="col-12 auction-divider"><hr></div>
+                <div class="col-12 auction-section-heading-wrap">
+                    <h5 class="mb-3 auction-section-heading"><i class="fa-regular fa-file-lines"></i>{{ TranslationHelper::translate('terms_conditions') }}</h5>
                 </div>
 
-                <div class="col-12 form-group mb-3">
+                <div class="col-12 form-group mb-3 auction-terms-field">
                     {!! Form::label('terms_conditions_ar', TranslationHelper::translate('terms_conditions'), ['class'=>'form-label']) !!}
-                    {!! Form::textArea('terms_conditions_ar', old('terms_conditions_ar', $data->terms_conditions_ar ?? null), ['class' => 'form-control'.($errors->has('terms_conditions_ar') ? ' is-invalid' : ''), 'placeholder' => TranslationHelper::translate('terms_conditions')]) !!}
+                    {!! Form::textArea('terms_conditions_ar', old('terms_conditions_ar', $data->terms_conditions_ar ?? null), ['class' => 'form-control'.($errors->has('terms_conditions_ar') ? ' is-invalid' : ''), 'placeholder' => 'اكتب الشروط والأحكام هنا...', 'rows' => 5, 'maxlength' => 2000, 'id' => 'terms_conditions_ar']) !!}
+                    <small class="text-muted d-block text-start"><span id="terms_conditions_ar_count">0</span>/2000</small>
                     @error('terms_conditions_ar')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
                     @enderror
@@ -265,7 +277,7 @@
 
             </div>
 
-<div class="mt-3">
+<div class="mt-3 auction-actions-wrap">
     <button type="submit" name="action" value="save" class="btn btn-primary md-btn-full-sm">
         {{ TranslationHelper::translate('save') }}
     </button>
@@ -303,5 +315,15 @@
 <script>
     $(document).ready(function () {
         $("select").select2();
+
+        const terms = document.getElementById('terms_conditions_ar');
+        const termsCount = document.getElementById('terms_conditions_ar_count');
+        const updateTermsCount = function () {
+            if (terms && termsCount) termsCount.textContent = terms.value.length;
+        };
+        if (terms) {
+            terms.addEventListener('input', updateTermsCount);
+            updateTermsCount();
+        }
     });
 </script>
