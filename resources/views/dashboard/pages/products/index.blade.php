@@ -83,6 +83,14 @@
         overflow: hidden;
     }
 
+    #transferUnsoldItemsModal .modal-content > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        height: 100%;
+    }
+
     #transferUnsoldItemsModal .modal-body {
         flex: 1 1 auto;
         min-height: 0;
