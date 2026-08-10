@@ -68,6 +68,41 @@
 <!--end::Card-->
 
 @if($canTransferItems ?? false)
+<style>
+    /* Keep the transfer form usable on short screens: only the modal body scrolls. */
+    #transferUnsoldItemsModal .modal-dialog {
+        height: calc(100vh - 1rem);
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+    }
+
+    #transferUnsoldItemsModal .modal-content {
+        height: 100%;
+        max-height: 100%;
+        display: flex;
+        overflow: hidden;
+    }
+
+    #transferUnsoldItemsModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: scroll !important;
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 575.98px) {
+        #transferUnsoldItemsModal .modal-dialog {
+            height: calc(100vh - .5rem);
+            margin-top: .25rem;
+            margin-bottom: .25rem;
+        }
+
+        #transferUnsoldItemsModal .modal-content {
+            max-height: 100%;
+        }
+    }
+</style>
 <div class="modal fade" id="transferUnsoldItemsModal" tabindex="-1" aria-labelledby="transferUnsoldItemsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
@@ -163,6 +198,23 @@
                                 <div class="col-md-4 form-group mb-3">
                                     <label class="form-label">{{ TranslationHelper::translate('start_price') }}</label>
                                     <input type="number" step="0.01" min="0" name="new_start_price" class="form-control" value="{{ old('new_start_price', $live->start_price ?? 0) }}">
+                                </div>
+                                <div class="col-md-6 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('city') }}</label>
+                                    <select name="new_city_id" class="form-control">
+                                        <option value="">{{ TranslationHelper::translate('select_city') }}</option>
+                                        @foreach($cities as $city)
+                                            <option value="{{ $city->id }}" {{ old('new_city_id', $live->city_id) == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-6 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('information') }}</label>
+                                    <textarea name="new_information_ar" class="form-control" rows="2">{{ old('new_information_ar', $live->information_ar ?? $live->information ?? '') }}</textarea>
+                                </div>
+                                <div class="col-12 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('terms_conditions') }}</label>
+                                    <textarea name="new_terms_conditions_ar" class="form-control" rows="2">{{ old('new_terms_conditions_ar', $live->terms_conditions_ar ?? $live->terms_conditions ?? '') }}</textarea>
                                 </div>
                             </div>
                         </div>

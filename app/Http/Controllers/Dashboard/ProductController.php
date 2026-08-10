@@ -73,7 +73,12 @@ class ProductController extends Controller
             $targetAuctions = $targetAuctions->orderByDesc('id')->get();
         }
 
-        return view('dashboard.pages.products.index', compact('request', 'live', 'canTransferItems', 'transferableItems', 'targetAuctions'));
+        $cities = City::select('id', 'name->'.app()->getLocale().' as name')
+            ->where('is_active', 1)
+            ->orderBy('name')
+            ->get();
+
+        return view('dashboard.pages.products.index', compact('request', 'live', 'canTransferItems', 'transferableItems', 'targetAuctions', 'cities'));
     }
 
     public function transferUnsoldItems($id, Request $request, AuctionItemTransferService $transferService)
@@ -93,6 +98,9 @@ class ProductController extends Controller
             'new_time_start_at' => 'required_if:transfer_mode,new|nullable',
             'new_time_end_at' => 'required_if:transfer_mode,new|nullable',
             'new_start_price' => 'required_if:transfer_mode,new|nullable|numeric|min:0',
+            'new_information_ar' => 'nullable|string',
+            'new_terms_conditions_ar' => 'nullable|string',
+            'new_city_id' => 'nullable|integer|exists:cities,id',
         ]);
 
         if ($request->transfer_mode === 'existing') {
@@ -109,6 +117,11 @@ class ProductController extends Controller
                 'time_start_at' => $request->new_time_start_at,
                 'time_end_at' => $request->new_time_end_at,
                 'start_price' => $request->new_start_price,
+                'information_ar' => $request->new_information_ar,
+                'information' => $request->new_information_ar,
+                'terms_conditions_ar' => $request->new_terms_conditions_ar,
+                'terms_conditions' => $request->new_terms_conditions_ar,
+                'city_id' => $request->new_city_id,
             ], $request->item_ids);
         }
 
