@@ -210,10 +210,10 @@
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="form-label">{{ TranslationHelper::translate('city') }}</label>
                                     <select name="new_city_id" class="form-control">
-                                        <option value="">{{ TranslationHelper::translate('select_city') }}</option>
-                                        @foreach($cities as $city)
-                                            <option value="{{ $city->id }}" {{ old('new_city_id', $live->city_id) == $city->id ? 'selected' : '' }}>{{ $city->name }}</option>
-                                        @endforeach
+                                        @php($riyadhCity = $cities->first(fn ($city) => mb_strtolower(trim((string) $city->name)) === 'الرياض'))
+                                        <option value="{{ $riyadhCity?->id ?? '' }}" selected>
+                                            {{ $riyadhCity->name ?? 'الرياض' }}
+                                        </option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 form-group mb-3">
