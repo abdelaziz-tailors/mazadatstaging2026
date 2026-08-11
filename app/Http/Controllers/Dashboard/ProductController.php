@@ -101,6 +101,10 @@ class ProductController extends Controller
             'new_information_ar' => 'nullable|string',
             'new_terms_conditions_ar' => 'nullable|string',
             'new_city_id' => 'nullable|integer|exists:cities,id',
+            'new_tax_amount' => 'nullable|numeric|min:0',
+            'new_commission_amount' => 'nullable|numeric|min:0',
+            'new_commission_payer' => 'nullable|in:buyer,seller',
+            'new_service_fee' => 'nullable|numeric|min:0',
         ]);
 
         if ($request->transfer_mode === 'existing') {
@@ -122,6 +126,10 @@ class ProductController extends Controller
                 'terms_conditions_ar' => $request->new_terms_conditions_ar,
                 'terms_conditions' => $request->new_terms_conditions_ar,
                 'city_id' => $request->new_city_id,
+                'tax_amount' => $request->new_tax_amount,
+                'commission_amount' => $request->new_commission_amount,
+                'commission_payer' => $request->new_commission_payer,
+                'service_fee' => $request->new_service_fee,
             ], $request->item_ids);
         }
 

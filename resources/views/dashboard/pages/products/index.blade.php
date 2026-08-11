@@ -224,6 +224,30 @@
                                     <label class="form-label">{{ TranslationHelper::translate('terms_conditions') }}</label>
                                     <textarea name="new_terms_conditions_ar" class="form-control" rows="2">{{ old('new_terms_conditions_ar', $live->terms_conditions_ar ?? $live->terms_conditions ?? '') }}</textarea>
                                 </div>
+                                <div class="col-12 mt-2 mb-2">
+                                    <h6 class="fw-bold mb-1">{{ TranslationHelper::translate('auction_fees') }}</h6>
+                                    <small class="text-muted">{{ TranslationHelper::translate('optional') }}</small>
+                                </div>
+                                <div class="col-md-4 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('tax_amount') }}</label>
+                                    <input type="number" step="0.01" min="0" name="new_tax_amount" class="form-control" value="{{ old('new_tax_amount', $live->tax_amount ?? '') }}">
+                                </div>
+                                <div class="col-md-4 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('commission_amount') }}</label>
+                                    <input type="number" step="0.01" min="0" name="new_commission_amount" class="form-control" value="{{ old('new_commission_amount', $live->commission_amount ?? '') }}">
+                                </div>
+                                <div class="col-md-4 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('service_fee') }}</label>
+                                    <input type="number" step="0.01" min="0" name="new_service_fee" class="form-control" value="{{ old('new_service_fee', $live->service_fee ?? '') }}">
+                                </div>
+                                <div class="col-md-6 form-group mb-3">
+                                    <label class="form-label">{{ TranslationHelper::translate('commission_payer') }}</label>
+                                    <select name="new_commission_payer" class="form-control">
+                                        <option value="">{{ TranslationHelper::translate('commission_payer') }}</option>
+                                        <option value="buyer" {{ old('new_commission_payer', $live->commission_payer ?? '') === 'buyer' ? 'selected' : '' }}>{{ TranslationHelper::translate('buyer') }}</option>
+                                        <option value="seller" {{ old('new_commission_payer', $live->commission_payer ?? '') === 'seller' ? 'selected' : '' }}>{{ TranslationHelper::translate('seller') }}</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     @endif
