@@ -1623,4 +1623,5 @@
   'close' => 'Close',
   'cancel' => 'Cancel',
   'your_subscription_is_not_active' => 'Your subscription is not active',
+  'added_successfully' => 'Added Successfully',
 );

@@ -1631,4 +1631,5 @@
   'close' => 'إغلاق',
   'cancel' => 'إلغاء',
   'your_subscription_is_not_active' => 'Your subscription is not active',
+  'added_successfully' => 'Added Successfully',
 );
