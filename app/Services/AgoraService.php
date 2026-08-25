@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Libraries\Agora\RtcTokenBuilder2;
 use Illuminate\Support\Facades\Log;
 
-
 class AgoraService
 {
     private $appId;
@@ -13,22 +12,20 @@ class AgoraService
 
     public function __construct()
     {
-        $this->appId = env('AGORA_APP_ID');
-        $this->appCertificate = env('AGORA_APP_CERTIFICATE');
+        $this->appId = config('services.agora.app_id');
+        $this->appCertificate = config('services.agora.app_certificate');
     }
 
-  
     public function generateToken($channelName, $uid = 0, $role = 'subscriber')
     {
-      
         $tokenExpireSeconds = 86400; // 24 hours in seconds
-    
 
         $rtcRole = RtcTokenBuilder2::ROLE_SUBSCRIBER;
+
         if ($role === 'publisher') {
             $rtcRole = RtcTokenBuilder2::ROLE_PUBLISHER;
         }
-      
+
         // Use official Agora token builder
         try {
             $token = RtcTokenBuilder2::buildTokenWithUid(
@@ -40,22 +37,22 @@ class AgoraService
                 $tokenExpireSeconds,
                 $tokenExpireSeconds
             );
-           
+
             return $token;
         } catch (\Exception $e) {
             Log::error('Exception while generating Agora token', [
                 'error' => $e->getMessage(),
                 'channel_name' => $channelName,
                 'uid' => $uid,
-                'role' => $role
+                'role' => $role,
             ]);
+
             return null;
         }
     }
 
-
     /**
-     * Generate a unique channel name for live video
+     * Generate a unique channel name for live video.
      */
     public function generateChannelName($liveVideoId)
     {
@@ -63,13 +60,10 @@ class AgoraService
     }
 
     /**
-     * Get Agora App ID
+     * Get Agora App ID.
      */
     public function getAppId()
     {
         return $this->appId;
     }
-
-
 }
-

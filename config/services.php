@@ -29,6 +29,7 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+
     'nafath' => [
         'APP_ID' => env('NAFATH_APP_ID'),
         'APP_KEY' => env('NAFATH_APP_KEY'),
@@ -53,6 +54,11 @@ return [
         'whatsapp_template' => env('INFOBIP_WHATSAPP_TEMPLATE'),
         'whatsapp_lang' => env('INFOBIP_WHATSAPP_LANG', 'en'),
         'timeout' => env('INFOBIP_TIMEOUT', 10),
+    ],
+
+    'agora' => [
+        'app_id' => env('AGORA_APP_ID'),
+        'app_certificate' => env('AGORA_APP_CERTIFICATE'),
     ],
 
 ];
