@@ -127,6 +127,20 @@ class LiveVideoItemTransferController extends Controller
                     return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
                 }
                 $createdItems = $transferService->transferItems($source, $target, $request->item_ids);
+
+                $target = $target->fresh(['video_items']);
+                $targetId = (int) $request->target_auction_id;
+                $createdItemIds = $createdItems->pluck('id')->filter()->values();
+
+                if ((int) $target->id !== $targetId || $createdItemIds->isEmpty() ||
+                    $createdItems->contains(function (LiveVideoItem $createdItem) use ($targetId) {
+                        return (int) $createdItem->live_video_id !== $targetId;
+                    }) ||
+                    $createdItemIds->diff($target->video_items->pluck('id'))->isNotEmpty()) {
+                    throw ValidationException::withMessages([
+                        'target_auction_id' => ['The transferred item was not returned by the selected destination auction.'],
+                    ]);
+                }
             } else {
                 $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
                 if (! $activeSubscription) {
