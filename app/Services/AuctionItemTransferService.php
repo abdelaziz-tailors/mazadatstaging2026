@@ -142,7 +142,21 @@ class AuctionItemTransferService
                     ]));
                 }
 
+                if ($clone->pieces()->count() !== $item->pieces->unique('piece_number')->count()) {
+                    throw ValidationException::withMessages([
+                        'item_ids' => ['The transferred item pieces were not persisted in the destination auction.'],
+                    ]);
+                }
+
                 $created->push($clone->load('pieces'));
+            }
+
+            if ($created->isEmpty() || $created->contains(function (LiveVideoItem $createdItem) use ($target) {
+                return (int) $createdItem->live_video_id !== (int) $target->id;
+            })) {
+                throw ValidationException::withMessages([
+                    'target_auction_id' => ['No transferred item was persisted in the selected destination auction.'],
+                ]);
             }
 
             return $created;
