@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -109,7 +110,6 @@ class AuctionItemTransferService
                     'deleted_at',
                 ]);
 
-                $clone->live_video_id = $target->id;
                 $clone->transferred_from_item_id = $item->id;
                 $clone->transfer_origin_item_id = $originId;
                 $clone->finished_price = null;
@@ -117,7 +117,20 @@ class AuctionItemTransferService
                 $clone->end_at = null;
                 $clone->winner_video = null;
                 $clone->status = 'pending';
-                $clone->save();
+                // Persist through the destination relationship so the target
+                // auction association is explicit and cannot silently remain
+                // attached to the source item.
+                $target->video_items()->save($clone);
+
+                $persisted = $target->video_items()
+                    ->whereKey($clone->getKey())
+                    ->first();
+
+                if (! $persisted || (int) $persisted->live_video_id !== (int) $target->id) {
+                    throw ValidationException::withMessages([
+                        'target_auction_id' => ['The transferred item was not persisted in the destination auction.'],
+                    ]);
+                }
 
                 foreach ($item->pieces->unique('piece_number') as $piece) {
                     $clone->pieces()->create($piece->only([
@@ -194,6 +207,42 @@ class AuctionItemTransferService
         $target->type = $target->type ?: 'live';
         $target->save();
 
+        if ($target->type === 'live') {
+            $this->initializeLiveAgora($target);
+        }
+
         return $target;
+    }
+
+    /**
+     * Initialize credentials using the same existing AgoraService used by the
+     * normal live-auction creation flow. This intentionally does not add any
+     * recording/replay behavior.
+     */
+    private function initializeLiveAgora(LiveVideo $target): void
+    {
+        $agoraService = app(AgoraService::class);
+        $channelName = $agoraService->generateChannelName($target->id);
+        $token = $agoraService->generateToken($channelName);
+        $appId = $agoraService->getAppId();
+
+        if (empty($appId) || empty($channelName) || empty($token)) {
+            Log::error('Transferred live auction Agora initialization failed', [
+                'auction_id' => $target->id,
+                'has_app_id' => ! empty($appId),
+                'has_channel_name' => ! empty($channelName),
+                'has_token' => ! empty($token),
+            ]);
+
+            throw ValidationException::withMessages([
+                'new_auction.type' => ['Live auction initialization failed. Agora credentials could not be generated.'],
+            ]);
+        }
+
+        $target->update([
+            'agora_app_id' => $appId,
+            'agora_channel_name' => $channelName,
+            'agora_token' => $token,
+        ]);
     }
 }
