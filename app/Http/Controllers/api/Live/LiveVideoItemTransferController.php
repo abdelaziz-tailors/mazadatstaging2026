@@ -13,6 +13,7 @@ use App\Services\AuctionItemTransferService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class LiveVideoItemTransferController extends Controller
@@ -64,6 +65,20 @@ class LiveVideoItemTransferController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
 
+        // TEMPORARY diagnostic logging for the mobile existing-auction
+        // transfer investigation. No secrets/tokens/Agora values. Remove
+        // once the production root cause is confirmed.
+        Log::info('MOBILE_TRANSFER_REQUEST', [
+            'user_id' => auth('api')->user()->id,
+            'path' => $request->path(),
+            'item_id' => $request->input('item_id'),
+            'item_ids' => $request->input('item_ids'),
+            'source_auction_id' => $request->input('source_auction_id'),
+            'target_auction_id' => $request->input('target_auction_id'),
+            'target_location_id' => $request->input('target_location_id'),
+            'transfer_mode' => $request->input('transfer_mode'),
+        ]);
+
         try {
             // Normalize both the single-item mobile payload and the original
             // array payload before validation.
@@ -95,6 +110,13 @@ class LiveVideoItemTransferController extends Controller
                 }
             }
 
+            Log::info('MOBILE_TRANSFER_NORMALIZED', [
+                'source_auction_id' => $request->input('source_auction_id'),
+                'target_auction_id' => $request->input('target_auction_id'),
+                'item_ids' => $request->input('item_ids'),
+                'transfer_mode' => $request->input('transfer_mode'),
+            ]);
+
             $request->validate([
                 'source_auction_id' => 'required|integer|exists:live_videos,id',
                 'item_ids' => 'required|array|min:1',
@@ -118,12 +140,18 @@ class LiveVideoItemTransferController extends Controller
 
             $source = $this->ownedAuction($request->source_auction_id);
             if (! $source) {
+                Log::info('MOBILE_TRANSFER_FAILED', [
+                    'error' => 'source auction not found or not owned by authenticated user',
+                ]);
                 return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
             }
 
             if ($request->transfer_mode === 'existing') {
                 $target = $this->ownedAuction($request->target_auction_id);
                 if (! $target) {
+                    Log::info('MOBILE_TRANSFER_FAILED', [
+                        'error' => 'target auction not found or not owned by authenticated user',
+                    ]);
                     return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
                 }
                 $createdItems = $transferService->transferItems($source, $target, $request->item_ids);
@@ -141,6 +169,12 @@ class LiveVideoItemTransferController extends Controller
                         'target_auction_id' => ['The transferred item was not returned by the selected destination auction.'],
                     ]);
                 }
+
+                Log::info('MOBILE_TRANSFER_SUCCESS', [
+                    'target_auction_id' => $target->id,
+                    'created_item_ids' => $createdItemIds->all(),
+                    'created_item_live_video_ids' => $createdItems->pluck('live_video_id')->all(),
+                ]);
             } else {
                 $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
                 if (! $activeSubscription) {
@@ -175,6 +209,9 @@ class LiveVideoItemTransferController extends Controller
                 'transferred_items' => VideoItemResource::collection($createdItems),
             ]);
         } catch (ValidationException $exception) {
+            Log::info('MOBILE_TRANSFER_FAILED', [
+                'error' => $exception->validator->errors()->first(),
+            ]);
             return $this->failed_response($exception->validator->errors()->first(), 422);
         }
     }
