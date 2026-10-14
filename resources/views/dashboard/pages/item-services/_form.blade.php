@@ -1,9 +1,29 @@
 @php $names = isset($data) ? (json_decode($data->name, true) ?: []) : []; @endphp
 
+@if(!empty($showDefaultToggle))
+    <div class="form-group mb-3">
+        <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   id="is_default"
+                   name="is_default"
+                   value="1"
+                   @if(!empty($selectedIsDefault)) checked @endif>
+
+            <label class="form-check-label" for="is_default">
+                خدمة أساسية عامة لكل المشتركين
+            </label>
+        </div>
+    </div>
+@endif
+
 @if(!empty($showPartnerSelect))
     <div class="form-group mb-3">
         {!! Form::label('admin_id', TranslationHelper::translate('select_partner'), ['class' => 'form-label']) !!}
-        <select name="admin_id" class="form-select form-control{{ $errors->has('admin_id') ? ' is-invalid' : '' }}" required>
+        <select name="admin_id"
+                id="item_service_partner_select"
+                class="form-select form-control{{ $errors->has('admin_id') ? ' is-invalid' : '' }}"
+                @if(empty($selectedIsDefault)) required @endif>
             <option value="">{{ TranslationHelper::translate('select') }}</option>
             @foreach($partners as $partner)
                 <option value="{{ $partner->id }}" @if((string) ($selectedPartnerId ?? '') === (string) $partner->id) selected @endif>
@@ -50,3 +70,27 @@
 </div>
 
 <button type="submit" class="btn btn-primary w-100 mt-2">{{ TranslationHelper::translate('save') }}</button>
+
+
+@if(!empty($showDefaultToggle))
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const defaultCheckbox = document.getElementById('is_default');
+    const partnerSelect = document.getElementById('item_service_partner_select');
+
+    if (!defaultCheckbox || !partnerSelect) {
+        return;
+    }
+
+    function syncDefaultState() {
+        const isDefault = defaultCheckbox.checked;
+
+        partnerSelect.disabled = isDefault;
+        partnerSelect.required = !isDefault;
+    }
+
+    defaultCheckbox.addEventListener('change', syncDefaultState);
+    syncDefaultState();
+});
+</script>
+@endif

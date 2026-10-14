@@ -50,6 +50,31 @@
 @endif
 
 <div class="form-group mb-3">
+    <div class="mb-3">
+        {!! Form::label('national_id', TranslationHelper::translate('national_identity'), ['class' => 'form-label']) !!}
+
+        {!! Form::text(
+            'national_id',
+            old(
+                'national_id',
+                isset($admin)
+                    ? ($admin->national_id ?: ($admin->user->national_id ?? ''))
+                    : null
+            ),
+            [
+                'class' => 'form-control' . ($errors->has('national_id') ? ' is-invalid' : ''),
+                'maxlength' => 32,
+                'inputmode' => 'numeric',
+                'autocomplete' => 'off',
+                'placeholder' => TranslationHelper::translate('national_identity')
+            ]
+        ) !!}
+
+        @error('national_id')
+            <div class="invalid-feedback d-block">{{ $message }}</div>
+        @enderror
+    </div>
+
     {!! Form::label('commercial_register', TranslationHelper::translate('commercial_register'), ['class' => 'form-label']) !!}
     <input type="file" name="commercial_register" id="commercial_register" class="form-control{{ $errors->has('commercial_register') ? ' is-invalid' : '' }}" accept=".jpeg,.jpg,.png,.pdf">
     @if ($errors->has('commercial_register'))

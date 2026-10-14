@@ -109,7 +109,7 @@ class OrderController extends Controller
                 return self::formatCityName($order->shippingCity?->name);
             })
             ->addColumn('total', function (Order $order) {
-                return number_format($order->total, 2);
+                return number_format($order->subtotal, 2);
             })
             ->addColumn('items_count', function (Order $order) {
                 return $order->items_count;
@@ -152,9 +152,11 @@ class OrderController extends Controller
 
         $itemServices = \App\Models\ItemService::query()
             ->where('is_active', true)
-            ->when($order->liveVideo?->admin_id, function ($query, $adminId) {
-                $query->where('admin_id', $adminId);
-            })
+            ->availableForAdmin(
+                $order->liveVideo?->admin_id
+                    ? (int) $order->liveVideo->admin_id
+                    : null
+            )
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get();

@@ -44,7 +44,7 @@ class VendorController extends Controller
      */
     public function index(Request $request)
     {
-        $base = User::where('user_type', 'vendor');
+        $base = User::where('user_type', 'seller');
         PartnerDashboardScope::scopeVendors($base);
 
         $total = (clone $base)->count();
@@ -83,7 +83,7 @@ class VendorController extends Controller
      */
     public function show($id)
     {
-        $vendor = User::where('user_type', 'vendor')->findOrFail($id);
+        $vendor = User::where('user_type', 'seller')->findOrFail($id);
 
         return view('dashboard.pages.vendors.show', compact('vendor'));
     }
@@ -91,7 +91,7 @@ class VendorController extends Controller
 
     // get index data by ajax
     public function get_data (Request $request) {
-        $providers = User::where('user_type', 'vendor');
+        $providers = User::where('user_type', 'seller');
         PartnerDashboardScope::scopeVendors($providers);
 
         if ($request->filled('filter_username')) {
@@ -187,7 +187,7 @@ class VendorController extends Controller
             'password' => bcrypt($request->password),
             'city_id' => $request->city_id,
             'admin_id' => Auth::guard('admin')->user()->id,
-            'user_type' => 'vendor',
+            'user_type' => 'seller',
             'is_active' => 1,
         ]);
 

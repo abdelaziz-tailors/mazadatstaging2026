@@ -437,6 +437,273 @@
             grid-template-columns: 1fr;
         }
     }
+
+    /* UNIVERSAL AUCTION RESPONSIVE FIX */
+    @media (max-width: 991.98px) {
+
+        .auction-create-page {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .auction-create-page .auction-create-card,
+        .auction-create-page .auction-create-card > .card-body,
+        .auction-create-page #kt_form_1 {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        /*
+         * On tablet / mobile every main form section becomes one column.
+         * This avoids Bootstrap widths fighting with the custom grid.
+         */
+        .auction-create-page .auction-create-form {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            width: 100% !important;
+            max-width: 100%;
+            min-width: 0;
+            margin-inline: 0 !important;
+            gap: 0 !important;
+        }
+
+        .auction-create-page .auction-create-form > * {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            min-inline-size: 0 !important;
+            box-sizing: border-box;
+        }
+
+        /*
+         * Fees section must be its own full-width grid.
+         * No field is allowed to become a tiny Bootstrap column.
+         */
+        .auction-create-page .auction-fees-field {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            gap: .75rem !important;
+        }
+
+        .auction-create-page .auction-fees-field > .auction-fees-heading,
+        .auction-create-page .auction-fees-field > .auction-fees-hint,
+        .auction-create-page .auction-fees-field > .form-group {
+            grid-column: 1 / -1 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        /*
+         * Desktop used a fixed two-line label height.
+         * Mobile labels should take their natural height.
+         */
+        .auction-create-page .auction-fees-field .md-label-2-lines {
+            min-height: 0 !important;
+            height: auto !important;
+            white-space: normal !important;
+            overflow-wrap: normal;
+            word-break: normal;
+        }
+
+        /*
+         * Bootstrap / Select2 / native date-time controls.
+         */
+        .auction-create-page .form-control,
+        .auction-create-page select,
+        .auction-create-page textarea,
+        .auction-create-page input,
+        .auction-create-page .select2-container {
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+        }
+
+        .auction-create-page .select2-container {
+            width: 100% !important;
+        }
+
+        .auction-create-page .select2-container--default
+        .select2-selection--single {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        .auction-create-page input[type="date"],
+        .auction-create-page input[type="time"],
+        .auction-create-page input[type="number"],
+        .auction-create-page input[type="text"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        /*
+         * Banner upload.
+         */
+        .auction-create-page .auction-banner-field,
+        .auction-create-page .auction-upload-zone {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box;
+        }
+
+        .auction-create-page .auction-upload-zone {
+            min-height: 170px;
+        }
+
+        /*
+         * Video type.
+         */
+        .auction-create-page .auction-video-field {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .auction-create-page .auction-video-options {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .65rem;
+        }
+
+        .auction-create-page .auction-video-option {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .auction-create-page .auction-video-option span {
+            min-width: 0;
+        }
+
+        .auction-create-page .auction-video-option strong,
+        .auction-create-page .auction-video-option small {
+            white-space: normal;
+            word-break: normal;
+            overflow-wrap: normal;
+        }
+
+        /*
+         * Terms.
+         */
+        .auction-create-page .auction-terms-field,
+        .auction-create-page .auction-terms-field textarea {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .auction-create-page .auction-terms-field textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .auction-create-page .auction-actions-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+    }
+
+
+    @media (max-width: 575.98px) {
+
+        .auction-create-page .auction-create-card > .card-body {
+            padding: .75rem !important;
+        }
+
+        /*
+         * 16px prevents automatic Safari/iPhone zoom when focusing inputs.
+         */
+        .auction-create-page .form-control,
+        .auction-create-page select,
+        .auction-create-page textarea,
+        .auction-create-page input,
+        .auction-create-page .select2-selection__rendered {
+            font-size: 16px !important;
+        }
+
+        .auction-create-page .auction-section-heading {
+            font-size: 1.05rem;
+            line-height: 1.45;
+            white-space: normal;
+        }
+
+        .auction-create-page .auction-fees-hint {
+            line-height: 1.65;
+        }
+
+        /*
+         * One video type card per row is safer for
+         * iPhone SE / Samsung small screens / 360-430 widths.
+         */
+        .auction-create-page .auction-video-options {
+            grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .auction-create-page .auction-video-option {
+            min-height: 72px;
+            padding: .8rem;
+        }
+
+        .auction-create-page .auction-actions,
+        .auction-create-page .auction-actions-wrap {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: .6rem;
+        }
+
+        .auction-create-page .auction-actions .btn,
+        .auction-create-page .auction-actions-wrap .btn {
+            width: 100% !important;
+            max-width: 100%;
+            min-width: 0 !important;
+        }
+
+        .auction-create-page .auction-page-heading {
+            gap: .6rem !important;
+        }
+
+        .auction-create-page .auction-page-heading h3 {
+            max-width: 100%;
+            white-space: normal !important;
+            line-height: 1.35;
+        }
+    }
+
+
+    @media (max-width: 359.98px) {
+
+        .auction-create-page .auction-create-card > .card-body {
+            padding: .6rem !important;
+        }
+
+        .auction-create-page .auction-section-heading {
+            font-size: 1rem;
+        }
+
+        .auction-create-page .auction-page-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+        }
+    }
+
 </style>
 
 <div class="auction-create-page">

@@ -33,6 +33,7 @@ class RegisterRequest extends FormRequest
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
 //            'user_name' => 'required|min:3',
 
+            'national_id' => 'nullable|string|max:32|unique:users,national_id,NULL,id,deleted_at,NULL',
             'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL',
             // 'account_type' => 'required',
             'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',

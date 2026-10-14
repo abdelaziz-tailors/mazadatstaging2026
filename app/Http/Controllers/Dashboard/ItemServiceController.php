@@ -36,6 +36,7 @@ class ItemServiceController extends Controller
                 'name->'.app()->getLocale().' as name',
                 'default_price',
                 'is_active',
+                'is_default',
                 'admin_id'
             );
 
@@ -46,6 +47,10 @@ class ItemServiceController extends Controller
                 return $item->default_price !== null ? number_format($item->default_price, 2) : '—';
             })
             ->editColumn('is_active', function (ItemService $item) {
+                if (PartnerDashboardScope::isPartner() && $item->is_default) {
+                    return '<span class="badge bg-success">خدمة أساسية</span>';
+                }
+
                 return view('dashboard.partials.actions.is_active')
                     ->with(['item' => $item, 'action' => route('admin.item-services.active_toogler', $item->id)]);
             })
@@ -56,7 +61,9 @@ class ItemServiceController extends Controller
 
         if (PartnerDashboardScope::isSuperAdmin()) {
             $datatable->addColumn('partner', function (ItemService $item) {
-                return $item->admin->name ?? '—';
+                return $item->is_default
+                    ? 'خدمة أساسية عامة'
+                    : ($item->admin->name ?? '—');
             });
         }
 
@@ -72,7 +79,10 @@ class ItemServiceController extends Controller
 
     public function store(StoreItemServiceRequest $request)
     {
-        $adminId = $this->resolveOwnerAdminId($request);
+        $isDefault = PartnerDashboardScope::isSuperAdmin()
+            && $request->boolean('is_default');
+
+        $adminId = $this->resolveOwnerAdminId($request, $isDefault);
 
         ItemService::create([
             'name' => json_encode($request->name),
@@ -80,6 +90,7 @@ class ItemServiceController extends Controller
             'sort_order' => (int) ($request->input('sort_order') ?? 0),
             'admin_id' => $adminId,
             'is_active' => $request->has('is_active'),
+            'is_default' => $isDefault,
         ]);
 
         Toastr::success(TranslationHelper::translate('item_service_created_successfully'));
@@ -103,15 +114,24 @@ class ItemServiceController extends Controller
         $data = ItemService::findOrFail($id);
         PartnerDashboardScope::ensureOwnItemService($data);
 
+        $isDefault = PartnerDashboardScope::isSuperAdmin()
+            ? $request->boolean('is_default')
+            : false;
+
         $payload = [
             'name' => json_encode($request->name),
             'default_price' => $request->input('default_price'),
             'sort_order' => (int) ($request->input('sort_order') ?? 0),
             'is_active' => $request->has('is_active'),
+            'is_default' => $isDefault,
         ];
 
         if (PartnerDashboardScope::isSuperAdmin()) {
-            $payload['admin_id'] = $this->resolveOwnerAdminId($request);
+            $payload['admin_id'] = $this->resolveOwnerAdminId(
+                $request,
+                $isDefault,
+                $data
+            );
         }
 
         $data->update($payload);
@@ -146,14 +166,25 @@ class ItemServiceController extends Controller
                 ? Admin::query()->where('type', 'partner')->orderBy('name')->get(['id', 'name'])
                 : collect(),
             'showPartnerSelect' => PartnerDashboardScope::isSuperAdmin(),
+            'showDefaultToggle' => PartnerDashboardScope::isSuperAdmin(),
             'selectedPartnerId' => old('admin_id', $data->admin_id ?? null),
+            'selectedIsDefault' => old('is_default', $data->is_default ?? false),
         ];
     }
 
-    protected function resolveOwnerAdminId(Request $request): int
-    {
+    protected function resolveOwnerAdminId(
+        Request $request,
+        bool $isDefault = false,
+        ?ItemService $data = null
+    ): int {
         if (PartnerDashboardScope::isPartner()) {
             return (int) Auth::guard('admin')->id();
+        }
+
+        // A new global/default service belongs administratively to the
+        // Super Admin. Existing defaults keep their historical admin_id.
+        if ($isDefault) {
+            return (int) ($data?->admin_id ?: Auth::guard('admin')->id());
         }
 
         $request->validate([

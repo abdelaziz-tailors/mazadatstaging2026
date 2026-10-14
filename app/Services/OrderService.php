@@ -47,7 +47,7 @@ class OrderService
             ],
             [
                 'order_number' => self::generateOrderNumber(),
-                'tax_percent' => (float) ($live->tax_amount ?? 0),
+                'tax_percent' => 0.0,
                 'commission_percent' => (float) ($live->commission_amount ?? 0),
                 'commission_payer' => $live->commission_payer ?? 'buyer',
                 'service_fee_per_item' => (float) ($live->service_fee ?? 0),
@@ -79,16 +79,17 @@ class OrderService
         $subtotal = (float) $order->items->sum('finished_price');
         $pieceServicesTotal = PieceServiceService::sumItemServicesForOrder($order);
 
-        $taxValue = round($subtotal * ((float) $order->tax_percent) / 100, 2);
+        $taxValue = 0.0;
         $commissionValue = ($order->commission_payer === 'buyer')
             ? round($subtotal * ((float) $order->commission_percent) / 100, 2)
             : 0.0;
         $serviceFeeTotal = round(((float) $order->service_fee_per_item) * $itemCount, 2);
-        $total = round($subtotal + $taxValue + $commissionValue, 2);
+        $total = round($subtotal + $commissionValue, 2);
 
         $order->update([
             'subtotal' => $subtotal,
-            'tax_value' => $taxValue,
+            'tax_percent' => 0.0,
+            'tax_value' => 0.0,
             'commission_value' => $commissionValue,
             'service_fee_total' => $serviceFeeTotal,
             'piece_services_total' => $pieceServicesTotal,
@@ -433,6 +434,88 @@ class OrderService
 
             return $finished - $commission - $serviceFee - $pieceServices;
         }), 2);
+    }
+
+    /**
+     * Seller wallet totals.
+     *
+     * balance:
+     *   seller net from PAID orders only.
+     *
+     * pending_balance:
+     *   seller net from orders that are not paid yet.
+     *
+     * total_profits:
+     *   all seller net earnings, paid + pending.
+     *
+     * Buying activity is deliberately excluded from these figures.
+     */
+    public static function sellerWalletSummary(int $sellerId): array
+    {
+        $orders = Order::query()
+            ->whereHas('items', fn ($query) => $query->where('seller_id', $sellerId))
+            ->with([
+                'liveVideo',
+                'items.seller',
+                'items.liveVideoItem.pieces',
+                'items.services',
+            ])
+            ->get();
+
+        $paid = 0.0;
+        $pending = 0.0;
+
+        foreach ($orders as $order) {
+            $summary = self::sellerInvoiceSummariesForOrder($order, $sellerId)->first();
+
+            if (! $summary) {
+                continue;
+            }
+
+            $sellerNet = (float) $summary['net'];
+
+            if ($order->payment_status === 'paid') {
+                $paid += $sellerNet;
+            } else {
+                $pending += $sellerNet;
+            }
+        }
+
+        $paid = round($paid, 2);
+        $pending = round($pending, 2);
+
+        return [
+            'balance' => $paid,
+            'pending_balance' => $pending,
+            'total_profits' => round($paid + $pending, 2),
+        ];
+    }
+
+    /**
+     * Money this user actually paid in his separate role as a buyer.
+     * This never reduces seller earnings/balance.
+     */
+    public static function paidBuyerOrdersTotal(int $buyerId): float
+    {
+        // Wallet "total payments" represents the value of auction items
+        // actually purchased and paid for. Do not include tax or other
+        // additions stored in Order.total.
+        return round((float) Order::query()
+            ->where('buyer_id', $buyerId)
+            ->where('payment_status', 'paid')
+            ->sum('subtotal'), 2);
+    }
+
+    /**
+     * Buyer wallet debt: value of auction items in unpaid orders only.
+     * Tax and other additions stored in Order.total are deliberately excluded.
+     */
+    public static function unpaidBuyerOrdersSubtotal(int $buyerId): float
+    {
+        return round((float) Order::query()
+            ->where('buyer_id', $buyerId)
+            ->where('payment_status', '!=', 'paid')
+            ->sum('subtotal'), 2);
     }
 
     /**

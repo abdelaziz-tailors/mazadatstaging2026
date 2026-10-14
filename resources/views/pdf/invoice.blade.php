@@ -157,10 +157,6 @@
             <td class="label">حق الرعاية</td>
             <td class="value"><span class="num">{{ number_format($sponsorshipFee, 2) }}</span> ر.س</td>
         </tr>
-        <tr>
-            <td class="label">ضريبة القيمة المضافة</td>
-            <td class="value"><span class="num">{{ number_format($vat, 2) }}</span> ر.س</td>
-        </tr>
         <tr class="total-row">
             <td class="label">الإجمالي</td>
             <td class="value"><span class="num">{{ number_format($total, 2) }}</span> ر.س</td>

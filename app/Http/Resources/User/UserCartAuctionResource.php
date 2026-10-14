@@ -23,8 +23,6 @@ class UserCartAuctionResource extends JsonResource
             'title' => $live->title_ar ?? '',
             'items_cart' => CartItemResource::collection($this->whenLoaded('items')),
             'sub_total' => $this->subtotal,
-            'tax' => $this->tax_value,
-            'tax_amount' => $this->tax_percent.'%',
             'commission' => $this->commission_value,
             $this->mergeWhen($this->commission_payer === 'buyer', function () {
                 return [
@@ -33,7 +31,7 @@ class UserCartAuctionResource extends JsonResource
             }),
             'payment_status' => $this->payment_status,
             'status' => $this->status,
-            'total_price' => $this->total,
+            'total_price' => $this->subtotal,
             'shipping_address' => $this->shipping_address ? [
                 'address' => $this->shipping_address,
                 'city_id' => $this->shipping_city_id,

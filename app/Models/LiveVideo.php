@@ -153,7 +153,7 @@ class LiveVideo extends Model
 
     public function tax_value(?int $buyerUserId = null): float
     {
-        return (float) ($this->sub_total($buyerUserId) * ((float) ($this->tax_amount ?? 0)) / 100);
+        return 0.0;
     }
 
     public function commission_value(?int $buyerUserId = null): float
@@ -167,7 +167,7 @@ class LiveVideo extends Model
 
     public function total_price(?int $buyerUserId = null): float
     {
-        return (float) ($this->sub_total($buyerUserId) + $this->tax_value($buyerUserId) + $this->commission_value($buyerUserId));
+        return (float) ($this->sub_total($buyerUserId) + $this->commission_value($buyerUserId));
     }
 
     /**
@@ -189,7 +189,7 @@ class LiveVideo extends Model
                 'user_id' => $buyerId,
                 'user_name' => $user->name ?? '—',
                 'sub_total' => $this->sub_total($buyerId),
-                'tax' => $this->tax_value($buyerId),
+                'tax' => 0.0,
                 'commission' => $this->commission_value($buyerId),
                 'total' => $this->total_price($buyerId),
             ];

@@ -27,8 +27,7 @@ class ForgetPasswordController extends Controller
             return $this->failed_response(TranslationHelper::translate('verify_account_before_reset_password'));
         }
 
-        // $otp = $this->generate_password_otp();
-        $otp = 1111;
+        $otp = $this->generate_password_otp();
         $expireAt = Carbon::now()->addMinutes(10);
 
         $user->update([
@@ -36,21 +35,32 @@ class ForgetPasswordController extends Controller
             'expire_at' => $expireAt,
         ]);
 
-        if (config('services.sms.username') && config('services.sms.password')) {
-            $smsResult = $smsService->send(
-                $request->phone,
-                'Your password reset code is: '.$otp
+        $otpResult = $smsService->sendWhatsappOtp(
+            $request->phone,
+            (string) $otp
+        );
+
+        if (! ($otpResult['success'] ?? false)) {
+            \Log::warning('FORGET_PASSWORD_WHATSAPP_OTP_FAILED', [
+                'error' => $otpResult['error'] ?? null,
+                'status' => $otpResult['status'] ?? null,
+                'response' => $otpResult['response'] ?? null,
+            ]);
+
+            $user->update([
+                'password_otp' => null,
+                'expire_at' => null,
+            ]);
+
+            return $this->failed_response(
+                TranslationHelper::translate('Something went wrong')
             );
-
-            if (! ($smsResult['success'] ?? false)) {
-                $user->update([
-                    'password_otp' => null,
-                    'expire_at' => null,
-                ]);
-
-                return $this->failed_response(TranslationHelper::translate('Something went wrong'));
-            }
         }
+
+        \Log::info('FORGET_PASSWORD_WHATSAPP_OTP_SENT', [
+            'provider_message_id' => $otpResult['provider_message_id'] ?? null,
+            'provider_status' => $otpResult['provider_status_name'] ?? null,
+        ]);
 
         return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
             'phone' => $request->phone,

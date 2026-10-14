@@ -38,28 +38,108 @@ class BalanceResource extends JsonResource
         // }
 
 
-        // Buyers owe money for unpaid orders; sellers/vendors are owed money
-        // for sold items not yet settled/paid out. A buyer_vendor account can
-        // do both, so its dues combine both sides.
+        $balance = (float) ($this->wallet_balance ?? 0);
         $dues = 0.0;
-        if (in_array($this->user_type, ['buyer', 'buyer_vendor'], true)) {
-            $dues += OrderService::unpaidBuyerTotal($this->id);
-        }
-        if (in_array($this->user_type, ['seller', 'vendor', 'buyer_vendor'], true)) {
-            $dues += OrderService::unsettledSellerNet($this->id);
+
+        // For an auction partner, use the same Partner Earnings calculation
+        // used by the partner invoice/wallet.
+        $partnerAdminIds = \App\Models\Admin::query()
+            ->where('type', 'partner')
+            ->where('user_id', $this->id)
+            ->pluck('id');
+
+        if ($partnerAdminIds->isNotEmpty()) {
+
+            $liveVideos = LiveVideo::query()
+                ->where(function ($query) use ($partnerAdminIds) {
+                    $query->where('user_id', $this->id)
+                        ->orWhere('partner_id', $this->id)
+                        ->orWhereIn('admin_id', $partnerAdminIds)
+                        ->orWhereIn('partner_id', $partnerAdminIds);
+                })
+                ->whereHas('orders.items', fn ($q) => $q->whereNotNull('seller_id'))
+                ->get();
+
+            $paidPartnerEarnings = 0.0;
+            $pendingPartnerEarnings = 0.0;
+
+            foreach ($liveVideos as $liveVideo) {
+
+                $sellerSummaries =
+                    OrderService::sellerInvoiceSummariesForLiveVideo($liveVideo);
+
+                $paymentStatuses =
+                    $liveVideo->orders->pluck('payment_status', 'id');
+
+                foreach ($sellerSummaries as $summary) {
+
+                    $isOwnPiece =
+                        (int) $summary['seller_id'] === (int) $this->id;
+
+                    foreach ($summary['lines'] as $line) {
+
+                        // Own piece = full sale price.
+                        // External seller piece =
+                        // commission + service fee + piece services.
+                        $partnerEarnings = $isOwnPiece
+                            ? round((float) $line['price'], 2)
+                            : round(
+                                (float) $line['commission']
+                                + (float) $line['service_fee']
+                                + (float) $line['piece_services'],
+                                2
+                            );
+
+                        $paymentStatus =
+                            $paymentStatuses->get($line['order_id']) ?? 'unpaid';
+
+                        if ($paymentStatus === 'paid') {
+                            $paidPartnerEarnings += $partnerEarnings;
+                        } else {
+                            $pendingPartnerEarnings += $partnerEarnings;
+                        }
+                    }
+                }
+            }
+
+            $balance = round($paidPartnerEarnings, 2);
+            $dues = round($pendingPartnerEarnings, 2);
+
+        } elseif (\App\Models\OrderItem::query()->where('seller_id', $this->id)->exists()) {
+
+            // Seller wallet.
+            // Selling earnings are independent from anything this same user
+            // buys in the auction.
+            $sellerWallet = OrderService::sellerWalletSummary((int) $this->id);
+
+            $balance = $sellerWallet['balance'];
+            $dues = $sellerWallet['pending_balance'];
+
+        } elseif (in_array($this->user_type, ['buyer', 'buyer_vendor'], true)) {
+
+            // Pure buyer:
+            // current balance is always zero.
+            // "available" is used by mobile as total paid purchases.
+            // pending/dues is the value of unpaid purchases.
+            $balance = 0.0;
+            $dues = OrderService::unpaidBuyerOrdersSubtotal((int) $this->id);
+
+        } else {
+
+            // Existing behavior for any remaining account type.
+            if (in_array($this->user_type, ['seller', 'vendor', 'buyer_vendor'], true)) {
+                $dues += OrderService::unsettledSellerNet($this->id);
+            }
         }
 
         $data = [
-            'balance' => $this->wallet_balance ?? 0,
+            'balance' => $balance,
             'dues' => round($dues, 2),
-            // Explicit, unambiguous aliases so the app never has to derive
-            // "available" itself (e.g. via balance - dues, which goes
-            // negative whenever dues exceed the current balance — pending
-            // dues aren't a deduction from the wallet, they just haven't
-            // been credited to it yet). available_balance is always the
-            // same value as "balance"; pending_balance is always the same
-            // value as "dues".
-            'available_balance' => $this->wallet_balance ?? 0,
+            'available_balance' => in_array($this->user_type, ['buyer', 'buyer_vendor'], true)
+                && $partnerAdminIds->isEmpty()
+                && ! \App\Models\OrderItem::query()->where('seller_id', $this->id)->exists()
+                    ? OrderService::paidBuyerOrdersTotal((int) $this->id)
+                    : $balance,
             'pending_balance' => round($dues, 2),
             'active_bids_count' => $this->myActiveAuctionsCount(),
             // 'coin'=> $this->user_coin->coin ?? 0,

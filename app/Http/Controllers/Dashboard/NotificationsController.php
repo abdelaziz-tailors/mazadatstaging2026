@@ -78,28 +78,137 @@ class NotificationsController extends Controller
     public function store(StoreNotificationRequest $request)
     {
         $this->authorizable('add notification');
-        Notification::create([
+
+        // Keep the existing in-app notification behavior.
+        $notification = Notification::create([
             'title' => $request->title,
             'description' => $request->description,
         ]);
-            $fcmTokens = User::whereNotNull('fcm_token')->orderBy('id', 'asc')->pluck('fcm_token')->toArray();
-        try{
-            Larafirebase::withTitle($request->title ?? '')
-                ->withBody($request->description ?? '')
-                ->withIcon('https://vlog.dev03.matrix-clouds.com/dashboard/img/logo-white.png')
-                ->withClickAction($request->url)
-                ->withAdditionalData([
-                    'click_action'=> 'FLUTTER_NOTIFICATION_CLICK',
-                    'screen'=> 'notification',
-                ])
-                ->sendNotification($fcmTokens ??'');
 
+        // All user types: buyers, sellers and partners.
+        // Remove empty and duplicate device tokens.
+        $tokens = User::whereNotNull('fcm_token')
+            ->pluck('fcm_token')
+            ->map(function ($token) {
+                return trim((string) $token);
+            })
+            ->filter(function ($token) {
+                return $token !== '';
+            })
+            ->unique()
+            ->values();
 
-        }catch(\Exception $e){
+        $sent = 0;
+        $failed = 0;
 
+        $data = [
+            'click_action' => 'FLUTTER_NOTIFICATION_CLICK',
+            'screen' => 'notification',
+        ];
+
+        if ($request->filled('url')) {
+            $data['url'] = (string) $request->input('url');
         }
 
-        Toastr::success(TranslationHelper::translate('New Notification Created Successfully'));
+        if ($tokens->isNotEmpty()) {
+            try {
+                $fcm = new \App\Services\FCMService();
+
+                foreach ($tokens as $token) {
+                    try {
+                        $result = $fcm->sendToDevice(
+                            $token,
+                            (string) $request->title,
+                            (string) $request->description,
+                            $data
+                        );
+
+                        if ($result['success'] ?? false) {
+                            $sent++;
+                        } else {
+                            $failed++;
+
+                            $reason = (string) (
+                                $result['error'] ?? 'Unknown Firebase error'
+                            );
+
+                            \Illuminate\Support\Facades\Log::warning(
+                                'SUPERADMIN_PUSH_DEVICE_FAILED',
+                                [
+                                    'notification_id' => $notification->id,
+                                    'device_ref' => substr(
+                                        hash('sha256', $token),
+                                        0,
+                                        12
+                                    ),
+                                    'reason' => str_replace(
+                                        $token,
+                                        '[REDACTED]',
+                                        $reason
+                                    ),
+                                ]
+                            );
+                        }
+                    } catch (\Throwable $e) {
+                        $failed++;
+
+                        \Illuminate\Support\Facades\Log::error(
+                            'SUPERADMIN_PUSH_DEVICE_EXCEPTION',
+                            [
+                                'notification_id' => $notification->id,
+                                'device_ref' => substr(
+                                    hash('sha256', $token),
+                                    0,
+                                    12
+                                ),
+                                'exception' => get_class($e),
+                                'reason' => str_replace(
+                                    $token,
+                                    '[REDACTED]',
+                                    $e->getMessage()
+                                ),
+                            ]
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                $failed = $tokens->count();
+
+                \Illuminate\Support\Facades\Log::error(
+                    'SUPERADMIN_PUSH_SETUP_FAILED',
+                    [
+                        'notification_id' => $notification->id,
+                        'exception' => get_class($e),
+                        'reason' => $e->getMessage(),
+                    ]
+                );
+            }
+        }
+
+        \Illuminate\Support\Facades\Log::info(
+            'SUPERADMIN_PUSH_SUMMARY',
+            [
+                'notification_id' => $notification->id,
+                'unique_devices' => $tokens->count(),
+                'accepted' => $sent,
+                'failed' => $failed,
+            ]
+        );
+
+        if ($tokens->isEmpty()) {
+            Toastr::warning(
+                'تم حفظ الإشعار، لكن لا توجد أجهزة مسجلة لاستقبال التنبيهات'
+            );
+        } elseif ($failed > 0) {
+            Toastr::warning(
+                "تم حفظ الإشعار. Firebase قبل {$sent} إشعار وفشل {$failed}. راجع السجل."
+            );
+        } else {
+            Toastr::success(
+                "تم حفظ الإشعار وقبل Firebase الإرسال إلى {$sent} جهاز"
+            );
+        }
+
         return redirect()->route('admin.notifications.index');
     }
 

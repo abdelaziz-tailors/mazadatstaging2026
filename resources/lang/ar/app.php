@@ -1632,4 +1632,9 @@
   'cancel' => 'إلغاء',
   'your_subscription_is_not_active' => 'Your subscription is not active',
   'added_successfully' => 'Added Successfully',
+  'subscription_rejected_successfully' => 'Subscription Rejected Successfully',
+  'test_mazad' => 'Test mazad',
+  'please_enter_item_service_name' => 'Please enter item service name',
+  'bshsh' => 'Bshsh',
+  'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
 );

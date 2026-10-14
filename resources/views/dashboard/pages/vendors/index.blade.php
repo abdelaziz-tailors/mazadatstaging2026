@@ -9,8 +9,281 @@
 @endpush
 
 
+
+@section('css_lib')
+<style>
+/* Mazadat vendors responsive v1 */
+
+.md-vendors-card,
+.md-vendors-card > .card-body,
+.md-vendors-table-host,
+.md-vendors-card .dataTables_wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* Filters */
+
+.md-vendors-filters {
+    padding: 20px;
+    margin-bottom: 22px;
+    background: #f9fbf9;
+    border: 1px solid #e4ece6;
+    border-radius: 14px;
+}
+
+.md-vendors-filters-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 18px;
+    color: #3d5f45;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.md-vendors-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    direction: rtl;
+}
+
+.md-vendors-field {
+    min-width: 0;
+}
+
+.md-vendors-field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #627469;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.md-vendors-field .form-control,
+.md-vendors-field .form-select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid #dce6df;
+    border-radius: 9px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.md-vendors-field .form-control:focus,
+.md-vendors-field .form-select:focus {
+    border-color: #3d5f45;
+    box-shadow: 0 0 0 3px rgba(61, 95, 69, .10);
+}
+
+.md-vendors-reset-field {
+    display: flex;
+    align-items: end;
+}
+
+.md-vendors-reset {
+    width: 100%;
+    min-height: 42px;
+    color: #3d5f45;
+    background: #eaf2ec;
+    border: 1px solid #cbded1;
+    border-radius: 9px;
+    font-weight: 600;
+}
+
+.md-vendors-reset:hover {
+    color: #fff;
+    background: #3d5f45;
+    border-color: #3d5f45;
+}
+
+/* DataTables controls */
+
+.md-vendors-toolbar,
+.md-vendors-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    direction: rtl;
+}
+
+.md-vendors-toolbar {
+    margin-bottom: 18px;
+}
+
+.md-vendors-footer {
+    margin-top: 16px;
+}
+
+.md-vendors-length {
+    flex: 0 1 auto;
+}
+
+.md-vendors-length .dataTables_length {
+    float: none !important;
+    margin: 0;
+}
+
+.md-vendors-length .dataTables_length label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.md-vendors-length .dataTables_length select {
+    min-width: 65px;
+    min-height: 42px;
+    margin: 0;
+}
+
+/* Excel / PDF */
+
+.md-vendors-buttons .dt-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.md-vendors-buttons .dt-button {
+    margin: 0 !important;
+    border-radius: 7px !important;
+}
+
+/* Table only scrolls */
+
+.md-vendors-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #b8c9bd #f0f4f1;
+}
+
+.md-vendors-table-scroll #data-table {
+    width: 100% !important;
+    min-width: 900px;
+}
+
+.md-vendors-table-scroll #data-table th,
+.md-vendors-table-scroll #data-table td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.md-vendors-table-scroll #data-table th:nth-child(2),
+.md-vendors-table-scroll #data-table td:nth-child(2) {
+    min-width: 140px;
+    white-space: normal;
+}
+
+.md-vendors-table-scroll #data-table th:nth-child(3),
+.md-vendors-table-scroll #data-table td:nth-child(3) {
+    min-width: 130px;
+    white-space: normal;
+}
+
+.md-vendors-table-scroll #data-table th:nth-child(4),
+.md-vendors-table-scroll #data-table td:nth-child(4) {
+    min-width: 190px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.md-vendors-table-scroll #data-table th:last-child,
+.md-vendors-table-scroll #data-table td:last-child {
+    min-width: 140px;
+    text-align: center;
+}
+
+/* Tablet */
+
+@media (max-width: 1199.98px) {
+    .md-vendors-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 767.98px) {
+
+    .md-vendors-header .page-title {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .md-vendors-header .page-title > .btn {
+        float: none !important;
+        width: 100%;
+        margin: 0 !important;
+    }
+
+    .md-vendors-card > .card-body {
+        padding: 12px;
+    }
+
+    .md-vendors-filters {
+        padding: 14px;
+    }
+
+    .md-vendors-filter-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+    }
+
+    .md-vendors-field .form-control,
+    .md-vendors-field .form-select {
+        font-size: 16px;
+    }
+
+    .md-vendors-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .md-vendors-length,
+    .md-vendors-buttons {
+        width: 100%;
+    }
+
+    .md-vendors-buttons .dt-buttons {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .md-vendors-buttons .dt-button {
+        width: 100%;
+    }
+
+    .md-vendors-table-scroll #data-table {
+        min-width: 880px;
+        font-size: 12px;
+    }
+
+    .md-vendors-footer {
+        gap: 12px;
+    }
+}
+</style>
+@endsection
+
 @section('content')
-<div class="page-header">
+<div class="page-header md-vendors-header">
     <div class="row">
         <div class="col">
 
@@ -66,41 +339,95 @@
     ],
 ]])
 
-<div class="card md-wide-search">
+<div class="card md-wide-search md-vendors-card">
 
     <div class="card-body">
-        <div class="row g-3 mb-3" id="vendorsFilterPanel">
-            <div class="col-xl col-lg-4 col-md-6 col-12">
-                <label class="form-label small mb-1">{{ TranslationHelper::translate('User Name') }}</label>
-                <input type="text" id="filter_username" class="form-control form-control-sm">
-            </div>
-            <div class="col-xl col-lg-4 col-md-6 col-12">
-                <label class="form-label small mb-1">{{ TranslationHelper::translate('Email') }}</label>
-                <input type="text" id="filter_email" class="form-control form-control-sm">
-            </div>
-            <div class="col-xl col-lg-4 col-md-6 col-12">
-                <label class="form-label small mb-1">{{ TranslationHelper::translate('Status') }}</label>
-                <select id="filter_status" class="form-select form-select-sm">
-                    <option value="">{{ TranslationHelper::translate('all') }}</option>
-                    <option value="1">{{ TranslationHelper::translate('Active') }}</option>
-                    <option value="0">{{ TranslationHelper::translate('inactive') }}</option>
-                </select>
-            </div>
-            <div class="col-xl col-lg-4 col-md-6 col-12">
-                <label class="form-label small mb-1">{{ TranslationHelper::translate('from') }} - {{ TranslationHelper::translate('to') }}</label>
-                <div class="d-flex gap-1">
-                    <input type="date" id="filter_date_from" class="form-control form-control-sm">
-                    <input type="date" id="filter_date_to" class="form-control form-control-sm">
+
+        <div id="vendorsFilterPanel" class="md-vendors-filters">
+
+            <h5 class="md-vendors-filters-title">
+                <i class="fa-solid fa-sliders"></i>
+                البحث والتصفية
+            </h5>
+
+            <div class="md-vendors-filter-grid">
+
+                <div class="md-vendors-field">
+                    <label for="filter_username">
+                        {{ TranslationHelper::translate('User Name') }}
+                    </label>
+                    <input
+                        type="text"
+                        id="filter_username"
+                        class="form-control"
+                    >
                 </div>
-            </div>
-            <div class="col-xl-auto col-lg-4 col-md-6 col-12 d-flex align-items-end">
-                <button type="button" id="filter_reset" class="btn btn-outline-secondary btn-sm w-100">
-                    <i class="fa-solid fa-rotate-right"></i> {{ TranslationHelper::translate('reset') }}
-                </button>
+
+                <div class="md-vendors-field">
+                    <label for="filter_email">
+                        {{ TranslationHelper::translate('Email') }}
+                    </label>
+                    <input
+                        type="text"
+                        id="filter_email"
+                        class="form-control"
+                    >
+                </div>
+
+                <div class="md-vendors-field">
+                    <label for="filter_status">
+                        {{ TranslationHelper::translate('Status') }}
+                    </label>
+                    <select id="filter_status" class="form-select">
+                        <option value="">
+                            {{ TranslationHelper::translate('all') }}
+                        </option>
+                        <option value="1">
+                            {{ TranslationHelper::translate('Active') }}
+                        </option>
+                        <option value="0">
+                            {{ TranslationHelper::translate('inactive') }}
+                        </option>
+                    </select>
+                </div>
+
+                <div class="md-vendors-field">
+                    <label for="filter_date_from">
+                        {{ TranslationHelper::translate('from') }}
+                    </label>
+                    <input
+                        type="date"
+                        id="filter_date_from"
+                        class="form-control"
+                    >
+                </div>
+
+                <div class="md-vendors-field">
+                    <label for="filter_date_to">
+                        {{ TranslationHelper::translate('to') }}
+                    </label>
+                    <input
+                        type="date"
+                        id="filter_date_to"
+                        class="form-control"
+                    >
+                </div>
+
+                <div class="md-vendors-reset-field">
+                    <button
+                        type="button"
+                        id="filter_reset"
+                        class="btn md-vendors-reset"
+                    >
+                        <i class="fa-solid fa-rotate-right"></i>
+                        {{ TranslationHelper::translate('reset') }}
+                    </button>
+                </div>
+
             </div>
         </div>
 
-        <div class="table-responsive">
+        <div class="md-vendors-table-host">
 
 
             <table id="data-table" class="table">
@@ -177,7 +504,7 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f><B>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>',
+        dom: '<"md-vendors-toolbar"<"md-vendors-length"l><"md-vendors-buttons"B>>r<"md-vendors-table-scroll"t><"md-vendors-footer"ip>',
         buttons: [
 
             {
@@ -211,7 +538,7 @@
     $('#filter_reset').on('click', function () {
         $('#filter_username, #filter_email, #filter_date_from, #filter_date_to').val('');
         $('#filter_status').val('');
-        $('#data-table').DataTable().draw(true);
+        $('#data-table').DataTable().search('').draw(true);
     });
 
 

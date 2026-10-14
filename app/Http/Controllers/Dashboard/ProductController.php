@@ -101,7 +101,6 @@ class ProductController extends Controller
             'new_information_ar' => 'nullable|string',
             'new_terms_conditions_ar' => 'nullable|string',
             'new_city_id' => 'nullable|integer|exists:cities,id',
-            'new_tax_amount' => 'nullable|numeric|min:0',
             'new_commission_amount' => 'nullable|numeric|min:0',
             'new_commission_payer' => 'nullable|in:buyer,seller',
             'new_service_fee' => 'nullable|numeric|min:0',
@@ -126,7 +125,6 @@ class ProductController extends Controller
                 'terms_conditions_ar' => $request->new_terms_conditions_ar,
                 'terms_conditions' => $request->new_terms_conditions_ar,
                 'city_id' => $request->new_city_id,
-                'tax_amount' => $request->new_tax_amount,
                 'commission_amount' => $request->new_commission_amount,
                 'commission_payer' => $request->new_commission_payer,
                 'service_fee' => $request->new_service_fee,
@@ -200,16 +198,33 @@ class ProductController extends Controller
 
     public function comments_get_data($id,Request $request){
 
-        $comments = LiveVideoComment::where('live_video_item_id',$id);
+        $piece = LiveVideoItem::findOrFail($id);
+        $auction = LiveVideo::findOrFail($piece->live_video_id);
+        PartnerDashboardScope::ensureOwnLiveVideo($auction);
+
+        $comments = \App\Models\VideoComment::where('live_video_item_id',$id);
 
         return Datatables::of($comments)
-            ->editColumn('comment', function(LiveVideoComment $item) {
+            ->editColumn('comment', function(\App\Models\VideoComment $item) {
                 return $item->comment;
             })
-            ->addColumn('user', function(LiveVideoComment $item) {
+            ->addColumn('user', function(\App\Models\VideoComment $item) {
                 return $item->user_Video->name ?? '';
             })
-            ->addColumn('action', function(LiveVideoComment $item) {
+            ->addColumn('action', function(\App\Models\VideoComment $item) use ($auction) {
+                // PROTECTED_AUCTION_BID_COMMENTS_V1
+                $isBid = is_numeric(trim((string) $item->comment));
+                $hasReplies = \App\Models\VideoComment::where(
+                    'comment_id',
+                    $item->id
+                )->exists();
+
+                if ($auction->status === 'end' || $isBid || $hasReplies) {
+                    return '<span class="badge bg-light text-secondary">'
+                        . 'سجل محفوظ - غير قابل للحذف'
+                        . '</span>';
+                }
+
                 return view('dashboard.pages.products.actions-comment')
                     ->with(['item' => $item]);
             })
@@ -542,9 +557,38 @@ class ProductController extends Controller
         return redirect()->back();
     }
     public function comments_delete($id){
-        $admin = LiveVideoComment::findorfail($id);
-        $admin->delete();
-        Toastr::success(TranslationHelper::translate('Deleted Successfully'));
+        $comment = \App\Models\VideoComment::findOrFail($id);
+
+        $piece = LiveVideoItem::findOrFail(
+            $comment->live_video_item_id
+        );
+
+        $auction = LiveVideo::findOrFail(
+            $piece->live_video_id
+        );
+
+        PartnerDashboardScope::ensureOwnLiveVideo($auction);
+
+        $isBid = is_numeric(trim((string) $comment->comment));
+
+        $hasReplies = \App\Models\VideoComment::where(
+            'comment_id',
+            $comment->id
+        )->exists();
+
+        if ($auction->status === 'end' || $isBid || $hasReplies) {
+            abort(
+                403,
+                'لا يمكن حذف سجل مزايدة أو تعليق من مزاد منتهي أو تعليق له ردود.'
+            );
+        }
+
+        $comment->delete();
+
+        Toastr::success(
+            TranslationHelper::translate('Deleted Successfully')
+        );
+
         return redirect()->back();
     }
 

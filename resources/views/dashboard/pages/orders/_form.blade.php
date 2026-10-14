@@ -51,16 +51,12 @@
                                 <strong>{{ number_format($order->subtotal, 2) }}</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <small class="text-muted d-block">{{ TranslationHelper::translate('tax') }}</small>
-                                <strong>{{ number_format($order->tax_value, 2) }}</strong>
-                            </div>
-                            <div class="col-6 col-md-3">
                                 <small class="text-muted d-block">{{ TranslationHelper::translate('commission') }}</small>
                                 <strong>{{ number_format($order->commission_value, 2) }}</strong>
                             </div>
                             <div class="col-6 col-md-3">
                                 <small class="text-muted d-block">{{ TranslationHelper::translate('order_total') }}</small>
-                                <strong>{{ number_format($order->total, 2) }}</strong>
+                                <strong>{{ number_format($order->subtotal, 2) }}</strong>
                             </div>
                         </div>
                     </div>

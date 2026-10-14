@@ -25,21 +25,34 @@ class PieceServiceController extends Controller
         $query = ItemService::query()
             ->where('is_active', true);
 
+        $adminId = null;
+
         if ($request->filled('order_id')) {
-            $order = Order::query()->with('liveVideo')->findOrFail($request->input('order_id'));
-            if ($order->liveVideo?->admin_id) {
-                $query->where('admin_id', $order->liveVideo->admin_id);
-            }
+            $order = Order::query()
+                ->with('liveVideo')
+                ->findOrFail($request->input('order_id'));
+
+            $adminId = $order->liveVideo?->admin_id;
         } elseif ($request->filled('live_video_id')) {
-            $live = LiveVideo::query()->findOrFail($request->input('live_video_id'));
-            if ($live->admin_id) {
-                $query->where('admin_id', $live->admin_id);
-            }
+            $live = LiveVideo::query()
+                ->findOrFail($request->input('live_video_id'));
+
+            $adminId = $live->admin_id;
         }
 
-        $types = $query->orderBy('sort_order')->orderBy('id')->get();
+        // With auction context: defaults + that partner's own services.
+        // Without context: global defaults only.
+        $query->availableForAdmin($adminId ? (int) $adminId : null);
 
-        return $this->success_response(null, ItemServiceCatalogResource::collection($types));
+        $types = $query
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
+
+        return $this->success_response(
+            null,
+            ItemServiceCatalogResource::collection($types)
+        );
     }
 
     public function store(StorePieceServiceRequest $request)

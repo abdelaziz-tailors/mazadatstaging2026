@@ -2,6 +2,228 @@
 
 @section('title') {{ TranslationHelper::translate('subscriber_invoices') }} @endsection
 
+
+@push('css')
+<style>
+/* Mazadat invoices responsive v1 */
+
+.md-inv-card,
+.md-inv-card > .card-body {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* Filters */
+
+.md-inv-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    width: 100%;
+    padding: 20px;
+    margin-bottom: 22px;
+    direction: rtl;
+
+    background: #f9fbf9;
+    border: 1px solid #e4ece6;
+    border-radius: 14px;
+}
+
+.md-inv-filters > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.md-inv-filters label {
+    display: block;
+    margin-bottom: 8px !important;
+    color: #627469;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.md-inv-filters .form-control,
+.md-inv-filters .form-select {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 42px;
+
+    background-color: #fff;
+    border: 1px solid #dce6df;
+    border-radius: 9px;
+    box-sizing: border-box;
+}
+
+.md-inv-filters .form-control:focus,
+.md-inv-filters .form-select:focus {
+    border-color: #3d5f45;
+    box-shadow: 0 0 0 3px rgba(61, 95, 69, .10);
+}
+
+/* Date inputs stay balanced. */
+
+.md-inv-filters .d-flex.gap-1 {
+    width: 100%;
+    min-width: 0;
+    gap: 10px !important;
+}
+
+.md-inv-filters .d-flex.gap-1 > input {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Filter / reset buttons */
+
+.md-inv-filters > div:last-child {
+    display: flex !important;
+    align-items: end !important;
+    gap: 10px !important;
+}
+
+.md-inv-filters > div:last-child .btn {
+    flex: 1 1 0;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+/* Table */
+
+.md-inv-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+
+    scrollbar-width: thin;
+    scrollbar-color: #b8c9bd #f0f4f1;
+}
+
+.md-inv-table-scroll table {
+    width: 100% !important;
+    min-width: 980px;
+    margin-bottom: 0;
+}
+
+.md-inv-table-scroll th,
+.md-inv-table-scroll td {
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.md-inv-table-scroll th:nth-child(2),
+.md-inv-table-scroll td:nth-child(2),
+.md-inv-table-scroll th:nth-child(3),
+.md-inv-table-scroll td:nth-child(3) {
+    white-space: normal;
+    min-width: 140px;
+}
+
+.md-inv-table-scroll th:first-child,
+.md-inv-table-scroll td:first-child {
+    min-width: 170px;
+}
+
+.md-inv-table-scroll th:last-child,
+.md-inv-table-scroll td:last-child {
+    min-width: 75px;
+    text-align: center;
+}
+
+.md-inv-mobile-hint {
+    display: none;
+}
+
+/* Pagination */
+
+.md-inv-card .pagination {
+    margin-bottom: 0;
+}
+
+/* Tablet */
+
+@media (max-width: 1199.98px) {
+    .md-inv-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Mobile */
+
+@media (max-width: 767.98px) {
+
+    .md-inv-card > .card-body {
+        padding: 12px;
+    }
+
+    .md-inv-filters {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px;
+    }
+
+    .md-inv-filters .form-control,
+    .md-inv-filters .form-select {
+        font-size: 16px;
+    }
+
+    .md-inv-filters .d-flex.gap-1 {
+        flex-direction: column;
+    }
+
+    .md-inv-filters > div:last-child {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+
+    .md-inv-filters > div:last-child .btn {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .md-inv-mobile-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        direction: rtl;
+
+        margin-bottom: 12px;
+        padding: 10px 12px;
+
+        color: #3d5f45;
+        background: #edf5ef;
+        border-radius: 8px;
+        font-size: 12px;
+    }
+
+    .md-inv-table-scroll table {
+        min-width: 960px;
+        font-size: 12px;
+    }
+
+    .md-inv-card > .card-body > .mt-3 {
+        overflow-x: auto;
+    }
+}
+</style>
+@endpush
+
 @section('content')
 @include('dashboard.partials.page-header', [
     'title' => TranslationHelper::translate('subscriber_invoices'),
@@ -44,9 +266,9 @@
     ],
 ]])
 
-<div class="card md-wide-search">
+<div class="card md-wide-search md-inv-card">
     <div class="card-body">
-        <form method="GET" class="row g-3 mb-3" id="invoicesFilterPanel">
+        <form method="GET" class="md-inv-filters" id="invoicesFilterPanel">
             <div class="col-xl col-lg-4 col-md-6 col-12">
                 <label class="form-label small mb-1">{{ TranslationHelper::translate('search') }}</label>
                 <input
@@ -93,7 +315,12 @@
                 </a>
             </div>
         </form>
-        <div class="table-responsive">
+        <div class="md-inv-mobile-hint">
+            <i class="fa-solid fa-arrows-left-right"></i>
+            اسحب الجدول يمينًا ويسارًا لعرض جميع البيانات
+        </div>
+
+        <div class="md-inv-table-scroll">
             <table class="table align-middle">
                 <thead>
                 <tr>

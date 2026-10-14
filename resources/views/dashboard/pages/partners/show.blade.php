@@ -28,7 +28,36 @@
         </div>
         <div class="row">
             <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('national_identity') }}</p>
-            <p class="col-sm-10">{{ $admin->national_id ?? '-' }}</p>
+            <p class="col-sm-10">{{ $admin->national_id ?: ($admin->user->national_id ?? '-') }}</p>
+        </div>
+
+        <div class="row">
+            <p class="col-sm-2 text-muted mb-3">السجل التجاري</p>
+            <div class="col-sm-10 mb-3">
+                @php
+                    $commercialRegister = $admin->user->commercial_register ?? null;
+                    $commercialExists = $commercialRegister
+                        && \Illuminate\Support\Facades\Storage::disk('public')->exists($commercialRegister);
+                @endphp
+
+                @if ($commercialExists)
+                    <a
+                        href="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($commercialRegister) }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="btn btn-sm btn-outline-success"
+                    >
+                        <i class="fa-solid fa-file-arrow-down me-1"></i>
+                        عرض السجل التجاري
+                    </a>
+                @elseif ($commercialRegister)
+                    <span class="text-warning">
+                        السجل التجاري مسجل، لكن الملف غير موجود في مسار التخزين المتوقع
+                    </span>
+                @else
+                    <span class="text-muted">لم يتم رفع سجل تجاري</span>
+                @endif
+            </div>
         </div>
         <div class="row">
             <p class="col-sm-2 text-muted mb-3">{{ TranslationHelper::translate('Status') }}</p>

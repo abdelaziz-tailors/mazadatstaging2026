@@ -96,8 +96,8 @@ class UserAuctionController extends Controller
             'buyerCommission' => (float) $order->commission_value,
             'sellerCommission' => round($commissionPct * (float) $order->subtotal / 100, 2),
             'sponsorshipFee' => (float) $order->service_fee_total,
-            'vat' => (float) $order->tax_value,
-            'total' => (float) $order->total,
+            'vat' => 0.0,
+            'total' => (float) $order->subtotal,
             'paymentStatus' => $order->payment_status,
             'issuedAt' => optional($order->created_at)->format('Y-m-d') ?? '',
             'regularFontPath' => 'file://'.str_replace('\\', '/', resource_path('fonts/Cairo-Regular.ttf')),
@@ -444,25 +444,29 @@ class UserAuctionController extends Controller
     }
 
     /**
-     * What the auction owner (organizer/partner) himself earns from a line.
+     * What the auction owner (organizer/partner) earns from a line.
      *
-     * Normally: commission + service_fee + piece_services — what the
-     * platform credits him for running the auction on a consignor's piece.
+     * If the piece belongs to another seller:
+     * commission + service_fee + piece_services belong to the partner,
+     * while the net amount belongs to the seller.
      *
-     * If the piece itself belongs to the auction owner (he is also the
-     * seller_id on that lot), he isn't paying himself a commission — instead
-     * he earns the full sale price, PLUS the service_fee and piece_services
-     * that would otherwise have been deducted from him as if he were a
-     * regular consignor (they're still added to his earnings on top of the
-     * price, not subtracted).
+     * If the piece belongs to the auction owner himself:
+     * the partner receives the full sale price. The net, commission,
+     * service fee and piece services are already components of that price,
+     * so they must not be added again.
      */
     private function partnerEarningsForLine(array $line, bool $isOwnPiece): float
     {
         if ($isOwnPiece) {
-            return round((float) $line['price'] + $line['service_fee'] + $line['piece_services'], 2);
+            return round((float) $line['price'], 2);
         }
 
-        return round($line['commission'] + $line['service_fee'] + $line['piece_services'], 2);
+        return round(
+            (float) $line['commission']
+            + (float) $line['service_fee']
+            + (float) $line['piece_services'],
+            2
+        );
     }
 
     /**

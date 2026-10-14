@@ -18,6 +18,331 @@
         .dataTables_wrapper .dt-buttons .btn {
             margin: 0 !important;
         }
+    
+
+        /* Mazadat buyers/users responsive v1 */
+
+        .md-users-card,
+        .md-users-card > .card-body,
+        .md-users-table-host,
+        .md-users-card .dataTables_wrapper {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        /* Filters */
+
+        .md-users-filters {
+            padding: 20px;
+            margin-bottom: 22px;
+            background: #f9fbf9;
+            border: 1px solid #e4ece6;
+            border-radius: 14px;
+        }
+
+        .md-users-filters-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0 0 18px;
+            color: #3d5f45;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .md-users-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            direction: rtl;
+        }
+
+        .md-users-field {
+            min-width: 0;
+        }
+
+        .md-users-field label {
+            display: block;
+            margin-bottom: 8px;
+            color: #627469;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .md-users-field .form-control,
+        .md-users-field .form-select {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            min-height: 42px;
+            background: #fff;
+            border: 1px solid #dce6df;
+            border-radius: 9px;
+            box-sizing: border-box;
+        }
+
+        .md-users-field .form-control:focus,
+        .md-users-field .form-select:focus {
+            border-color: #3d5f45;
+            box-shadow: 0 0 0 3px rgba(61, 95, 69, .10);
+        }
+
+        .md-users-reset-field {
+            display: flex;
+            align-items: end;
+            min-width: 0;
+        }
+
+        .md-users-reset {
+            width: 100%;
+            min-height: 42px;
+            color: #3d5f45;
+            background: #eaf2ec;
+            border: 1px solid #cbded1;
+            border-radius: 9px;
+            font-weight: 600;
+        }
+
+        .md-users-reset:hover {
+            color: #fff;
+            background: #3d5f45;
+            border-color: #3d5f45;
+        }
+
+        /* DataTables toolbar */
+
+        .md-users-toolbar,
+        .md-users-footer {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            direction: rtl;
+        }
+
+        .md-users-toolbar {
+            margin-bottom: 18px;
+        }
+
+        .md-users-footer {
+            margin-top: 16px;
+        }
+
+        /*
+         * Buyers already have username/email filters,
+         * so hide the duplicated DataTables search there only.
+         */
+        .md-users-buyers .md-users-search {
+            display: none !important;
+        }
+
+        .md-users-general .md-users-search {
+            display: block;
+            flex: 1 1 300px;
+            min-width: 0;
+        }
+
+        .md-users-search .dataTables_filter {
+            float: none !important;
+            width: 100%;
+            margin: 0;
+        }
+
+        .md-users-search .dataTables_filter label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            margin: 0;
+        }
+
+        .md-users-search .dataTables_filter input {
+            flex: 1 1 180px;
+            width: 100%;
+            min-width: 0;
+            min-height: 42px;
+            margin: 0 !important;
+            border: 1px solid #dce6df;
+            border-radius: 9px;
+        }
+
+        .md-users-length {
+            flex: 0 1 auto;
+        }
+
+        .md-users-length .dataTables_length {
+            float: none !important;
+            margin: 0;
+        }
+
+        .md-users-length .dataTables_length label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .md-users-length .dataTables_length select {
+            min-width: 65px;
+            min-height: 42px;
+            margin: 0;
+        }
+
+        /* Export buttons */
+
+        .md-users-buttons .dt-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .md-users-buttons .dt-button {
+            margin: 0 !important;
+            border-radius: 7px !important;
+        }
+
+        /* Table only scrolls */
+
+        .md-users-table-scroll {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #b8c9bd #f0f4f1;
+        }
+
+        .md-users-table-scroll #data-table {
+            width: 100% !important;
+            min-width: 980px;
+        }
+
+        .md-users-table-scroll #data-table th,
+        .md-users-table-scroll #data-table td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        /* Image */
+        .md-users-table-scroll #data-table th:nth-child(2),
+        .md-users-table-scroll #data-table td:nth-child(2) {
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .md-users-table-scroll #data-table td:nth-child(2) img {
+            width: 44px !important;
+            height: 44px !important;
+            max-width: 44px !important;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* Full name / username */
+
+        .md-users-table-scroll #data-table th:nth-child(3),
+        .md-users-table-scroll #data-table td:nth-child(3),
+        .md-users-table-scroll #data-table th:nth-child(4),
+        .md-users-table-scroll #data-table td:nth-child(4) {
+            min-width: 145px;
+            white-space: normal;
+        }
+
+        /* Email */
+
+        .md-users-table-scroll #data-table th:nth-child(5),
+        .md-users-table-scroll #data-table td:nth-child(5) {
+            min-width: 210px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        /* Actions */
+
+        .md-users-table-scroll #data-table th:last-child,
+        .md-users-table-scroll #data-table td:last-child {
+            min-width: 140px;
+            text-align: center;
+        }
+
+        @media (max-width: 1199.98px) {
+            .md-users-filter-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+
+            .md-users-card > .card-body {
+                padding: 12px;
+            }
+
+            .md-users-filters {
+                padding: 14px;
+            }
+
+            .md-users-filter-grid {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 14px;
+            }
+
+            .md-users-field .form-control,
+            .md-users-field .form-select {
+                font-size: 16px;
+            }
+
+            .md-users-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .md-users-length,
+            .md-users-buttons,
+            .md-users-general .md-users-search {
+                width: 100%;
+            }
+
+            .md-users-general .md-users-search {
+                flex: 0 0 auto;
+            }
+
+            .md-users-search .dataTables_filter label {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: right;
+            }
+
+            .md-users-search .dataTables_filter input {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .md-users-buttons .dt-buttons {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .md-users-buttons .dt-button {
+                width: 100%;
+            }
+
+            .md-users-table-scroll #data-table {
+                min-width: 960px;
+                font-size: 12px;
+            }
+
+            .md-users-footer {
+                gap: 12px;
+            }
+        }
+
     </style>
 @endpush
 
@@ -103,43 +428,99 @@
     ]])
 @endif
 
-<div class="card md-wide-search">
+<div class="card md-wide-search md-users-card {{ $isBuyersView ? 'md-users-buyers' : 'md-users-general' }}">
 
     <div class="card-body">
         @if ($isBuyersView)
-            <div class="row g-3 mb-3" id="usersFilterPanel">
-                <div class="col-xl col-lg-4 col-md-6 col-12">
-                    <label class="form-label small mb-1">{{ TranslationHelper::translate('User Name') }}</label>
-                    <input type="text" id="filter_username" class="form-control form-control-sm">
-                </div>
-                <div class="col-xl col-lg-4 col-md-6 col-12">
-                    <label class="form-label small mb-1">{{ TranslationHelper::translate('Email') }}</label>
-                    <input type="text" id="filter_email" class="form-control form-control-sm">
-                </div>
-                <div class="col-xl col-lg-4 col-md-6 col-12">
-                    <label class="form-label small mb-1">{{ TranslationHelper::translate('Status') }}</label>
-                    <select id="filter_status" class="form-select form-select-sm">
-                        <option value="">{{ TranslationHelper::translate('all') }}</option>
-                        <option value="1">{{ TranslationHelper::translate('Active') }}</option>
-                        <option value="0">{{ TranslationHelper::translate('inactive') }}</option>
-                    </select>
-                </div>
-                <div class="col-xl col-lg-4 col-md-6 col-12">
-                    <label class="form-label small mb-1">{{ TranslationHelper::translate('from') }} - {{ TranslationHelper::translate('to') }}</label>
-                    <div class="d-flex gap-1">
-                        <input type="date" id="filter_date_from" class="form-control form-control-sm">
-                        <input type="date" id="filter_date_to" class="form-control form-control-sm">
+
+            <div id="usersFilterPanel" class="md-users-filters">
+
+                <h5 class="md-users-filters-title">
+                    <i class="fa-solid fa-sliders"></i>
+                    البحث والتصفية
+                </h5>
+
+                <div class="md-users-filter-grid">
+
+                    <div class="md-users-field">
+                        <label for="filter_username">
+                            {{ TranslationHelper::translate('User Name') }}
+                        </label>
+                        <input
+                            type="text"
+                            id="filter_username"
+                            class="form-control"
+                        >
                     </div>
-                </div>
-                <div class="col-xl-auto col-lg-4 col-md-6 col-12 d-flex align-items-end">
-                    <button type="button" id="filter_reset" class="btn btn-outline-secondary btn-sm w-100">
-                        <i class="fa-solid fa-rotate-right"></i> {{ TranslationHelper::translate('reset') }}
-                    </button>
+
+                    <div class="md-users-field">
+                        <label for="filter_email">
+                            {{ TranslationHelper::translate('Email') }}
+                        </label>
+                        <input
+                            type="text"
+                            id="filter_email"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="md-users-field">
+                        <label for="filter_status">
+                            {{ TranslationHelper::translate('Status') }}
+                        </label>
+
+                        <select id="filter_status" class="form-select">
+                            <option value="">
+                                {{ TranslationHelper::translate('all') }}
+                            </option>
+                            <option value="1">
+                                {{ TranslationHelper::translate('Active') }}
+                            </option>
+                            <option value="0">
+                                {{ TranslationHelper::translate('inactive') }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="md-users-field">
+                        <label for="filter_date_from">
+                            {{ TranslationHelper::translate('from') }}
+                        </label>
+                        <input
+                            type="date"
+                            id="filter_date_from"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="md-users-field">
+                        <label for="filter_date_to">
+                            {{ TranslationHelper::translate('to') }}
+                        </label>
+                        <input
+                            type="date"
+                            id="filter_date_to"
+                            class="form-control"
+                        >
+                    </div>
+
+                    <div class="md-users-reset-field">
+                        <button
+                            type="button"
+                            id="filter_reset"
+                            class="btn md-users-reset"
+                        >
+                            <i class="fa-solid fa-rotate-right"></i>
+                            {{ TranslationHelper::translate('reset') }}
+                        </button>
+                    </div>
+
                 </div>
             </div>
+
         @endif
 
-        <div class="table-responsive">
+        <div class="md-users-table-host">
 
 
             <table id="data-table" class="table">
@@ -223,7 +604,7 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex flex-wrap justify-content-between align-items-center mb-3 px-2"<l><f><B>>rt<"d-flex justify-content-between px-2"<"d-flex align-items-center"<><i>><p>>',
+        dom: '<"md-users-toolbar"<"md-users-search"f><"md-users-length"l><"md-users-buttons"B>>r<"md-users-table-scroll"t><"md-users-footer"ip>',
         buttons: [
 
             {
@@ -257,7 +638,10 @@
     $('#filter_reset').on('click', function () {
         $('#filter_username, #filter_email, #filter_date_from, #filter_date_to').val('');
         $('#filter_status').val('');
-        $('#data-table').DataTable().draw(true);
+
+        $('.md-users-search input[type="search"]').val('');
+
+        $('#data-table').DataTable().search('').draw(true);
     });
 
 

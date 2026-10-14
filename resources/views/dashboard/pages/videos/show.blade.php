@@ -74,7 +74,6 @@
                                         <div class="row">
                                             <p class="col-sm-2 text-muted text-sm-end mb-0 mb-sm-3">{{ TranslationHelper::translate('Auction fees') }} </p>
                                             <p class="col-sm-10">
-                                                {{ TranslationHelper::translate('Tax') }}: {{ $video->tax_amount ?? '—' }},
                                                 {{ TranslationHelper::translate('commission_amount') }}: {{ $video->commission_amount ?? '—' }},
                                                 {{ TranslationHelper::translate('commission_payer') }}: {{ $video->commission_payer ?? '—' }},
                                                 {{ TranslationHelper::translate('service_fee') }}: {{ $video->service_fee ?? '—' }}

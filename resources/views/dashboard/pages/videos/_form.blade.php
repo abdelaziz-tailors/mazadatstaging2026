@@ -136,19 +136,13 @@
                         {{ TranslationHelper::translate('auction_fees') }}
                         <small class="text-muted">({{ TranslationHelper::translate('optional') }})</small>
                     </h5>
-                    <p class="text-muted small mb-3 auction-fees-hint">{{ TranslationHelper::translate('auction_fees_optional_hint') }}</p>
+                    <p class="text-muted small mb-3 auction-fees-hint">{{ 'اختياري: حدد نسبة السعي ورسوم الخدمة لهذا المزاد.' }}</p>
 
                 {{-- md-label-2-lines reserves two lines of label height on every
                      field in this row, so a short label like "نسبة الضريبة (%)"
                      and a long one like "رسوم الخدمة (تشمل الاستضافة وأي مصاريف
                      إضافية)" still leave their inputs starting on the same
                      baseline instead of one sitting higher than the other. --}}
-                <div class="col-lg-3 form-group mb-3 auction-fee-tax">
-                    {!! Form::label('tax_amount', TranslationHelper::translate('tax_amount'), ['class'=>'form-label md-label-2-lines']) !!}
-                    {!! Form::number('tax_amount', old('tax_amount', isset($data) ? $data->tax_amount : null), ['class' => 'form-control', 'min'=>'0', 'step'=>'0.01', 'placeholder' => TranslationHelper::translate('tax_amount')]) !!}
-                    @error('tax_amount')<span class="text-danger small d-block mt-1">{{ $message }}</span>@enderror
-                </div>
-
                 <div class="col-lg-3 form-group mb-3 auction-fee-commission">
                     {!! Form::label('commission_amount', TranslationHelper::translate('commission_amount'), ['class'=>'form-label md-label-2-lines']) !!}
                     {!! Form::number('commission_amount', old('commission_amount', isset($data) ? $data->commission_amount : null), ['class' => 'form-control', 'min'=>'0', 'step'=>'0.01', 'placeholder' => TranslationHelper::translate('commission_amount')]) !!}

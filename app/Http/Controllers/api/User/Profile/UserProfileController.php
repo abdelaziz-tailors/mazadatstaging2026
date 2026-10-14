@@ -95,6 +95,93 @@ class UserProfileController extends Controller
 
         $user = auth('api')->user();
 
+        // Partner wallet uses the exact same earnings rules as the
+        // consolidated partner invoice:
+        //
+        // Own piece:
+        //   partner earnings = full sale price.
+        //
+        // External seller piece:
+        //   partner earnings = commission + service fee + piece services.
+        //
+        // Paid orders contribute to current balance.
+        // Unpaid orders contribute to pending balance.
+        // Both together make total profits.
+        $partnerAdminIds = \App\Models\Admin::query()
+            ->where('type', 'partner')
+            ->where('user_id', $user->id)
+            ->pluck('id');
+
+        $isPartner = $partnerAdminIds->isNotEmpty();
+
+        if ($isPartner) {
+            $liveVideos = LiveVideo::query()
+                ->where(function ($query) use ($user, $partnerAdminIds) {
+                    $query->where('user_id', $user->id)
+                        ->orWhere('partner_id', $user->id);
+
+                    if ($partnerAdminIds->isNotEmpty()) {
+                        $query->orWhereIn('admin_id', $partnerAdminIds)
+                            ->orWhereIn('partner_id', $partnerAdminIds);
+                    }
+                })
+                ->whereHas('orders.items', fn ($q) => $q->whereNotNull('seller_id'))
+                ->get();
+
+            $paidPartnerEarnings = 0.0;
+            $pendingPartnerEarnings = 0.0;
+
+            foreach ($liveVideos as $liveVideo) {
+                $sellerSummaries = OrderService::sellerInvoiceSummariesForLiveVideo($liveVideo);
+                $paymentStatuses = $liveVideo->orders->pluck('payment_status', 'id');
+
+                foreach ($sellerSummaries as $summary) {
+                    $isOwnPiece = (int) $summary['seller_id'] === (int) $user->id;
+
+                    foreach ($summary['lines'] as $line) {
+                        $partnerEarnings = $isOwnPiece
+                            ? round((float) $line['price'], 2)
+                            : round(
+                                (float) $line['commission']
+                                + (float) $line['service_fee']
+                                + (float) $line['piece_services'],
+                                2
+                            );
+
+                        $paymentStatus = $paymentStatuses->get($line['order_id']) ?? 'unpaid';
+
+                        if ($paymentStatus === 'paid') {
+                            $paidPartnerEarnings += $partnerEarnings;
+                        } else {
+                            $pendingPartnerEarnings += $partnerEarnings;
+                        }
+                    }
+                }
+            }
+
+            $paidPartnerEarnings = round($paidPartnerEarnings, 2);
+            $pendingPartnerEarnings = round($pendingPartnerEarnings, 2);
+            $totalPartnerEarnings = round(
+                $paidPartnerEarnings + $pendingPartnerEarnings,
+                2
+            );
+
+            return $this->success_response(NULL, [
+                'balance' => $paidPartnerEarnings,
+                'available_balance' => $paidPartnerEarnings,
+                'pending_balance' => $pendingPartnerEarnings,
+                'total_deposits' => $totalPartnerEarnings,
+                'total_withdrawals' => 0.0,
+                'transactions' => [],
+                'pagination' => [
+                    'per_page' => 0,
+                    'next_cursor' => null,
+                    'prev_cursor' => null,
+                    'has_more_pages' => false,
+                ],
+            ]);
+        }
+
         $sums = WalletTransaction::query()
             ->where('user_id', $user->id)
             ->selectRaw('COALESCE(SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END), 0) as total_deposits')
@@ -109,6 +196,68 @@ class UserProfileController extends Controller
             ->where('user_id', $user->id)
             ->orderByDesc('id')
             ->cursorPaginate($perPage);
+
+        // Seller wallet: selling and buying are independent financial roles.
+        //
+        // Seller earnings:
+        //   balance         = seller net from paid orders.
+        //   pending_balance = seller net from unpaid orders.
+        //   total_deposits  = all seller net earnings.
+        //
+        // Buyer activity:
+        //   total_withdrawals = paid orders where this same user was the buyer.
+        // Buying must NEVER reduce the seller's earnings balance.
+        $hasSellerActivity = \App\Models\OrderItem::query()
+            ->where('seller_id', $user->id)
+            ->exists();
+
+        if ($hasSellerActivity) {
+            $sellerWallet = OrderService::sellerWalletSummary((int) $user->id);
+            $buyerPayments = OrderService::paidBuyerOrdersTotal((int) $user->id);
+
+            return $this->success_response(NULL, [
+                'balance' => $sellerWallet['balance'],
+                'available_balance' => $sellerWallet['balance'],
+                'pending_balance' => $sellerWallet['pending_balance'],
+                'total_deposits' => $sellerWallet['total_profits'],
+                'total_withdrawals' => $buyerPayments,
+                'transactions' => WalletTransactionResource::collection($transactions->items()),
+                'pagination' => [
+                    'per_page' => $perPage,
+                    'next_cursor' => optional($transactions->nextCursor())->encode(),
+                    'prev_cursor' => optional($transactions->previousCursor())->encode(),
+                    'has_more_pages' => $transactions->hasMorePages(),
+                ],
+            ]);
+        }
+
+        // Pure buyer wallet.
+        //
+        // Buying is not a wallet investment balance:
+        // balance/current balance always stays zero.
+        //
+        // available_balance is used by the mobile UI as "Paid".
+        // pending_balance is used as "Debt".
+        // total_withdrawals is "Total Payments".
+        if (in_array($user->user_type, ['buyer', 'buyer_vendor'], true)) {
+            $paidBuyerPayments = OrderService::paidBuyerOrdersTotal((int) $user->id);
+            $buyerDebt = OrderService::unpaidBuyerOrdersSubtotal((int) $user->id);
+
+            return $this->success_response(NULL, [
+                'balance' => 0.0,
+                'available_balance' => $paidBuyerPayments,
+                'pending_balance' => $buyerDebt,
+                'total_deposits' => 0.0,
+                'total_withdrawals' => $paidBuyerPayments,
+                'transactions' => WalletTransactionResource::collection($transactions->items()),
+                'pagination' => [
+                    'per_page' => $perPage,
+                    'next_cursor' => optional($transactions->nextCursor())->encode(),
+                    'prev_cursor' => optional($transactions->previousCursor())->encode(),
+                    'has_more_pages' => $transactions->hasMorePages(),
+                ],
+            ]);
+        }
 
         // Same "pending" definition as BalanceResource: unpaid orders owed by
         // a buyer, plus not-yet-settled seller/vendor net — never a deduction

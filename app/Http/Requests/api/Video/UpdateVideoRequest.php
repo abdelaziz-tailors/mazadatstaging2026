@@ -42,7 +42,6 @@ class UpdateVideoRequest extends FormRequest
             'partners_type' => 'nullable',
             'city_id' => 'nullable|nullable|exists:cities,id',
             'type' => 'nullable',
-            'tax_amount' => 'nullable|nullable|min:0',
             'commission_amount' => 'nullable|nullable|min:0',
             'commission_payer' => 'nullable|nullable|in:buyer,seller',
             'service_fee' => 'nullable|nullable|min:0',

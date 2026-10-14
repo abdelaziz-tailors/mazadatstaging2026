@@ -117,7 +117,6 @@ class LiveVideoController extends Controller
                 'city_id' => $request->city_id ?? null,
                 'type' => $videoType,
                 'partners_type' => 'single',
-                'tax_amount' => $request->input('tax_amount'),
                 'commission_amount' => $request->input('commission_amount'),
                 'commission_payer' => $request->input('commission_payer'),
                 'service_fee' => $request->input('service_fee'),

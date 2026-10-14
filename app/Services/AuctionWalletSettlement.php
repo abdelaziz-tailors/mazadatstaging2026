@@ -80,12 +80,16 @@ class AuctionWalletSettlement
         }
 
         $buyerId = (int) $item->user_finished_id;
-        $buyerDebit = self::buyerDebitForItem($item, $live);
         $sellerNet = self::sellerNetForItem($item, $live, $locked);
         $partnerCredit = self::partnerCreditForItem($item, $live, $locked);
         $partnerUserId = self::resolvePartnerUserId($live);
 
-        self::applyDelta($buyerId, -$buyerDebit, [
+        // Buying is a payment activity only.
+        // Use the actual sold item price (without tax) and do not change
+        // the buyer's wallet balance.
+        $buyerDebit = round((float) $locked->finished_price, 2);
+
+        self::recordTransactionWithoutBalanceImpact($buyerId, -$buyerDebit, [
             'type' => 'buyer_debit',
             'order_id' => $locked->order_id,
             'order_item_id' => $locked->id,
@@ -94,24 +98,40 @@ class AuctionWalletSettlement
         ]);
 
         $sellerId = $locked->seller_id ? (int) $locked->seller_id : null;
-        if ($sellerId && $sellerNet > 0) {
-            self::applyDelta($sellerId, $sellerNet, [
-                'type' => 'seller_credit',
-                'order_id' => $locked->order_id,
-                'order_item_id' => $locked->id,
-                'live_video_item_id' => $item->id,
-                'description' => 'Auction seller settlement',
-            ]);
-        }
+        $isPartnerOwnPiece = $sellerId
+            && $partnerUserId
+            && (int) $sellerId === (int) $partnerUserId;
 
-        if ($partnerUserId && $partnerCredit > 0) {
-            self::applyDelta($partnerUserId, $partnerCredit, [
+        if ($isPartnerOwnPiece) {
+            // Auction owner selling his own piece:
+            // one partner transaction for the full sale price.
+            self::applyDelta($partnerUserId, round((float) $locked->finished_price, 2), [
                 'type' => 'partner_credit',
                 'order_id' => $locked->order_id,
                 'order_item_id' => $locked->id,
                 'live_video_item_id' => $item->id,
-                'description' => 'Auction partner settlement',
+                'description' => 'Auction owner sale settlement',
             ]);
+        } else {
+            if ($sellerId && $sellerNet > 0) {
+                self::applyDelta($sellerId, $sellerNet, [
+                    'type' => 'seller_credit',
+                    'order_id' => $locked->order_id,
+                    'order_item_id' => $locked->id,
+                    'live_video_item_id' => $item->id,
+                    'description' => 'Auction seller settlement',
+                ]);
+            }
+
+            if ($partnerUserId && $partnerCredit > 0) {
+                self::applyDelta($partnerUserId, $partnerCredit, [
+                    'type' => 'partner_credit',
+                    'order_id' => $locked->order_id,
+                    'order_item_id' => $locked->id,
+                    'live_video_item_id' => $item->id,
+                    'description' => 'Auction partner settlement',
+                ]);
+            }
         }
 
         $locked->update(['settled_at' => now()]);
@@ -153,11 +173,10 @@ class AuctionWalletSettlement
         $finished = (float) ($item->finished_price ?? 0);
         $serviceFee = (float) ($live->service_fee ?? 0);
         $commissionAmount = (float) ($live->commission_amount ?? 0) * $finished / 100;
-        $taxAmount = (float) ($live->tax_amount ?? 0) * $finished / 100;
         $pieceServices = $orderItem
             ? PieceServiceService::sumItemServicesForOrderItem($orderItem)
             : PieceServiceService::sumItemServicesForLiveVideoItem($item);
-        $netPrice = $commissionAmount + $taxAmount + $serviceFee + $pieceServices;
+        $netPrice = $commissionAmount + $serviceFee + $pieceServices;
 
         return round(max(0, $netPrice), 2);
     }
@@ -178,6 +197,36 @@ class AuctionWalletSettlement
         }
 
         return null;
+    }
+
+    protected static function recordTransactionWithoutBalanceImpact(
+        int $userId,
+        float $delta,
+        array $meta = []
+    ): void {
+        if (abs($delta) < 0.00001) {
+            return;
+        }
+
+        $user = User::query()
+            ->whereKey($userId)
+            ->lockForUpdate()
+            ->first();
+
+        if (! $user) {
+            throw new \RuntimeException('user_not_found');
+        }
+
+        WalletTransaction::query()->create([
+            'user_id' => $userId,
+            'order_id' => $meta['order_id'] ?? null,
+            'order_item_id' => $meta['order_item_id'] ?? null,
+            'live_video_item_id' => $meta['live_video_item_id'] ?? null,
+            'type' => $meta['type'] ?? 'adjustment',
+            'amount' => $delta,
+            'balance_after' => (float) ($user->wallet_balance ?? 0),
+            'description' => $meta['description'] ?? null,
+        ]);
     }
 
     protected static function applyDelta(int $userId, float $delta, array $meta = []): void

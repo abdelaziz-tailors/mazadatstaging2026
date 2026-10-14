@@ -6,6 +6,165 @@
 <!--begin::Page Vendor Stylesheets(used by this page)-->
 <link href="{{asset('dashboard/plugins/datatables/datatables.min.css')}}" rel="stylesheet" type="text/css"/>
 <!--end::Page Vendor Stylesheets-->
+
+<style>
+/* Mazadat products clean responsive fix */
+
+.md-products-card,
+.md-products-card > .card-body,
+.md-products-card #data-table_wrapper {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.md-products-toolbar,
+.md-products-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    direction: rtl;
+}
+
+.md-products-toolbar {
+    margin-bottom: 18px;
+}
+
+.md-products-footer {
+    margin-top: 16px;
+}
+
+.md-products-toolbar .dataTables_filter,
+.md-products-toolbar .dataTables_length {
+    float: none !important;
+    margin: 0;
+    text-align: right;
+}
+
+.md-products-toolbar .dataTables_filter label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.md-products-toolbar .dataTables_filter input {
+    min-height: 40px;
+    min-width: 0;
+    border: 1px solid #dde6df;
+    border-radius: 9px;
+    margin: 0 !important;
+}
+
+.md-products-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #a9bfaf #eff3f0;
+}
+
+/* Prevent excessively wide shipping addresses. */
+.md-products-table-scroll #data-table {
+    width: 100% !important;
+    min-width: 1100px;
+    table-layout: fixed;
+}
+
+.md-products-table-scroll #data-table th,
+.md-products-table-scroll #data-table td {
+    vertical-align: middle;
+}
+
+.md-products-table-scroll #data-table th:nth-child(8),
+.md-products-table-scroll #data-table td:nth-child(8) {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+}
+
+.md-products-table-scroll #data-table th:nth-child(9),
+.md-products-table-scroll #data-table td:nth-child(9) {
+    width: 240px;
+    min-width: 240px;
+    white-space: normal !important;
+}
+
+.md-products-mobile-hint {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    /* Arrange both header buttons vertically. */
+    .page-header .page-title {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 9px;
+    }
+
+    .page-header .page-title .btn {
+        float: none !important;
+        width: 100%;
+        margin: 0 !important;
+        white-space: normal;
+    }
+
+    .md-products-card > .card-body {
+        padding: 12px;
+    }
+
+    .md-products-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .md-products-toolbar .dataTables_filter,
+    .md-products-toolbar .dataTables_length {
+        width: 100%;
+    }
+
+    .md-products-toolbar .dataTables_filter label {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        text-align: right;
+    }
+
+    .md-products-toolbar .dataTables_filter input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .md-products-mobile-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        direction: rtl;
+        padding: 10px;
+        margin-bottom: 12px;
+        background: #edf5ef;
+        color: #3d5f45;
+        border-radius: 8px;
+        font-size: 12px;
+    }
+
+    .md-products-table-scroll #data-table {
+        min-width: 1120px;
+    }
+
+    .md-products-footer {
+        gap: 10px;
+    }
+}
+</style>
+
 @endpush
 
 
@@ -35,11 +194,15 @@
         </div>
     </div>
 </div>
-<div class="card">
+<div class="card md-products-card">
     <div class="card-body">
 
         <!--begin::Table-->
-        <div class="table-responsive">
+        <div class="md-products-mobile-hint">
+            <i class="fa-solid fa-arrows-left-right"></i>
+            اسحب الجدول يمينًا ويسارًا لعرض باقي الأعمدة
+        </div>
+        <div class="md-products-table-host">
             <table id="data-table" class="table">
                 <thead>
                     <tr>
@@ -229,8 +392,6 @@
                                     <small class="text-muted">{{ TranslationHelper::translate('optional') }}</small>
                                 </div>
                                 <div class="col-md-4 form-group mb-3">
-                                    <label class="form-label">{{ TranslationHelper::translate('tax_amount') }}</label>
-                                    <input type="number" step="0.01" min="0" name="new_tax_amount" class="form-control" value="{{ old('new_tax_amount', $live->tax_amount ?? '') }}">
                                 </div>
                                 <div class="col-md-4 form-group mb-3">
                                     <label class="form-label">{{ TranslationHelper::translate('commission_amount') }}</label>
@@ -314,7 +475,19 @@
                 "next": @if(app()->getLocale() == 'ar') "<i class='fas fa-angle-left'></i>" @else "<i class='fas fa-angle-right'></i>" @endif
             }
         },
-        dom: '<"d-flex justify-content-between"<l><f>>rt<"d-flex justify-content-between"<"d-flex align-items-center"<><i>><p>>'
+        dom: '<"md-products-toolbar"lf>t<"md-products-footer"ip>',
+        initComplete: function () {
+            var api = this.api();
+            var $table = $(api.table().node());
+
+            if (!$table.parent().hasClass('md-products-table-scroll')) {
+                $table.wrap(
+                    '<div class="md-products-table-scroll"></div>'
+                );
+            }
+
+            api.columns.adjust();
+        }
     });
 
     $('.md-transfer-mode').on('change', function () {

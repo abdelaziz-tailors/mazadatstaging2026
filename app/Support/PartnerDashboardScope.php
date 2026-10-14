@@ -137,7 +137,7 @@ class PartnerDashboardScope
     public static function scopeItemServices(Builder $query): Builder
     {
         if (self::isPartner()) {
-            $query->where('admin_id', Auth::guard('admin')->user()->id);
+            $query->availableForAdmin((int) Auth::guard('admin')->user()->id);
         }
 
         return $query;
@@ -179,6 +179,11 @@ class PartnerDashboardScope
     {
         if (! self::isPartner()) {
             return;
+        }
+
+        // Default/global services are read-only for every partner.
+        if ($service->is_default) {
+            abort(403, 'Default services can only be managed by Super Admin.');
         }
 
         if ((int) ($service->admin_id ?? 0) !== (int) Auth::guard('admin')->user()->id) {

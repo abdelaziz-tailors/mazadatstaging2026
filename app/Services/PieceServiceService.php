@@ -15,6 +15,12 @@ class PieceServiceService
     public static function addToOrderItem(OrderItem $orderItem, array $data): OrderItemService
     {
         self::assertEditableOrderItem($orderItem);
+        self::assertItemServiceAvailableForOrderItem(
+            $orderItem,
+            isset($data['item_service_id'])
+                ? (int) $data['item_service_id']
+                : null
+        );
 
         $service = DB::transaction(function () use ($orderItem, $data) {
             $service = OrderItemService::query()->create([
@@ -38,6 +44,15 @@ class PieceServiceService
     {
         $orderItem = $service->orderItem()->with('order')->firstOrFail();
         self::assertEditableOrderItem($orderItem);
+
+        if (array_key_exists('item_service_id', $data)) {
+            self::assertItemServiceAvailableForOrderItem(
+                $orderItem,
+                $data['item_service_id'] !== null
+                    ? (int) $data['item_service_id']
+                    : null
+            );
+        }
 
         DB::transaction(function () use ($service, $data, $orderItem) {
             $payload = [];
@@ -168,6 +183,29 @@ class PieceServiceService
         }
 
         return self::sumItemServicesForOrderItem($item->orderItem);
+    }
+
+    public static function assertItemServiceAvailableForOrderItem(
+        OrderItem $orderItem,
+        ?int $itemServiceId
+    ): void {
+        if (! $itemServiceId) {
+            return;
+        }
+
+        $orderItem->loadMissing('order.liveVideo');
+
+        $adminId = $orderItem->order?->liveVideo?->admin_id;
+
+        $exists = ItemService::query()
+            ->whereKey($itemServiceId)
+            ->where('is_active', true)
+            ->availableForAdmin($adminId ? (int) $adminId : null)
+            ->exists();
+
+        if (! $exists) {
+            abort(422, TranslationHelper::translate('nothing_found'));
+        }
     }
 
     public static function resolveDefaultPrice(?int $itemServiceId): ?float

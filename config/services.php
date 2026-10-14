@@ -53,6 +53,7 @@ return [
         'whatsapp_from' => env('INFOBIP_WHATSAPP_FROM'),
         'whatsapp_template' => env('INFOBIP_WHATSAPP_TEMPLATE'),
         'whatsapp_lang' => env('INFOBIP_WHATSAPP_LANG', 'en'),
+        'whatsapp_country_code' => env('INFOBIP_WHATSAPP_COUNTRY_CODE', '966'),
         'timeout' => env('INFOBIP_TIMEOUT', 10),
     ],
 
