@@ -19,7 +19,9 @@ class RegisterController extends Controller
     public function __invoke(RegisterRequest $request, SmsService $smsService)
     {
         try {
-            $numbers = random_int(1000, 9999);
+            $numbers = config('services.otp.testing')
+                ? (string) config('services.otp.test_code', '1111')
+                : (string) random_int(1000, 9999);
 
             $expire_at = Carbon::now()->addMinutes(10);
 
@@ -59,27 +61,33 @@ class RegisterController extends Controller
                 UserOtp::create($pendingRegistration);
             }
 
-            $otpResult = $smsService->sendRegistrationOtp(
-                $request->phone,
-                (string) $numbers
-            );
-
-            if (! ($otpResult['success'] ?? false)) {
-                \Log::warning('REGISTER_WHATSAPP_OTP_FAILED', [
-                    'error' => $otpResult['error'] ?? null,
-                    'status' => $otpResult['status'] ?? null,
-                    'response' => $otpResult['response'] ?? null,
-                ]);
-
-                throw new \RuntimeException(
-                    $otpResult['error'] ?? 'WhatsApp OTP sending failed'
+            if (! config('services.otp.testing')) {
+                $otpResult = $smsService->sendRegistrationOtp(
+                    $request->phone,
+                    (string) $numbers
                 );
-            }
 
-            \Log::info('REGISTER_WHATSAPP_OTP_SENT', [
-                'provider_message_id' => $otpResult['provider_message_id'] ?? null,
-                'provider_status' => $otpResult['provider_status_name'] ?? null,
-            ]);
+                if (! ($otpResult['success'] ?? false)) {
+                    \Log::warning('REGISTER_WHATSAPP_OTP_FAILED', [
+                        'error' => $otpResult['error'] ?? null,
+                        'status' => $otpResult['status'] ?? null,
+                        'response' => $otpResult['response'] ?? null,
+                    ]);
+
+                    throw new \RuntimeException(
+                        $otpResult['error'] ?? 'WhatsApp OTP sending failed'
+                    );
+                }
+
+                \Log::info('REGISTER_WHATSAPP_OTP_SENT', [
+                    'provider_message_id' => $otpResult['provider_message_id'] ?? null,
+                    'provider_status' => $otpResult['provider_status_name'] ?? null,
+                ]);
+            } else {
+                \Log::info('REGISTER_TEST_OTP', [
+                    'phone' => $request->phone,
+                ]);
+            }
 
             return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
                 'phone' => $request->phone,

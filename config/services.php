@@ -57,6 +57,11 @@ return [
         'timeout' => env('INFOBIP_TIMEOUT', 10),
     ],
 
+    'otp' => [
+        'testing' => env('OTP_TESTING', false),
+        'test_code' => env('OTP_TEST_CODE', '1111'),
+    ],
+
     'agora' => [
         'app_id' => env('AGORA_APP_ID'),
         'app_certificate' => env('AGORA_APP_CERTIFICATE'),
