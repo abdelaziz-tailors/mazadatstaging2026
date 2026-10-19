@@ -250,6 +250,7 @@ Route::group(['middleware' => ['auth:api']], function() {
 
 
         Route::group(['prefix' => 'live','namespace' => 'Live'], function(){
+            Route::get('replay/{id}', 'AuctionReplayController@show')->name('auction.replay');
             Route::post('add', 'LiveVideoController@add');
             Route::post('start/{id}', 'LiveVideoController@start');
             Route::get('last-auction/{id}', 'LiveVideoController@lastAuction');

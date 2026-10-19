@@ -28,6 +28,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('livevideo:check')->everyMinute();
         $schedule->command('livevideoEnd:check')->everyMinute();
         $schedule->command('recordedvideostart:check')->everyMinute();
+        $schedule->command('recordings:reconcile')->everyMinute()->withoutOverlapping();
         $schedule->command('notifications:upcoming-auction-reminders')->everyFiveMinutes();
         $schedule->command('notifications:subscription-expiry-reminders')->hourly();
     }

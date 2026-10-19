@@ -283,7 +283,9 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::find($id);
+        $data = LiveVideo::findOrFail($id);
+        abort_unless((int) $data->user_id === (int) auth('api')->id(), 403);
+        abort_if($data->isEnded(), 409);
         $data->update([
             'status' => 'start',
         ]);
@@ -339,7 +341,11 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::find($id);
+        $data = LiveVideo::findOrFail($id);
+        abort_unless((int) $data->user_id === (int) auth('api')->id(), 403);
+        if ($data->isEnded()) {
+            return $this->success_response(TranslationHelper::translate(' Added Successfully '), new MyLiveVideoResource($data));
+        }
 
         $hight_pirce = VideoComment::where('video_id', $id)->orderByDesc('comment')->first();
 
