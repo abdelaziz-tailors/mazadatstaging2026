@@ -167,6 +167,15 @@ class SmsService
             $firstMessage = $responseJson['messages'][0] ?? [];
             $status = $firstMessage['status'] ?? [];
 
+            // HTTP acceptance alone does not mean the message was accepted.
+            if (empty($firstMessage['messageId']) || ! in_array($status['groupName'] ?? null, ['PENDING', 'DELIVERED'], true)) {
+                return [
+                    'success' => false,
+                    'error' => 'Infobip did not accept the WhatsApp message',
+                    'status' => $response->status(),
+                ];
+            }
+
             return [
                 'success' => true,
                 'response' => $response->body(),

@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Auth\ResetPasswordRequest;
 use App\Helpers\TranslationHelper;
 use App\Http\Resources\User\UserResource;
-use App\Models\User\User;
 use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ResetPasswordController extends Controller
 {
@@ -17,28 +17,29 @@ class ResetPasswordController extends Controller
 
     public function __invoke(ResetPasswordRequest $request)
     {
-        $user = User::where('phone', $request->phone)
-            ->where('password_otp', $request->otp)
-            ->first();
+        return DB::transaction(function () use ($request) {
+            $user = $this->passwordResetUser($request->phone);
 
-        if (! $user) {
-            return $this->failed_response(TranslationHelper::translate('wrong_otp'));
-        }
+            if (! $user || ! $user->is_verified || ! $user->password_otp
+                || ! hash_equals((string) $user->password_otp, $request->otp)) {
+                return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+            }
 
-        if (! $user->expire_at || Carbon::now()->isAfter($user->expire_at)) {
-            return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
-        }
+            if (! $user->expire_at || Carbon::now()->greaterThanOrEqualTo($user->expire_at)) {
+                return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
+            }
 
-        $user->password = bcrypt($request->password);
-        $user->password_otp = null;
-        $user->expire_at = null;
-        $user->save();
+            $user->password = bcrypt($request->password);
+            $user->password_otp = null;
+            $user->expire_at = null;
+            $user->save();
 
-        $user->token = $user->createToken('MyApp')->accessToken;
+            $user->token = $user->createToken('MyApp')->accessToken;
 
-        return $this->success_response(
-            TranslationHelper::translate('your_password_changed_successfully'),
-            new UserResource($user)
-        );
+            return $this->success_response(
+                TranslationHelper::translate('your_password_changed_successfully'),
+                new UserResource($user)
+            );
+        });
     }
 }

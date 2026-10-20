@@ -34,7 +34,9 @@ class LoginController extends Controller
                 $data = new UserResource(Auth::user());
                 return $this->success_response(TranslationHelper::translate('your_account_logged_in_successfully'), $data);
         }
-        return $this->failed_response(TranslationHelper::translate('phone or password not correct'));
+        return $this->failed_response(TranslationHelper::translate(
+            $loginField === 'email' ? 'email or password not correct' : 'phone or password not correct'
+        ));
 
     }
 

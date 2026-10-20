@@ -29,7 +29,6 @@ class UserAuctionController extends Controller
 
     public function list(Request $request)
     {
-        dd(auth('api')->user()->id);
         $orders = Order::query()
             ->with(['liveVideo', 'items.liveVideoItem'])
             ->where('buyer_id', auth('api')->user()->id)
