@@ -41,6 +41,7 @@ use Illuminate\Http\JsonResponse;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LiveVideoController extends Controller
@@ -478,11 +479,27 @@ class LiveVideoController extends Controller
         if (!$video) {
             return $this->failed_response(TranslationHelper::translate('Video not found'));
         }
-        // if ($video->status != null) {
-        //     return $this->failed_response(TranslationHelper::translate('Live Video Cant Be Modified'));
-        // }
+        $deleted = DB::transaction(function () use ($video) {
+            $video = LiveVideo::whereKey($video->id)->lockForUpdate()->first();
+            if (! $video) {
+                return false;
+            }
 
-        $video->delete();
+            // Hard deletion cascades to orders. Keep the auction and its
+            // sale history, including soft-deleted orders and legacy awards.
+            if ($video->orders()->withTrashed()->exists()
+                || $video->video_items()->where(function ($query) {
+                    $query->whereNotNull('user_finished_id')->orWhereNotNull('finished_price');
+                })->exists()) {
+                return false;
+            }
+
+            return $video->delete();
+        });
+
+        if (! $deleted) {
+            return $this->failed_response(TranslationHelper::translate('auction_has_sales_cannot_delete'), 422);
+        }
         try {
             $firebase = new FirebaseController();
             $firebase->removeLive($id);

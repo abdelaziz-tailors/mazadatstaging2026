@@ -69,6 +69,7 @@
             <tr><th>{{ TranslationHelper::translate('name') }}</th><td>{{ $submission->user->name ?? '-' }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('phone') }}</th><td>{{ $submission->user->phone ?? '-' }}</td></tr>
             <tr><th>{{ TranslationHelper::translate('sheep_type') }}</th><td>{{ $submission->sheep_type }}</td></tr>
+            <tr><th>{{ TranslationHelper::translate('expected_price') }}</th><td>{{ $submission->expected_price ?? '-' }}</td></tr>
             @if(!($isPartnerDashboard ?? false))
             <tr><th>{{ TranslationHelper::translate('partner') }}</th><td>{{ $submission->partner->name ?? '-' }}</td></tr>
             @endif

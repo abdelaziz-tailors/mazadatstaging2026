@@ -19,7 +19,7 @@ class UserInvoiceResource extends JsonResource
             'id' => $this->id,
             'order_number' => $this->order_number,
             'live_video_id' => $this->live_video_id,
-            'title' =>$live->title_ar,
+            'title' => $live->title_ar ?? '',
             'live_status' => $live->status ?? '',
             'end_at' => $live->end_at ?? null,
             'sub_total' => $this->subtotal,

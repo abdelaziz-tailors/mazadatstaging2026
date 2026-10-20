@@ -308,7 +308,13 @@ class LiveVideoItemController extends Controller
         if (!$video){
             return $this->failed_response(TranslationHelper::translate('Item not found'));
         }
-        if ($video->status !='pending'){
+        if (! $this->userOwnsItemsAuction($video)) {
+            return $this->failed_response(TranslationHelper::translate('unauthorized_access'), 403);
+        }
+        if ($video->status != 'pending'
+            || $video->user_finished_id !== null
+            || $video->finished_price !== null
+            || $video->orderItem()->exists()) {
             return $this->failed_response(TranslationHelper::translate('Item Cant Be Deleted'));
         }
 

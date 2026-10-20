@@ -997,6 +997,8 @@
   'new_report_created_successfully' => 'New Report Created Successfully',
   '_video_delete_successfully_' => ' Video Delete Successfully ',
   'email_or_password_not_correct' => 'Email or Password not correct',
+  'auction_has_sales_cannot_delete' => 'An auction with sales or orders cannot be deleted.',
+  'expected_price' => 'Expected Price',
   'that_mail_not_exist' => 'That mail not exist',
   'please_enter_account_type' => 'please enter account type',
   'please_enter_user__type' => 'please enter user  type',
@@ -1630,4 +1632,5 @@
   'bshsh' => 'Bshsh',
   'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
   'edit_slider' => 'edit slider',
+  'not_found' => 'not found',
 );

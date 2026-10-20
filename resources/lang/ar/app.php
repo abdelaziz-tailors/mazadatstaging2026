@@ -999,6 +999,8 @@
   'new_report_created_successfully' => 'تم إنشاء تقرير جديد بنجاح',
   '_video_delete_successfully_' => 'تم حذف الفيديو بنجاح',
   'email_or_password_not_correct' => 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+  'auction_has_sales_cannot_delete' => 'لا يمكن حذف مزاد يحتوي على مبيعات أو طلبات.',
+  'expected_price' => 'السعر المتوقع',
   'that_mail_not_exist' => 'هذا البريد الإلكتروني غير موجود',
   'please_enter_account_type' => 'يرجى إدخال نوع الحساب',
   'please_enter_user__type' => 'يرجى إدخال نوع المستخدم',
@@ -1221,7 +1223,7 @@
   'select_status' => 'اختر الحالة',
   'select_active' => 'اختر نشط',
   'inactive' => 'غير نشط',
-  'phone_or_password_not_correct' => 'phone or password not correct',
+  'phone_or_password_not_correct' => 'رقم الهاتف أو كلمة المرور غير صحيحة',
   'account_type_not_match' => 'نوع الحساب المحدد غير مطابق لنوع الحساب المسجل به',
   'please_add_valid_tax_certificate' => 'Please Add Valid Tax Certificate',
   '_tax_certificate_max_size_10_mb_' => ' Tax Certificate max Size 10 MB ',
@@ -1637,4 +1639,5 @@
   'please_enter_item_service_name' => 'Please enter item service name',
   'bshsh' => 'Bshsh',
   'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
+  'not_found' => 'not found',
 );

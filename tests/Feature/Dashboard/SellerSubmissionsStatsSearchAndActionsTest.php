@@ -78,6 +78,19 @@ class SellerSubmissionsStatsSearchAndActionsTest extends TestCase
         $this->assertEquals((int) $baseline->under_review + 2, $stats['under_review']);
     }
 
+    public function test_received_submission_details_display_the_sellers_expected_price()
+    {
+        Auth::guard('admin')->setUser($this->createAdmin());
+        view()->share('errors', new ViewErrorBag());
+        $submission = $this->createSubmission();
+        $submission->update(['expected_price' => 1234.50]);
+
+        $html = (new SellerSubmissionController())->show($submission->id)->render();
+
+        $this->assertStringContainsString(TranslationHelper::translate('expected_price'), $html);
+        $this->assertMatchesRegularExpression('/<td>1234\.5(?:0)?<\/td>/', $html);
+    }
+
     public function test_index_page_renders_the_stat_cards()
     {
         Auth::guard('admin')->setUser($this->createAdmin());
