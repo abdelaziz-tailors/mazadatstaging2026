@@ -1,6 +1,19 @@
 <?php
 
 return [
+    'auction_commission_required' => 'Commission percentage is required.',
+    'auction_commission_numeric' => 'Commission percentage must be a number.',
+    'auction_commission_min' => 'Commission percentage must be at least zero.',
+    'auction_payer_required' => 'Select the commission payer.',
+    'auction_payer_in' => 'Commission payer must be seller or buyer.',
+    'animal_images_required' => 'Upload at least one image for each animal.',
+    'animal_images_array' => 'Animal images must be an array of uploaded files.',
+    'animal_image_file' => 'Each animal image must be a valid uploaded JPEG, JPG or PNG image.',
+    'animal_image_max' => 'Each animal image must not exceed 20MB.',
+    'animal_image_uploaded' => 'An animal image failed to upload. Please upload it again.',
+    'head_weight_required' => 'Head weight is required.',
+    'head_weight_numeric' => 'Head weight must be a number.',
+    'head_weight_positive' => 'Head weight must be greater than zero.',
 
     /*
     |--------------------------------------------------------------------------

@@ -26,6 +26,9 @@ class AddVideoRequest extends FormRequest
      */
     public function rules()
     {
+        // Match the subscriber eligibility check in LiveVideoController::add.
+        $admin = auth('api')->user()->admin ?? null;
+        $presence = $admin && $admin->partner !== 'partner' ? 'required' : 'nullable';
         return [
             'title_ar' => 'required',
             'start_price' => 'required|numeric|min:0',
@@ -42,8 +45,8 @@ class AddVideoRequest extends FormRequest
             'video_type' => 'nullable|in:live,recorded,photo',
             'partners_type'=>'nullable',
             'partner_id'=>'nullable',
-            'commission_amount' => 'nullable|min:0',
-            'commission_payer' => 'nullable|in:buyer,seller',
+            'commission_amount' => $presence.'|numeric|min:0',
+            'commission_payer' => $presence.'|in:buyer,seller',
             'service_fee' => 'nullable|min:0',
             'title' => 'nullable',
             'information' => 'nullable|string|max:255',
@@ -57,6 +60,11 @@ class AddVideoRequest extends FormRequest
     public function messages()
     {
         return [
+            'commission_amount.required' => trans('validation.auction_commission_required'),
+            'commission_amount.numeric' => trans('validation.auction_commission_numeric'),
+            'commission_amount.min' => trans('validation.auction_commission_min'),
+            'commission_payer.required' => trans('validation.auction_payer_required'),
+            'commission_payer.in' => trans('validation.auction_payer_in'),
             'title.required' => TranslationHelper::translate('please  enter title'),
             'title_ar.required' => TranslationHelper::translate('please  enter title'),
             'information.required' => TranslationHelper::translate('please  enter information'),
@@ -83,7 +91,8 @@ class AddVideoRequest extends FormRequest
         throw new HttpResponseException(response()->json([
             'code' => 200,
             'success'   => false,
-            'message'   => $validator->errors()->first()
+            'message'   => $validator->errors()->first(),
+            'errors' => $validator->errors()->toArray(),
         ]));
     }
 }
