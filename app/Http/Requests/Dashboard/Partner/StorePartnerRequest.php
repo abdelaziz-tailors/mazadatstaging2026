@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard\Partner;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 
 class StorePartnerRequest extends FormRequest
 {
@@ -26,12 +27,7 @@ class StorePartnerRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        if ($this->filled('phone')) {
-            $digits = preg_replace('/\D/', '', $this->phone);
-            $digits = ltrim($digits, '0');
-
-            $this->merge(['phone' => '+966'.$digits]);
-        }
+        MobileNumber::prepare($this);
     }
 
     /**
@@ -43,9 +39,9 @@ class StorePartnerRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:admins,email,NULL,id,deleted_at,NULL',
+            'email' => array_merge(MobileNumber::emailRules(), MobileNumber::emailRules(null, 'admins')),
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
-            'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/'],
+            'phone' => array_merge(MobileNumber::rules(), MobileNumber::rules(null, 'admins')),
             'commercial_register' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'national_id' => 'nullable|string|max:32',
             'password' => 'required|min:6',

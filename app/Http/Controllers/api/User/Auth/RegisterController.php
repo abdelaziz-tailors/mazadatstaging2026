@@ -48,10 +48,12 @@ class RegisterController extends Controller
                 'expire_at' => $expire_at,
             ];
 
-            $otpRecord = UserOtp::withTrashed()
-                ->where('phone', $request->phone)
-                ->where('type', 'register')
-                ->first();
+            $otpRecords = \App\Helpers\MobileNumber::matching(UserOtp::withTrashed(), $request->phone)
+                ->where('type', 'register')->limit(2)->get();
+            if ($otpRecords->count() > 1) {
+                throw new \RuntimeException('Ambiguous pending registration');
+            }
+            $otpRecord = $otpRecords->first();
 
             if ($otpRecord) {
                 $otpRecord->update(array_merge($pendingRegistration, [
@@ -95,6 +97,9 @@ class RegisterController extends Controller
             ]);
 
         } catch (\Throwable $th) {
+            if ($th instanceof \Illuminate\Database\QueryException && \App\Exceptions\Handler::identityConflict($th)) {
+                return app(\App\Exceptions\Handler::class)->render($request, $th);
+            }
             return $this->failed_response(TranslationHelper::translate('Something went wrong'),);
         }
     }

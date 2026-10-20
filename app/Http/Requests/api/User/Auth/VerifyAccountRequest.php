@@ -24,6 +24,18 @@ class VerifyAccountRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        $phone = $this->input('phone');
+        if (is_string($phone)) {
+            $pending = \App\Helpers\MobileNumber::matching(\App\Models\UserOtp::query(), $phone)
+                ->where('type', 'register')->where('is_verified', false)->limit(2)->get();
+            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
+            $this->merge(['phone' => $pending->count() === 1 ? $pending->first()->phone
+                : ($user ? $user->phone : $phone)]);
+        }
+    }
+
     public function rules()
     {
         return [

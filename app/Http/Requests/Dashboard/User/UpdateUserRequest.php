@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Http\Requests\Dashboard\Vendor;
+namespace App\Http\Requests\Dashboard\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 
 class UpdateUserRequest extends FormRequest
 {
     /**
-     * Determine if the Vendor is authorized to make this request.
+     * Determine if the User is authorized to make this request.
      *
      * @return bool
      */
@@ -22,12 +23,17 @@ class UpdateUserRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,'.request()->route('vendor').',id,deleted_at,NULL',
-            'phone' => 'required|unique:users,phone,'.request()->route('vendor').',id,deleted_at,NULL',
+            'email' => MobileNumber::emailRules($this->route('user')),
+            'phone' => MobileNumber::rules($this->route('user')),
         ];
     }
 
@@ -40,14 +46,12 @@ class UpdateUserRequest extends FormRequest
     public function messages()
     {
         return [
-            'name.required' => TranslationHelper::translate('Please Enter Vendor name'),
-            'email.required' => TranslationHelper::translate('Please Enter Vendor E-mail Address'),
-            'email.email' => TranslationHelper::translate('Please Enter Valid Vendor E-mail Address'),
-            'email.unique' => TranslationHelper::translate('E-mail Address Registered For Another Vendor'),
-            'phone.required' => TranslationHelper::translate('Please Enter Vendor Phone'),
-            'phone.unique' => TranslationHelper::translate('Phone Registered For Another Vendor'),
-            'city.required' => TranslationHelper::translate('Please Enter Vendor city'),
-            'county.required' => TranslationHelper::translate('Please Enter Vendor county'),
+            'name.required' => TranslationHelper::translate('Please Enter User name'),
+            'email.required' => TranslationHelper::translate('Please Enter User E-mail Address'),
+            'email.email' => TranslationHelper::translate('Please Enter Valid User E-mail Address'),
+            'email.unique' => TranslationHelper::translate('E-mail Address Registered For Another User'),
+            'phone.required' => TranslationHelper::translate('Please Enter User Phone'),
+            'phone.unique' => TranslationHelper::translate('Phone Registered For Another User'),
 
         ];
     }

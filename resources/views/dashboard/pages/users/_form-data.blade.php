@@ -30,7 +30,7 @@
     </div>
     <div class="col-lg-6 form-group">
         {!! Form::label('phone', TranslationHelper::translate('phone'), ['class'=>'form-label']) !!}
-        {!! Form::text('phone', NULL, ['class' => 'form-control','placeholder' => 'phone number EX. 1007982550']) !!}
+        {!! Form::text('phone', NULL, ['required' => true, 'class' => 'form-control','placeholder' => 'phone number EX. 1007982550']) !!}
     </div>
     <div class="col-lg-12 form-group" id="doctor_job">
         {!! Form::label('Jobs', TranslationHelper::translate('Jobs'), ['class'=>'form-label']) !!}
