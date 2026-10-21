@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'auction_schedule_format' => 'Enter a valid auction date (YYYY-MM-DD) and time (HH:mm).',
+    'auction_start_future' => 'The auction start date and time must not be earlier than the current time (Asia/Kuwait).',
+    'auction_end_after_start' => 'The auction end date and time must be later than its start.',
     'auction_commission_required' => 'Commission percentage is required.',
     'auction_commission_numeric' => 'Commission percentage must be a number.',
     'auction_commission_min' => 'Commission percentage must be at least zero.',

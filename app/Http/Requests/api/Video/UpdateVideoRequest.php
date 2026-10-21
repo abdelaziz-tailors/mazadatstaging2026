@@ -9,6 +9,8 @@ use App\Helpers\TranslationHelper;
 use Illuminate\Support\Facades\Auth;
 class UpdateVideoRequest extends FormRequest
 {
+    use ValidatesAuctionSchedule;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -80,7 +82,8 @@ class UpdateVideoRequest extends FormRequest
         throw new HttpResponseException(response()->json([
             'code' => 200,
             'success'   => false,
-            'message'   => $validator->errors()->first()
+            'message'   => $validator->errors()->first(),
+            'errors' => $validator->errors()->toArray()
         ]));
     }
 }

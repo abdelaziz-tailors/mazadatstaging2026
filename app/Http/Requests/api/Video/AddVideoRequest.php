@@ -9,6 +9,8 @@ use App\Helpers\TranslationHelper;
 use Illuminate\Support\Facades\Auth;
 class AddVideoRequest extends FormRequest
 {
+    use ValidatesAuctionSchedule;
+
     /**
      * Determine if the user is authorized to make this request.
      *

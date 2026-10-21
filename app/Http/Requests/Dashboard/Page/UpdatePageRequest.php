@@ -43,7 +43,7 @@ class UpdatePageRequest extends FormRequest
         $rules = array();
         $rules['name.ar'] = 'required';
         $rules['description.ar'] = 'required';
-//        $rules['image_svg'] = 'sometimes|mimes:svg';
+        $rules['image_png'] = 'prohibited';
         return $rules;
     }
 

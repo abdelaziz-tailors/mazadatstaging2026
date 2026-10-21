@@ -3,6 +3,9 @@
 namespace Tests\Feature\Api;
 
 use App\Http\Requests\api\Video\AddVideoRequest;
+use App\Http\Requests\api\Video\UpdateVideoRequest;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Carbon;
 use App\Http\Requests\api\Video\item\StoreItemRequest;
 use App\Http\Requests\api\Video\item\AddPieceRequest;
 use App\Http\Requests\api\Video\item\UpdatePieceRequest;
@@ -22,6 +25,8 @@ class AuctionCreationValidationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Carbon::setTestNow(Carbon::parse('2026-10-20 12:30:30', 'Asia/Kuwait'));
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-20 12:30:30', 'Asia/Kuwait'));
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:', 'app.debug' => false]);
         DB::purge('sqlite');
         $this->withoutMiddleware('APISettings');
@@ -57,6 +62,86 @@ class AuctionCreationValidationTest extends TestCase
             'date_start_at' => '2026-11-01', 'date_end_at' => '2026-11-02',
             'time_start_at' => '10:00', 'time_end_at' => '11:00',
             'commission_amount' => 2.5, 'commission_payer' => 'seller'];
+    }
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        CarbonImmutable::setTestNow();
+        parent::tearDown();
+    }
+
+    public function test_combined_schedule_validation_and_no_writes(): void
+    {
+        foreach ([
+            ['date_start_at' => '2026-10-20', 'time_start_at' => '12:29'],
+            ['date_start_at' => '2026-10-19'],
+            ['date_end_at' => '2026-10-31'],
+            ['date_end_at' => '2026-11-01', 'time_end_at' => '09:59'],
+            ['date_end_at' => '2026-11-01', 'time_end_at' => '10:00'],
+            ['date_start_at' => null], ['time_start_at' => null],
+            ['date_start_at' => '2026-02-30'], ['time_start_at' => '25:00'],
+            ['date_end_at' => []], ['time_end_at' => 'not a time'],
+        ] as $invalid) {
+            $this->postJson('/validation/auction', array_replace($this->auction(), $invalid))
+                ->assertOk()->assertJsonPath('success', false)->assertJsonStructure(['errors']);
+        }
+        foreach (['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at'] as $field) {
+            $data = $this->auction();
+            unset($data[$field]);
+            $this->postJson('/validation/auction', $data)->assertJsonPath('success', false)
+                ->assertJsonStructure(['errors' => [$field]]);
+        }
+        $this->assertDatabaseCount('validation_writes', 0);
+        $this->postJson('/validation/auction', array_replace($this->auction(), [
+            'date_start_at' => '2026-10-20', 'time_start_at' => '12:31',
+        ]))->assertJsonPath('success', true);
+        $this->assertDatabaseCount('validation_writes', 1);
+
+        // 21:30 UTC is 00:30 the following day in the established auction timezone.
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-20 21:30:00', 'UTC'));
+        foreach (['en', 'ar'] as $locale) {
+            app()->setLocale($locale);
+            $this->postJson('/validation/auction', array_replace($this->auction(), [
+                'date_start_at' => '2026-10-21', 'time_start_at' => '00:29',
+            ]))->assertJsonPath('errors.time_start_at.0', trans('validation.auction_start_future'));
+        }
+        $this->postJson('/validation/auction', array_replace($this->auction(), [
+            'date_start_at' => '2026-10-21', 'time_start_at' => '23:59',
+            'date_end_at' => '2026-10-22', 'time_end_at' => '00:01',
+        ]))->assertJsonPath('success', true);
+    }
+
+    public function test_partial_scheduling_updates_use_stored_values(): void
+    {
+        Schema::create('live_videos', function (Blueprint $table) {
+            $table->id();
+            foreach (['user_id', 'status', 'date_start_at', 'date_end_at', 'time_start_at', 'time_end_at'] as $field) {
+                $table->string($field);
+            }
+        });
+        DB::table('live_videos')->insert(['id' => 1, 'user_id' => 1, 'status' => 'pending',
+            'date_start_at' => '2026-11-01', 'date_end_at' => '2026-11-01',
+            'time_start_at' => '10:00:00', 'time_end_at' => '11:00:00']);
+        Route::post('/validation/auction-update/{id}', function (UpdateVideoRequest $request) {
+            DB::table('validation_writes')->insert(['kind' => 'update']);
+            return ['success' => true];
+        });
+        $this->postJson('/validation/auction-update/1', ['time_end_at' => '09:59'])
+            ->assertJsonPath('errors.time_end_at.0', trans('validation.auction_end_after_start'));
+        $this->postJson('/validation/auction-update/1', ['date_start_at' => '2026-10-19'])
+            ->assertJsonPath('success', false);
+        $this->postJson('/validation/auction-update/1', ['time_start_at' => null])
+            ->assertJsonStructure(['errors' => ['time_start_at']]);
+        $this->postJson('/api/live/update/1', ['time_end_at' => '09:59'])
+            ->assertJsonPath('success', false)->assertJsonStructure(['errors' => ['time_end_at']]);
+        $this->assertDatabaseHas('live_videos', ['time_end_at' => '11:00:00']);
+        $this->assertDatabaseCount('validation_writes', 0);
+        $this->postJson('/validation/auction-update/1', ['time_end_at' => '12:00'])->assertJsonPath('success', true);
+        $this->postJson('/validation/auction-update/1', ['title_ar' => 'Updated'])->assertJsonPath('success', true);
+        DB::table('live_videos')->where('id', 1)->update(['status' => 'live']);
+        $this->postJson('/api/live/update/1', ['time_end_at' => '12:00'])->assertJsonPath('success', false);
+        $this->assertDatabaseHas('live_videos', ['time_end_at' => '11:00:00']);
     }
 
     public function test_commission_validation_and_legacy_response_contract(): void
@@ -186,6 +271,10 @@ class AuctionCreationValidationTest extends TestCase
         (new \CreateLiveVideoItemPiecesTable())->up();
         DB::table('user_subscriptions')->insert(['user_id' => 1, 'status' => 'approved',
             'expires_at' => now()->addMonth(), 'remaining_auctions' => 3]);
+        $this->postJson('/api/live/add', array_replace($this->auction(), ['date_start_at' => '2026-10-19']))
+            ->assertJsonPath('success', false)->assertJsonStructure(['errors' => ['time_start_at']]);
+        $this->assertDatabaseCount('live_videos', 0);
+        $this->assertDatabaseHas('user_subscriptions', ['remaining_auctions' => 3]);
         $this->postJson('/api/live/add', $this->auction() + ['video_type' => 'photo'])
             ->assertOk()->assertJsonPath('success', true);
         $this->assertDatabaseCount('live_videos', 1);

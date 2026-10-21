@@ -6,7 +6,6 @@ use App\Http\Resources\CityResource;
 use App\Http\Resources\DepartmentResource;
 use App\Models\JobTitle;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 use TranslationHelper;
 
 class PageResource extends JsonResource
@@ -19,14 +18,11 @@ class PageResource extends JsonResource
      */
     public function toArray($request)
     {
-        $data = [
+        return [
             'name' => $this->name ?? '-',
             'description' => $this->description ?? '-',
-            'image' => Storage::disk('public')->url($this->image)  ?? '-',
-
+            'image' => null,
         ];
-
-        return $data;
     }
 
 
