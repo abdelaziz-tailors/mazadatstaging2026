@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 class LiveVideo extends Model
 {
     use HasFactory;
-    protected $guarded=['id'];
+    protected $guarded = ['id'];
     public function user_Video()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -31,7 +31,8 @@ class LiveVideo extends Model
     }
     public function city()
     {
-        return $this->belongsTo(City::class, 'city_id')->select('id', 'name->'.app()->getLocale().' as name');;
+        return $this->belongsTo(City::class, 'city_id')->select('id', 'name->' . app()->getLocale() . ' as name');
+        ;
     }
 
     public function video_items()
@@ -57,21 +58,21 @@ class LiveVideo extends Model
 
     public function all_views()
     {
-        return $this->hasMany(VideoView::class,'video_id');
+        return $this->hasMany(VideoView::class, 'video_id');
     }
 
     public function likes()
     {
-        return $this->hasMany(LiveVideoLike::class,'live_video_id');
+        return $this->hasMany(LiveVideoLike::class, 'live_video_id');
     }
 
     public function islike()
     {
         // Check if there's a favorite record associated with this post and the current user
-        if(isset(auth('api')->user()->id)){
+        if (isset(auth('api')->user()->id)) {
             return $this->likes()->where('user_id', auth('api')->user()->id);
 
-        }else{
+        } else {
             return $this->likes()->where('user_id', '');
         }
     }
@@ -79,8 +80,13 @@ class LiveVideo extends Model
 
     public function categoryData()
     {
-        return $this->belongsTo(Category::class, 'category_id')->select('id', 'name->'.app()->getLocale().' as name');
+        return $this->belongsTo(Category::class, 'category_id')->select('id', 'name->' . app()->getLocale() . ' as name');
 
+    }
+
+    public function currentVideoItems()
+    {
+        return $this->video_items()->notTransferredAway();
     }
 
 
@@ -97,11 +103,11 @@ class LiveVideo extends Model
     }
     public function leave_live_video_user()
     {
-        return $this->hasMany(LiveVideoUser::class, 'live_video_id')->where('leave',1);
+        return $this->hasMany(LiveVideoUser::class, 'live_video_id')->where('leave', 1);
     }
     public function in_live_video_user()
     {
-        return $this->hasMany(LiveVideoUser::class, 'live_video_id')->where('leave',0);
+        return $this->hasMany(LiveVideoUser::class, 'live_video_id')->where('leave', 0);
     }
 
     public function Live_Video_count()
@@ -119,10 +125,10 @@ class LiveVideo extends Model
     public function isfavorite()
     {
         // Check if there's a favorite record associated with this post and the current user
-        if(isset(auth('api')->user()->id)){
+        if (isset(auth('api')->user()->id)) {
             return $this->favorites()->where('user_id', auth('api')->user()->id);
 
-        }else{
+        } else {
             return $this->favorites()->where('user_id', '');
         }
     }
@@ -248,7 +254,7 @@ class LiveVideo extends Model
 
     public function sellerOrderSummaryForSellerId(?int $sellerId): ?array
     {
-        if (! $sellerId) {
+        if (!$sellerId) {
             return null;
         }
 

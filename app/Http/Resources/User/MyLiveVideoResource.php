@@ -65,7 +65,7 @@ class MyLiveVideoResource extends JsonResource
             'video_type'=>$this['type'],
             'partners_type'=>$this['partners_type'],
             'partner'=> New PartnerResource($this->partnerData),
-            'video_items'=> VideoItemResource::collection($this->video_items),
+            'video_items'=> VideoItemResource::collection($this->currentVideoItems),
             'user'=> New UserDataResource($this->user_Video),
 
             // Agora Live Streaming Configuration

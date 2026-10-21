@@ -65,7 +65,7 @@ class LiveVideoController extends Controller
             }
         }
 
-        if (is_null(auth('api')->user()->admin) || (auth('api')->user()->admin->partner == 'partner' ? true : false) ) {
+        if (is_null(auth('api')->user()->admin) || (auth('api')->user()->admin->partner == 'partner' ? true : false)) {
             return $this->failed_response('هذه الخاصية غير متاحة لك لانك ليست شريك', '422');
         } else {
 
@@ -135,53 +135,53 @@ class LiveVideoController extends Controller
             // Decrement remaining auctions from subscription
             $activeSubscription->decrementAuctions();
 
-            }
-            try {
-                $firebase = new FirebaseController();
-                $firebase->create($data);
-            } catch (\Exception $t) {
-            }
-
-
-            $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
-            $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
-
-            $notification_record = [
-                'title_en' => 'New Auction: ' . $data->title,
-                'title_ar' => 'مزاد جديد: ' . $data->title_ar,
-                'body_en'  => 'Auction "' . $data->title . '" will be held on ' . $data->date_start_at . ' at ' . $data->time_start_at,
-                'body_ar'  => 'سيقام المزاد "' . $data->title . '" في ' . $data->date_start_at . ' في ' . $data->time_start_at,
-            ];
-
-            // Send FCM notifications directly
-            try {
-                $fcmService = new FCMService();
-
-                if (!empty($tokens_en)) {
-                    $result_en = $fcmService->sendToMultipleDevices(
-                        $tokens_en,
-                        $notification_record['title_en'],
-                        $notification_record['body_en']
-                    );
-                    Log::info('Auction Add - EN notification result', $result_en);
-                }
-
-                if (!empty($tokens_ar)) {
-                    $result_ar = $fcmService->sendToMultipleDevices(
-                        $tokens_ar,
-                        $notification_record['title_ar'],
-                        $notification_record['body_ar']
-                    );
-                    Log::info('Auction Add - AR notification result', $result_ar);
-                }
-            } catch (\Exception $e) {
-                Log::error('Auction Add - FCM error: ' . $e->getMessage());
-            }
-
-
-            $data = new MyLiveVideoResource($data);
-            return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
         }
+        try {
+            $firebase = new FirebaseController();
+            $firebase->create($data);
+        } catch (\Exception $t) {
+        }
+
+
+        $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
+        $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
+
+        $notification_record = [
+            'title_en' => 'New Auction: ' . $data->title,
+            'title_ar' => 'مزاد جديد: ' . $data->title_ar,
+            'body_en' => 'Auction "' . $data->title . '" will be held on ' . $data->date_start_at . ' at ' . $data->time_start_at,
+            'body_ar' => 'سيقام المزاد "' . $data->title . '" في ' . $data->date_start_at . ' في ' . $data->time_start_at,
+        ];
+
+        // Send FCM notifications directly
+        try {
+            $fcmService = new FCMService();
+
+            if (!empty($tokens_en)) {
+                $result_en = $fcmService->sendToMultipleDevices(
+                    $tokens_en,
+                    $notification_record['title_en'],
+                    $notification_record['body_en']
+                );
+                Log::info('Auction Add - EN notification result', $result_en);
+            }
+
+            if (!empty($tokens_ar)) {
+                $result_ar = $fcmService->sendToMultipleDevices(
+                    $tokens_ar,
+                    $notification_record['title_ar'],
+                    $notification_record['body_ar']
+                );
+                Log::info('Auction Add - AR notification result', $result_ar);
+            }
+        } catch (\Exception $e) {
+            Log::error('Auction Add - FCM error: ' . $e->getMessage());
+        }
+
+
+        $data = new MyLiveVideoResource($data);
+        return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
+    }
 
     public function update(UpdateVideoRequest $request, $id): JsonResponse
     {
@@ -284,7 +284,7 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::find($id);
+        $data = LiveVideo::with('currentVideoItems')->find($id);
         $data->update([
             'status' => 'start',
         ]);
@@ -301,8 +301,8 @@ class LiveVideoController extends Controller
         $notification_record = [
             'title_en' => 'Auction Started: ' . $data->title,
             'title_ar' => 'بدأ المزاد: ' . $data->title_ar,
-            'body_en'  => 'Auction "' . $data->title . '" has started on ' . $data->date_start_at . ' at ' . $data->time_start_at,
-            'body_ar'  => 'بدأ المزاد "' . $data->title . '" بتاريخ ' . $data->date_start_at . ' في ' . $data->time_start_at,
+            'body_en' => 'Auction "' . $data->title . '" has started on ' . $data->date_start_at . ' at ' . $data->time_start_at,
+            'body_ar' => 'بدأ المزاد "' . $data->title . '" بتاريخ ' . $data->date_start_at . ' في ' . $data->time_start_at,
         ];
 
         // Send FCM notifications directly
@@ -340,7 +340,7 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::find($id);
+        $data = LiveVideo::with('currentVideoItems')->find($id);
 
         $hight_pirce = VideoComment::where('video_id', $id)->orderByDesc('comment')->first();
 
@@ -362,8 +362,8 @@ class LiveVideoController extends Controller
         $notification_record = [
             'title_en' => 'Auction Ended: ' . $data->title,
             'title_ar' => 'انتهى المزاد: ' . $data->title_ar,
-            'body_en'  => 'Auction "' . $data->title . '" has ended on ' . $data->date_end_at . ' at ' . $data->time_end_at,
-            'body_ar'  => 'انتهى المزاد "' . $data->title . '" بتاريخ ' . $data->date_end_at . ' في ' . $data->time_end_at,
+            'body_en' => 'Auction "' . $data->title . '" has ended on ' . $data->date_end_at . ' at ' . $data->time_end_at,
+            'body_ar' => 'انتهى المزاد "' . $data->title . '" بتاريخ ' . $data->date_end_at . ' في ' . $data->time_end_at,
         ];
 
         // Send FCM notifications directly
@@ -403,7 +403,7 @@ class LiveVideoController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
         $data = VideoView::where('video_id', $id)->get();
-        $data =  UserViewVideoResource::collection($data);
+        $data = UserViewVideoResource::collection($data);
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
     }
 
@@ -459,7 +459,7 @@ class LiveVideoController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
 
-        $data = LiveVideo::find($id);
+        $data = LiveVideo::with('currentVideoItems')->find($id);
 
         if (!$data) {
             return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
@@ -481,23 +481,25 @@ class LiveVideoController extends Controller
         }
         $deleted = DB::transaction(function () use ($video) {
             $video = LiveVideo::whereKey($video->id)->lockForUpdate()->first();
-            if (! $video) {
+            if (!$video) {
                 return false;
             }
 
             // Hard deletion cascades to orders. Keep the auction and its
             // sale history, including soft-deleted orders and legacy awards.
-            if ($video->orders()->withTrashed()->exists()
+            if (
+                $video->orders()->withTrashed()->exists()
                 || $video->video_items()->where(function ($query) {
                     $query->whereNotNull('user_finished_id')->orWhereNotNull('finished_price');
-                })->exists()) {
+                })->exists()
+            ) {
                 return false;
             }
 
             return $video->delete();
         });
 
-        if (! $deleted) {
+        if (!$deleted) {
             return $this->failed_response(TranslationHelper::translate('auction_has_sales_cannot_delete'), 422);
         }
         try {

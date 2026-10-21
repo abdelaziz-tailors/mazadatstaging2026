@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,11 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 class LiveVideoItem extends Model
 {
     use HasFactory;
-    protected $guarded=['id'];
+    protected $guarded = ['id'];
     protected $with = ['pieces'];
     public function categoryData()
     {
-        return $this->belongsTo(Category::class, 'category_id')->select('id', 'name->'.app()->getLocale().' as name');
+        return $this->belongsTo(Category::class, 'category_id')->select('id', 'name->' . app()->getLocale() . ' as name');
 
     }
     public function videoLive()
@@ -22,13 +23,18 @@ class LiveVideoItem extends Model
 
     }
 
+    public function scopeNotTransferredAway(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('transferredCopies');
+    }
+
     public function user_auction()
     {
         return $this->belongsTo(User::class, 'user_finished_id');
     }
     public function color()
     {
-        return $this->belongsTo(Color::class, 'color_id')->select('id', 'name->'.app()->getLocale().' as name','color');
+        return $this->belongsTo(Color::class, 'color_id')->select('id', 'name->' . app()->getLocale() . ' as name', 'color');
     }
     public function user()
     {

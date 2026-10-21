@@ -134,6 +134,86 @@ class MobileExistingAuctionTransferTest extends TestCase
         $second->assertStatus(422)->assertJson(['success' => false]);
     }
 
+    public function test_current_listings_hide_transfer_ancestors_and_preserve_item_details(): void
+    {
+        $scenario = $this->createScenario();
+        $source = $scenario['source'];
+        $target = $scenario['target'];
+        $original = $scenario['item'];
+        $original->update(['title_ar' => 'Animal', 'information_ar' => 'Details', 'address' => 'Farm']);
+        $unaffected = LiveVideoItem::create([
+            'live_video_id' => $source->id, 'title' => 'Sold animal',
+            'quantity' => 1, 'finished_price' => 125,
+        ]);
+        $service = app(\App\Services\AuctionItemTransferService::class);
+        $copy = $service->transferItems($source, $target, [$original->id])->first();
+
+        $this->assertCurrentAuctionItems($source, [$unaffected->id]);
+        $this->assertCurrentAuctionItems($target, [$copy->id]);
+
+        $details = $this->withHeaders($this->headers())->getJson('/api/live/video/' . $target->id);
+        $details->assertJsonPath('data.video_items.0.title', 'Animal')
+            ->assertJsonPath('data.video_items.0.information', 'Details')
+            ->assertJsonPath('data.video_items.0.address', 'Farm')
+            ->assertJsonPath('data.video_items.0.quantity', 1)
+            ->assertJsonPath('data.video_items.0.pieces.0.identifier', 'piece-1');
+
+        $target->update(['status' => 'end']);
+        $third = LiveVideo::create([
+            'user_id' => $scenario['user']->id, 'title' => 'Third auction', 'status' => 'pending',
+        ]);
+        $latest = $service->transferItems($target, $third, [$copy->id])->first();
+
+        $this->assertCurrentAuctionItems($source, [$unaffected->id]);
+        $this->assertCurrentAuctionItems($target, []);
+        $this->assertCurrentAuctionItems($third, [$latest->id]);
+        $this->assertSame($original->id, (int) $copy->fresh()->transferred_from_item_id);
+        $this->assertSame($copy->id, (int) $latest->transferred_from_item_id);
+        $this->assertSame(2, $source->video_items()->count());
+        $this->assertSame(1, $target->video_items()->count());
+        $this->assertSame('piece-1', $original->fresh()->pieces->first()->identifier);
+        $this->assertSame('piece-1', $latest->pieces->first()->identifier);
+        $historical = (new \App\Http\Resources\User\VideoItemResource($original->fresh()))
+            ->resolve(request());
+        $this->assertSame($original->id, $historical['id']);
+        $this->assertSame('Details', $historical['information']);
+        $this->assertSame(125.0, $source->fresh()->totalSales());
+    }
+
+    private function assertCurrentAuctionItems(LiveVideo $auction, array $expectedIds): void
+    {
+        $response = $this->withHeaders($this->headers())->getJson('/api/live/video/' . $auction->id);
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertEquals($expectedIds, collect($response->json('data.video_items'))->pluck('id')->all());
+
+        $list = $this->withHeaders($this->headers())->getJson('/api/live/my-list');
+        $list->assertOk();
+        $entry = collect($list->json('data'))->firstWhere('id', $auction->id);
+        $this->assertNotNull($entry);
+        $this->assertEquals($expectedIds, collect($entry['video_items'])->pluck('id')->all());
+
+        // The dashboard page loads this auction-specific DataTables action,
+        // not VideoItemResource. Call directly, as other dashboard tests do.
+        $request = \Illuminate\Http\Request::create('/', 'POST', [
+            'draw' => 1, 'start' => 0, 'length' => 1,
+        ]);
+        $previousRequest = $this->app['request'];
+        $this->app->instance('request', $request);
+        // Yajra caches the request as a singleton; each direct call must
+        // receive this request rather than an earlier auction's request.
+        $this->app->forgetInstance('datatables.request');
+        try {
+            $table = app(\App\Http\Controllers\Dashboard\ProductController::class)
+                ->get_data($auction->id, $request)->getData(true);
+        } finally {
+            $this->app->instance('request', $previousRequest);
+            $this->app->forgetInstance('datatables.request');
+        }
+        $this->assertSame(count($expectedIds), $table['recordsTotal']);
+        $this->assertSame(count($expectedIds), $table['recordsFiltered']);
+        $this->assertEquals($expectedIds, collect($table['data'])->pluck('id')->all());
+    }
+
     public function test_location_alias_that_is_not_an_owned_auction_is_rejected(): void
     {
         $scenario = $this->createScenario();

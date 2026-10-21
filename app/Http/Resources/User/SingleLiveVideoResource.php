@@ -23,49 +23,49 @@ class SingleLiveVideoResource extends JsonResource
     {
 
         $files = [];
-        if( !empty($this->image) && is_array(json_decode($this->image))){
+        if (!empty($this->image) && is_array(json_decode($this->image))) {
             $index = 0;
             foreach (json_decode($this->image) as $feature) {
                 $index++;
                 $files[] = [
                     'key' => $index,
-                    'file' => Storage::disk('public')->url($feature) ,
+                    'file' => Storage::disk('public')->url($feature),
                 ];
             }
-        }else{
+        } else {
             $files[] = [
                 'key' => 1,
-                'file' => Storage::disk('public')->url($this->image) ,
+                'file' => Storage::disk('public')->url($this->image),
             ];
         }
 
 
         $data = [
-            'id' => $this->id ??'',
-            'title'=>app()->getLocale()=='en'? $this['title']??'' :$this['title_ar']??'',
-            'title_en' => $this->title ??'',
-            'title_ar' => $this->title_ar ??'',
-            'status'=>$this['status'],
-            'image'=>$files,
-            'date_start_at'=>$this['date_start_at'],
-            'date_end_at'=>$this['date_end_at'],
-            'time_start_at'=>$this['time_start_at'],
-            'time_end_at'=>$this['time_end_at'],
+            'id' => $this->id ?? '',
+            'title' => app()->getLocale() == 'en' ? $this['title'] ?? '' : $this['title_ar'] ?? '',
+            'title_en' => $this->title ?? '',
+            'title_ar' => $this->title_ar ?? '',
+            'status' => $this['status'],
+            'image' => $files,
+            'date_start_at' => $this['date_start_at'],
+            'date_end_at' => $this['date_end_at'],
+            'time_start_at' => $this['time_start_at'],
+            'time_end_at' => $this['time_end_at'],
             'start_price' => $this->start_price,
-            'information'=>app()->getLocale()=='en'? $this['information']??'' :$this['information_ar']??'',
-            'information_en' => $this->information ??'',
-            'information_ar' => $this->information_ar ??'',
-            'terms_conditions'=>app()->getLocale()=='en'? $this['terms_conditions']??'' :$this['terms_conditions_ar']??'',
-            'terms_conditions_en' => $this->terms_conditions ??'',
-            'terms_conditions_ar' => $this->terms_conditions_ar ??'',
-            'views_count'=>count($this->all_views),
-            'video_type'=>$this['type'],
-            'partners_type'=>$this['partners_type'],
-            'partner'=> New PartnerResource($this->partnerData),
+            'information' => app()->getLocale() == 'en' ? $this['information'] ?? '' : $this['information_ar'] ?? '',
+            'information_en' => $this->information ?? '',
+            'information_ar' => $this->information_ar ?? '',
+            'terms_conditions' => app()->getLocale() == 'en' ? $this['terms_conditions'] ?? '' : $this['terms_conditions_ar'] ?? '',
+            'terms_conditions_en' => $this->terms_conditions ?? '',
+            'terms_conditions_ar' => $this->terms_conditions_ar ?? '',
+            'views_count' => count($this->all_views),
+            'video_type' => $this['type'],
+            'partners_type' => $this['partners_type'],
+            'partner' => new PartnerResource($this->partnerData),
 
-            'city'=> New CitiesResource($this->city),
-            'video_items'=> VideoItemResource::collection($this->video_items),
-            'user'=> New UserDataResource($this->user_Video),
+            'city' => new CitiesResource($this->city),
+            'video_items' => VideoItemResource::collection($this->currentVideoItems),
+            'user' => new UserDataResource($this->user_Video),
 
             // Agora Live Streaming Configuration
             // Token is generated on-demand in the controller based on user role
@@ -80,9 +80,9 @@ class SingleLiveVideoResource extends JsonResource
                 // The controller generates appropriate tokens based on user role
             ],
             'auction_fees' => [
-                'commission_amount' => isset($this->commission_amount) && $this->commission_amount !== null ?  $this->commission_amount : null,
+                'commission_amount' => isset($this->commission_amount) && $this->commission_amount !== null ? $this->commission_amount : null,
                 'commission_payer' => $this->commission_payer,
-                'service_fee' => isset($this->service_fee) && $this->service_fee !== null ?  $this->service_fee : null,
+                'service_fee' => isset($this->service_fee) && $this->service_fee !== null ? $this->service_fee : null,
             ],
         ];
 

@@ -142,7 +142,7 @@ class ProductController extends Controller
         $live = LiveVideo::findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live);
 
-        $providers = LiveVideoItem::where('live_video_id', $id)->with('seller', 'pieces', 'order');
+        $providers = LiveVideoItem::where('live_video_id', $id)->notTransferredAway()->with('seller', 'pieces', 'order');
 
 
         return Datatables::of($providers)
