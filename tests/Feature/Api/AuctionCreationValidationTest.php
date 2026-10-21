@@ -185,7 +185,7 @@ class AuctionCreationValidationTest extends TestCase
 
     public function test_all_head_creation_shapes_reject_invalid_weights(): void
     {
-        foreach ([0, -1, '', null, 'abc'] as $weight) {
+        foreach ([0, -1, 'abc'] as $weight) {
             $this->postJson('/api/live/items/pieces/add/1', ['weight' => $weight])->assertStatus(422);
             $this->postJson('/validation/head', ['weight' => $weight])->assertStatus(422);
             $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'weight' => [$weight],
@@ -196,9 +196,6 @@ class AuctionCreationValidationTest extends TestCase
             $this->postJson('/validation/head-update', ['weight' => $weight])->assertStatus(422);
             $this->postJson('/validation/animal-update', ['pieces' => [['weight' => $weight]]])->assertStatus(422);
         }
-        $this->postJson('/validation/head', [])->assertStatus(422);
-        $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'],
-            'image' => [[UploadedFile::fake()->image('ok.jpg')]]])->assertStatus(422);
         $this->assertDatabaseCount('validation_writes', 0);
         $this->postJson('/validation/head', ['weight' => 12.75])->assertOk()->assertJsonPath('success', true);
         $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'quantity' => [2],
@@ -209,7 +206,7 @@ class AuctionCreationValidationTest extends TestCase
         $this->assertDatabaseCount('validation_writes', 2);
     }
 
-    public function test_nested_heads_allow_unused_flat_weight_but_require_every_nested_weight(): void
+    public function test_weight_is_optional_for_single_and_nested_heads(): void
     {
         $data = ['lineage_title_ar' => ['Animal'], 'quantity' => [2], 'weight' => [null],
             'pieces' => [[['weight' => 12.5], ['weight' => 20]]]];
@@ -217,10 +214,30 @@ class AuctionCreationValidationTest extends TestCase
             ->assertOk()->assertJsonPath('success', true);
         unset($data['pieces'][0][1]['weight']);
         $this->post('/validation/animal', $data + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
-            ->assertStatus(422)->assertJsonStructure(['errors' => ['pieces.0.1.weight']]);
-        $this->postJson('/validation/animal-update', ['age' => 2])->assertStatus(422)
-            ->assertJsonStructure(['errors' => ['weight']]);
-        $this->assertDatabaseCount('validation_writes', 1);
+            ->assertOk()->assertJsonPath('success', true);
+        $this->postJson('/validation/animal-update', ['age' => 2])->assertOk();
+        foreach (['', null] as $weight) {
+            $this->postJson('/validation/head', ['weight' => $weight])->assertOk()->assertJsonPath('success', true);
+            $this->postJson('/validation/head-update', ['weight' => $weight])->assertOk();
+            $this->postJson('/validation/animal-update', ['weight' => $weight])->assertOk();
+        }
+        $this->postJson('/validation/head', [])->assertOk()->assertJsonPath('success', true);
+        $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'],
+            'image' => [[UploadedFile::fake()->image('ok.jpg')]]])->assertOk()->assertJsonPath('success', true);
+        $this->assertDatabaseCount('validation_writes', 6);
+    }
+
+    public function test_arabic_validation_messages_are_readable(): void
+    {
+        app()->setLocale('ar');
+        $this->postJson('/validation/head', ['weight' => 'invalid'])->assertStatus(422)
+            ->assertJsonPath('errors.weight.0', 'يجب أن يكون وزن الرأس رقمًا.');
+        $this->post('/validation/animal', ['lineage_title_ar' => ['Animal']])->assertStatus(422)
+            ->assertJsonPath('errors.image.0', 'يرجى رفع صورة واحدة على الأقل لكل حيوان.');
+        $data = $this->auction();
+        unset($data['commission_amount']);
+        $this->postJson('/validation/auction', $data)
+            ->assertJsonPath('errors.commission_amount.0', 'نسبة العمولة مطلوبة.');
     }
 
     public function test_real_creation_endpoints_persist_valid_requests_and_reject_invalid_batches(): void

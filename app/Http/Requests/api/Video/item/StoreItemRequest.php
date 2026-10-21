@@ -36,7 +36,7 @@ class StoreItemRequest extends FormRequest
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'seller_id.*' => 'nullable|integer|exists:users,id',
-            'weight' => 'sometimes|array',
+            'weight' => 'nullable|array',
             'weight.*' => 'nullable|numeric|gt:0',
             'age' => 'nullable',
             'age.*' => 'nullable|string',
@@ -55,7 +55,7 @@ class StoreItemRequest extends FormRequest
             'pieces.*' => 'required|array',
             'pieces.*.*' => 'required|array',
             'pieces.*.*.age' => 'nullable|string|max:255',
-            'pieces.*.*.weight' => 'required|numeric|gt:0',
+            'pieces.*.*.weight' => 'nullable|numeric|gt:0',
             'pieces.*.*.piece_multiplier_number' => 'nullable|string|max:255',
             'pieces.*.*.identifier' => 'nullable|string|max:255',
             'pieces.*.*.baham_count' => 'nullable|string|max:255',
@@ -69,9 +69,6 @@ class StoreItemRequest extends FormRequest
 
         foreach ((array) $this->input('lineage_title_ar', []) as $index => $title) {
             $rules["image.$index"] = 'required|array|min:1';
-            if ((int) $this->input("quantity.$index", 1) <= 1) {
-                $rules["weight.$index"] = 'required|numeric|gt:0';
-            }
         }
 
         return $rules;
@@ -103,10 +100,8 @@ class StoreItemRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.*.required' => trans('validation.head_weight_required'),
             'weight.*.numeric' => trans('validation.head_weight_numeric'),
             'weight.*.gt' => trans('validation.head_weight_positive'),
-            'pieces.*.*.weight.required' => trans('validation.head_weight_required'),
             'pieces.*.*.weight.numeric' => trans('validation.head_weight_numeric'),
             'pieces.*.*.weight.gt' => trans('validation.head_weight_positive'),
             'image.required' => trans('validation.animal_images_required'),

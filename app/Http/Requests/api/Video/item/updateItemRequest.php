@@ -6,7 +6,6 @@ use App\Helpers\TranslationHelper;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
-use Illuminate\Validation\Rule;
 
 class updateItemRequest extends FormRequest
 {
@@ -40,13 +39,7 @@ class updateItemRequest extends FormRequest
             'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
             'seller_id' => 'nullable|integer|exists:users,id', //  seller
-            'weight' => [
-                'filled',
-                Rule::requiredIf(function () {
-                    return ! $this->filled('pieces') && $this->hasAny(['age', 'weight', 'identifier', 'age_type']);
-                }),
-                'numeric', 'gt:0',
-            ],
+            'weight' => 'nullable|numeric|gt:0',
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer
             // 'start_price' => 'sometimes|numeric', // Assuming price is a number
@@ -58,7 +51,7 @@ class updateItemRequest extends FormRequest
             'image' => 'sometimes|array|min:1',
             'image.*' => 'required|file|image|mimes:jpeg,jpg,png|max:20000',
             'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.weight' => 'required|numeric|gt:0',
+            'pieces.*.weight' => 'nullable|numeric|gt:0',
             'pieces.*.piece_multiplier_number' => 'nullable|string|max:255',
             'pieces.*.identifier' => 'nullable|string|max:255',
             'pieces.*.baham_count' => 'nullable|string|max:255',
@@ -111,11 +104,8 @@ class updateItemRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.required' => trans('validation.head_weight_required'),
-            'weight.filled' => trans('validation.head_weight_required'),
             'weight.numeric' => trans('validation.head_weight_numeric'),
             'weight.gt' => trans('validation.head_weight_positive'),
-            'pieces.*.weight.required' => trans('validation.head_weight_required'),
             'pieces.*.weight.numeric' => trans('validation.head_weight_numeric'),
             'pieces.*.weight.gt' => trans('validation.head_weight_positive'),
             'image.required' => trans('validation.animal_images_required'),
