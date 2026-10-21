@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard\Partner;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 use App\Models\Admin;
 
 class UpdatePartnerRequest extends FormRequest
@@ -25,12 +26,7 @@ class UpdatePartnerRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        if ($this->filled('phone')) {
-            $digits = preg_replace('/\D/', '', $this->phone);
-            $digits = ltrim($digits, '0');
-
-            $this->merge(['phone' => '+966'.$digits]);
-        }
+        MobileNumber::prepare($this);
     }
 
     /**
@@ -46,9 +42,9 @@ class UpdatePartnerRequest extends FormRequest
 
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:admins,email,'.request()->route('partner').',id,deleted_at,NULL',
+            'email' => array_merge(MobileNumber::emailRules($admin->user_id), MobileNumber::emailRules($admin->id, 'admins')),
             'user_name' => 'required|string|unique:users,user_name,'.$admin->user_id,
-            'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/'],
+            'phone' => array_merge(MobileNumber::rules($admin->user_id), MobileNumber::rules($admin->id, 'admins')),
             'commercial_register' => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'national_id' => 'nullable|string|max:32',
             'image' => 'nullable|mimes:png,jpg,jpeg',

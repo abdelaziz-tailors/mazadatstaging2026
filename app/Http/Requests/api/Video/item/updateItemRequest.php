@@ -39,7 +39,7 @@ class updateItemRequest extends FormRequest
             'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
             'seller_id' => 'nullable|integer|exists:users,id', //  seller
-            'weight' => 'sometimes|numeric', // Assuming weight should be a number
+            'weight' => 'nullable|numeric|gt:0',
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer
             // 'start_price' => 'sometimes|numeric', // Assuming price is a number
@@ -47,8 +47,11 @@ class updateItemRequest extends FormRequest
             'quantity' => 'nullable',
             'quantity.*' => 'numeric',
             'pieces' => 'nullable|array',
+            'pieces.*' => 'required|array',
+            'image' => 'sometimes|array|min:1',
+            'image.*' => 'required|file|image|mimes:jpeg,jpg,png|max:20000',
             'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.weight' => 'nullable|numeric',
+            'pieces.*.weight' => 'nullable|numeric|gt:0',
             'pieces.*.piece_multiplier_number' => 'nullable|string|max:255',
             'pieces.*.identifier' => 'nullable|string|max:255',
             'pieces.*.baham_count' => 'nullable|string|max:255',
@@ -63,12 +66,15 @@ class updateItemRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
             if (! $this->has('quantity') && ! $this->has('pieces')) {
                 return;
             }
 
             $quantity = (int) $this->input('quantity', 0);
-            $pieces = $this->input('pieces', []);
+            $pieces = $this->input('pieces', []) ?? [];
 
             if ($quantity > 1) {
                 if (count($pieces) !== $quantity) {
@@ -98,6 +104,19 @@ class updateItemRequest extends FormRequest
     public function messages()
     {
         return [
+            'weight.numeric' => trans('validation.head_weight_numeric'),
+            'weight.gt' => trans('validation.head_weight_positive'),
+            'pieces.*.weight.numeric' => trans('validation.head_weight_numeric'),
+            'pieces.*.weight.gt' => trans('validation.head_weight_positive'),
+            'image.required' => trans('validation.animal_images_required'),
+            'image.min' => trans('validation.animal_images_required'),
+            'image.array' => trans('validation.animal_images_array'),
+            'image.*.required' => trans('validation.animal_image_file'),
+            'image.*.file' => trans('validation.animal_image_file'),
+            'image.*.image' => trans('validation.animal_image_file'),
+            'image.*.mimes' => trans('validation.animal_image_file'),
+            'image.*.max' => trans('validation.animal_image_max'),
+            'image.*.uploaded' => trans('validation.animal_image_uploaded'),
             'lineage_title_ar.required' => TranslationHelper::translate('lineage_title_ar field is required.'),
             'lineage_title.required' => TranslationHelper::translate('lineage_title field is required.'),
             'address.required' => TranslationHelper::translate('address field is required.'),
@@ -108,8 +127,6 @@ class updateItemRequest extends FormRequest
             'category_id.exists' => TranslationHelper::translate('category_id must exist in the system.'),
             'partner_id.integer' => TranslationHelper::translate('partner_id must be a number.'),
             'partner_id.exists' => TranslationHelper::translate('The selected partner does not exist in the system.'),
-            'weight.required' => TranslationHelper::translate('weight field is required.'),
-            'weight.numeric' => TranslationHelper::translate('weight must be a number.'),
             'age.required' => TranslationHelper::translate('age field is required.'),
             'age.integer' => TranslationHelper::translate('age must be a number.'),
             'start_price.required' => TranslationHelper::translate('start price field is required.'),
@@ -118,10 +135,6 @@ class updateItemRequest extends FormRequest
             'bidding.boolean' => TranslationHelper::translate('bidding must be true or false.'),
             'quantity.*.required' => TranslationHelper::translate('Each quantity field is required.'),
             'quantity.*.numeric' => TranslationHelper::translate('Each quantity must be a number.'),
-            'image.*.required' => TranslationHelper::translate('image is required.'),
-            'image.*.image' => TranslationHelper::translate('file must be an image.'),
-            'image.*.mimes' => TranslationHelper::translate('Only JPEG, JPG, and PNG formats are allowed.'),
-            'image.*.max' => TranslationHelper::translate('image must not exceed 20MB.'),
         ];
     }
 
@@ -137,6 +150,7 @@ class updateItemRequest extends FormRequest
             'code' => 422, // Use 422 for validation errors, not 200
             'success' => false,
             'message' => $validator->errors()->first(),
+            'errors' => $validator->errors()->toArray(),
         ], 422));
     }
 }

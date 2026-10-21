@@ -65,6 +65,15 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
+        $field = $exception instanceof \Illuminate\Database\QueryException ? self::identityConflict($exception) : null;
+        if ($field) {
+            $message = TranslationHelper::translate($field === 'phone' ? 'phone_number_exists' : 'email_address_exists');
+            if ($request->is('api/*')) {
+                $status = $request->is('api/user/register') ? 422 : 200;
+                return response()->json(['success' => false, 'code' => $status, 'message' => $message], $status);
+            }
+            return redirect()->back()->withInput($request->except($this->dontFlash))->withErrors([$field => $message]);
+        }
         if ($this->isHttpException($exception))
         {
             if ($exception->getStatusCode() == 404)
@@ -84,5 +93,19 @@ class Handler extends ExceptionHandler
             }
         }
         return parent::render($request, $exception);
+    }
+
+    public static function identityConflict(\Illuminate\Database\QueryException $exception): ?string
+    {
+        $info = $exception->errorInfo;
+        if (! (($info[0] ?? null) === '23000' && in_array((int) ($info[1] ?? 0), [19, 1062], true))) {
+            return null;
+        }
+        foreach (['phone', 'email'] as $field) {
+            if (preg_match('/registration_'.$field.'_(?:unique|key)|(?:users|admins)_'.$field.'_unique/', $exception->getMessage())) {
+                return $field;
+            }
+        }
+        return null;
     }
 }

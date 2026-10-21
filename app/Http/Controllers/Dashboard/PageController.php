@@ -14,7 +14,6 @@ use App\Models\Page;
 use Illuminate\Http\Request;
 
 use Brian2694\Toastr\Facades\Toastr;
-use Illuminate\Support\Facades\Storage;
 
 use App\Helpers\TranslationHelper;
 use Yajra\DataTables\DataTables;
@@ -64,7 +63,6 @@ class PageController extends Controller
         $packages->update([
             'name' => json_encode($request->name),
             'description' => json_encode($request->description),
-            'image' => ($request->hasFile('image_png')) ? Storage::disk('public')->putFile('pages', $request->file('image_png')) : $packages->image,
 
         ]);
 

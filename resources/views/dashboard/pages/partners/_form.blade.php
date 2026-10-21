@@ -26,7 +26,7 @@
     {!! Form::label('phone', TranslationHelper::translate('mobile_number'), ['class' => 'form-label']) !!}
     <div class="md-phone-field">
         <span class="md-phone-code-badge">🇸🇦 +966</span>
-        {!! Form::text('phone', old('phone'), ['class' => 'form-control' . ($errors->has('phone') ? ' is-invalid' : ''), 'placeholder' => '5X XXX XXXX', 'maxlength' => 9]) !!}
+        {!! Form::text('phone', old('phone'), ['required' => true, 'class' => 'form-control' . ($errors->has('phone') ? ' is-invalid' : ''), 'placeholder' => '5X XXX XXXX', 'maxlength' => 9]) !!}
     </div>
     @if ($errors->has('phone'))
         <div class="invalid-feedback d-block">{{ $errors->first('phone') }}</div>

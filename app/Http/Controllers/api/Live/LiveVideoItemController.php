@@ -53,10 +53,12 @@ class LiveVideoItemController extends Controller
 
         foreach ($request->lineage_title_ar as $index => $title) {
             // Store the image if provided
-            $imagePath = null;
-            if (!empty($request->image[$index])) {
+            $file = [];
+            $videoPath = null;
+            $healthCertificatePath = null;
+            if ($request->hasFile("image.$index")) {
                 $file = [];
-                foreach ($request->image[$index] as $img) {
+                foreach ($request->file("image.$index", []) as $img) {
                 $filename = Str::uuid() . '.' . $img->getClientOriginalExtension();
                 $img->move(storage_path('app/public/image_video_item'), $filename);
                 $file[] = 'image_video_item/' . $filename;

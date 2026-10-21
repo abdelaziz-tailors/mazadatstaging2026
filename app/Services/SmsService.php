@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use App\Helpers\MobileNumber;
 
 class SmsService
 {
@@ -14,6 +15,9 @@ class SmsService
 
     public function sendWhatsappOtp(string $phone, string $otp): array
     {
+        if (! MobileNumber::valid($phone)) {
+            return ['success' => false, 'error' => 'Invalid mobile number'];
+        }
         if (! $this->isInfobipWhatsappConfigured()) {
             return [
                 'success' => false,
@@ -31,6 +35,9 @@ class SmsService
 
     public function send(string $phone, string $message, ?string $smsId = null): array
     {
+        if (! MobileNumber::valid($phone)) {
+            return ['success' => false, 'error' => 'Invalid mobile number'];
+        }
         if (! config('services.sms.endpoint') || ! config('services.sms.username') || ! config('services.sms.password')) {
             return [
                 'success' => false,
@@ -77,38 +84,7 @@ class SmsService
 
     private function normalizePhone(string $phone): string
     {
-        $countryCode = (string) config('services.sms.country_code', '2');
-        $normalized = ltrim($phone, '+');
-
-        if (! $countryCode || Str::startsWith($normalized, $countryCode)) {
-            return $normalized;
-        }
-
-        return $countryCode.$normalized;
-    }
-
-    private function normalizeWhatsappPhone(string $phone): string
-    {
-        $normalized = preg_replace('/\D+/', '', $phone) ?? '';
-
-        if (Str::startsWith($normalized, '00')) {
-            $normalized = substr($normalized, 2);
-        }
-
-        $countryCode = (string) config(
-            'services.infobip.whatsapp_country_code',
-            '966'
-        );
-
-        if (Str::startsWith($normalized, $countryCode)) {
-            return $normalized;
-        }
-
-        if (Str::startsWith($normalized, '0')) {
-            return $countryCode.substr($normalized, 1);
-        }
-
-        return $countryCode.$normalized;
+        return ltrim((string) MobileNumber::normalize($phone), '+');
     }
 
     private function isInfobipWhatsappConfigured(): bool
@@ -133,7 +109,7 @@ class SmsService
         $payload = [
             'messages' => [[
                 'from' => (string) config('services.infobip.whatsapp_from'),
-                'to' => $this->normalizeWhatsappPhone($phone),
+                'to' => $this->normalizePhone($phone),
                 'messageId' => $messageId ?? (string) Str::uuid(),
                 'content' => [
                     'templateName' => $templateName,

@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 use Illuminate\Support\Facades\Auth;
 class ProfileCompleteRequest extends FormRequest
 {
@@ -24,12 +25,17 @@ class ProfileCompleteRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'user_name' => 'required|string|regex:/^\S*$/u|max:20|unique:users,user_name,'.auth('api')->user()->id.',id,deleted_at,NULL',
-            'email' => 'required|email|unique:users,email,'.auth('api')->user()->id.',id,deleted_at,NULL',
-            'phone' => 'required|unique:users,phone,'.auth('api')->user()->id.',id,deleted_at,NULL',
+            'email' => MobileNumber::emailRules(auth('api')->id()),
+            'phone' => MobileNumber::rules(auth('api')->id()),
             'birth_date' => 'required|date_format:Y-m-d',
             'birth_date.required' => TranslationHelper::translate('Please Enter Date Of Birth'),
             'birth_date.date_format' => TranslationHelper::translate('please Enter Valid Date'),

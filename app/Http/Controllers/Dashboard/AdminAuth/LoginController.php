@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use App\Helpers\MobileNumber;
 use Brian2694\Toastr\Facades\Toastr;
 
 use App\Models\Admin;
@@ -58,19 +60,25 @@ class LoginController extends Controller
 
     protected function login(LoginRequest $request)
     {
-        $admin = Admin::where('email', $request->email)->first();
-    
-        if($admin === NULL)
-        {
+        $identifier = $request->input('email') ?: $request->input('phone');
+        $key = 'dashboard-login:'.hash('sha256', strtolower((string) MobileNumber::normalize($identifier)).'|'.$request->ip());
+        if (RateLimiter::tooManyAttempts($key, 5)) {
             Toastr::error('Wrong Email Address Or Password');
             return redirect()->back();
         }
-        else if(!Hash::check($request->password, $admin->password))
-        {
+        $admin = $request->filled('email')
+            ? Admin::where('email', $request->email)->first()
+            : MobileNumber::find(Admin::class, $request->phone);
+        $passwordMatches = Hash::check($request->password, $admin ? $admin->password
+            : '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.');
+        if (! $admin || ! $passwordMatches) {
+            RateLimiter::hit($key, 60);
             Toastr::error('Wrong Email Address Or Password');
             return redirect()->back();
         }
+        RateLimiter::clear($key);
         Auth::guard('admin')->login($admin, true);
+        $request->session()->regenerate();
 
         return redirect(LaravelLocalization::getLocalizedURL(config('app.dashboard_locale', 'ar'), '/admin/'));
     }

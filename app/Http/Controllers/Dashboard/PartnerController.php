@@ -138,52 +138,54 @@ class PartnerController extends Controller
     public function store(StorePartnerRequest $request)
     {
         $this->authorizable('add partner');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
 
-        $commercialRegister = null;
-        if ($request->hasFile('commercial_register')) {
-            $commercialRegister = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
-        }
+            $commercialRegister = null;
+            if ($request->hasFile('commercial_register')) {
+                $commercialRegister = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
+            }
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'national_id' => $request->national_id,
-            'user_name' => $request->user_name,
-            'user_type' => 'vendor',
-            'commercial_register' => $commercialRegister,
-            'password' => bcrypt($request->password),
-            // 'is_verified'=>$request->is_verified,
-            'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : 'partners/default.png'
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'national_id' => $request->national_id,
+                'user_name' => $request->user_name,
+                'user_type' => 'vendor',
+                'commercial_register' => $commercialRegister,
+                'password' => bcrypt($request->password),
+                // 'is_verified'=>$request->is_verified,
+                'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : 'partners/default.png'
 
-        ]);
-
-        if ($request->is_verified == 'on') {
-            $user->update([
-                'is_verified' => 1
             ]);
-        }
+
+            if ($request->is_verified == 'on') {
+                $user->update([
+                    'is_verified' => 1
+                ]);
+            }
 
 
-        // dd($user->id);
+            // dd($user->id);
 
 
 
 
-        $admin = Admin::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'national_id' => $request->national_id,
-            'type' => 'partner',
-            'user_id'=>$user->id,
-            'password' => bcrypt($request->password),
-            'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : 'admins/default.png'
-        ]);
+            $admin = Admin::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'national_id' => $request->national_id,
+                'type' => 'partner',
+                'user_id'=>$user->id,
+                'password' => bcrypt($request->password),
+                'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : 'admins/default.png'
+            ]);
 
-        // dd($admin);
-        Toastr::success(TranslationHelper::translate('New Partner Created Successfully'));
-        return redirect()->route('admin.partners.index');
+            // dd($admin);
+            Toastr::success(TranslationHelper::translate('New Partner Created Successfully'));
+            return redirect()->route('admin.partners.index');
+        });
     }
 
     /**
@@ -243,49 +245,51 @@ class PartnerController extends Controller
     public function update(UpdatePartnerRequest $request, $id)
     {
         $this->authorizable('edit partner');
-        $admin = Admin::findorfail($id);
-        if ($request->hasFile('image') && $admin->image != 'partners/default.png' && $admin->image != NULL) {
-            Storage::disk('public')->delete($admin->image);
-        }
-        $admin->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'national_id' => $request->national_id,
-
-            'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $admin->image
-        ]);
-
-
-        $user = User::findorfail($admin->user_id);
-
-        $userData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'user_name' => $request->user_name,
-            'phone' => $request->phone,
-            'national_id' => $request->national_id,
-            'user_type' => 'vendor',
-            'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $user->image
-        ];
-
-        if ($request->hasFile('commercial_register')) {
-            if ($user->commercial_register && Storage::disk('public')->exists($user->commercial_register)) {
-                Storage::disk('public')->delete($user->commercial_register);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $id) {
+            $admin = Admin::findorfail($id);
+            if ($request->hasFile('image') && $admin->image != 'partners/default.png' && $admin->image != NULL) {
+                Storage::disk('public')->delete($admin->image);
             }
-            $userData['commercial_register'] = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
-        }
+            $admin->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'national_id' => $request->national_id,
 
-        $user->update($userData);
-        if ($request->is_verified == 'on') {
-            $user->update([
-                'is_verified' => 1
+                'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $admin->image
             ]);
-        }
 
 
-        Toastr::success(TranslationHelper::translate('Partner Data Updated Successfully'));
-        return redirect()->route('admin.partners.index');
+            $user = User::findorfail($admin->user_id);
+
+            $userData = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'user_name' => $request->user_name,
+                'phone' => $request->phone,
+                'national_id' => $request->national_id,
+                'user_type' => 'vendor',
+                'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('partners', $request->file('image')) : $user->image
+            ];
+
+            if ($request->hasFile('commercial_register')) {
+                if ($user->commercial_register && Storage::disk('public')->exists($user->commercial_register)) {
+                    Storage::disk('public')->delete($user->commercial_register);
+                }
+                $userData['commercial_register'] = Storage::disk('public')->putFile('vendor-commercial-files', $request->file('commercial_register'));
+            }
+
+            $user->update($userData);
+            if ($request->is_verified == 'on') {
+                $user->update([
+                    'is_verified' => 1
+                ]);
+            }
+
+
+            Toastr::success(TranslationHelper::translate('Partner Data Updated Successfully'));
+            return redirect()->route('admin.partners.index');
+        });
     }
 
      /**

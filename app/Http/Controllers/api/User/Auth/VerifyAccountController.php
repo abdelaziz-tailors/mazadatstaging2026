@@ -34,7 +34,7 @@ class VerifyAccountController extends Controller
             }
 
             $now = Carbon::now();
-            if (! $existingUser->expire_at || $now->isAfter($existingUser->expire_at)) {
+            if (! $existingUser->expire_at || $now->greaterThanOrEqualTo($existingUser->expire_at)) {
                 return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
             }
 
@@ -54,7 +54,7 @@ class VerifyAccountController extends Controller
         }
 
         $now = Carbon::now();
-        if (! $pendingRegistration->expire_at || $now->isAfter($pendingRegistration->expire_at)) {
+        if (! $pendingRegistration->expire_at || $now->greaterThanOrEqualTo($pendingRegistration->expire_at)) {
             return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
         }
 
@@ -62,11 +62,11 @@ class VerifyAccountController extends Controller
             return $this->failed_response(TranslationHelper::translate('wrong_otp'));
         }
 
-        if (User::where('phone', $pendingRegistration->phone)->exists()) {
+        if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $pendingRegistration->phone)->exists()) {
             return $this->failed_response(TranslationHelper::translate('phone_number_exists'));
         }
 
-        if (User::where('email', $pendingRegistration->email)->exists()) {
+        if ($pendingRegistration->email !== null && User::where('email', $pendingRegistration->email)->exists()) {
             return $this->failed_response(TranslationHelper::translate('email_address_exists'));
         }
 
@@ -76,10 +76,16 @@ class VerifyAccountController extends Controller
 
         DB::beginTransaction();
         try {
+            $pendingRegistration = UserOtp::whereKey($pendingRegistration->id)
+                ->where('is_verified', false)->lockForUpdate()->first();
+            if (! $pendingRegistration || (string) $pendingRegistration->otp !== (string) $request->otp
+                || ! $pendingRegistration->expire_at || now()->greaterThanOrEqualTo($pendingRegistration->expire_at)) {
+                throw new \RuntimeException('Registration OTP is no longer valid');
+            }
             $user = User::create([
                 'name' => $pendingRegistration->name,
                 'email' => $pendingRegistration->email,
-                'phone' => $pendingRegistration->phone,
+                'phone' => \App\Helpers\MobileNumber::normalize($pendingRegistration->phone),
                 'user_name' => $pendingRegistration->user_name,
                 'national_id' => $pendingRegistration->national_id,
                 'user_type' => $pendingRegistration->user_type ?? 'buyer',
@@ -95,7 +101,7 @@ class VerifyAccountController extends Controller
                 $admin = Admin::create([
                     'name' => $pendingRegistration->name,
                     'email' => $pendingRegistration->email,
-                    'phone' => $pendingRegistration->phone,
+                    'phone' => \App\Helpers\MobileNumber::normalize($pendingRegistration->phone),
                     'national_id' => $pendingRegistration->national_id,
                     'type' => 'partner',
                     'user_id' => $user->id,
@@ -113,6 +119,9 @@ class VerifyAccountController extends Controller
             DB::commit();
         } catch (\Throwable $th) {
             DB::rollBack();
+            if ($th instanceof \Illuminate\Database\QueryException && \App\Exceptions\Handler::identityConflict($th)) {
+                return app(\App\Exceptions\Handler::class)->render($request, $th);
+            }
 
             return $this->failed_response(TranslationHelper::translate('Something went wrong'));
         }

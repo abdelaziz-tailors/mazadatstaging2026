@@ -16,7 +16,7 @@
         </div>
     </div>
 </div>
-{!! Form::model($packages, ['route' => ['admin.pages.update', $packages->id], 'method' => 'PUT', 'files' => true, 'id' => 'kt_form_1', 'data-toggle' => 'validator']) !!}
+{!! Form::model($packages, ['route' => ['admin.pages.update', $packages->id], 'method' => 'PUT', 'id' => 'kt_form_1', 'data-toggle' => 'validator']) !!}
     @include('dashboard.pages.pages._form')
 {!! Form::close() !!}
 @endsection

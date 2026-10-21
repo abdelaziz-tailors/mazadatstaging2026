@@ -33,7 +33,7 @@ class AuctionAwardVideoRequest extends FormRequest
              'image.*'=> 'mimes:jpeg,jpg,png|max:20000',
 //            'image_video'=> 'mimes:mp4,ogx,oga,ogv,ogg,webm,jpeg,jpg,png|max:20000',
             'information' => 'required|string|max:255',
-            'weight' => 'required',
+            'weight' => 'nullable|numeric|gt:0',
             'age' => 'required',
             'auction_time' => 'required|date_format:Y-m-d H:i',
             'start_price' => 'required',

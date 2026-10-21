@@ -22,11 +22,21 @@ class LoginRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        $identifier = $this->input('email');
+        if (is_string($identifier) && ! filter_var($identifier, FILTER_VALIDATE_EMAIL)
+            && \App\Helpers\MobileNumber::valid($identifier)) {
+            $this->merge(['phone' => $identifier, 'email' => null]);
+        }
+    }
+
     public function rules()
     {
         return [
-            'email'=>'required|email',
-            'password'=>'required'
+            'email' => 'nullable|email|required_without:phone',
+            'phone' => 'nullable|string|max:32|required_without:email',
+            'password'=>'required|string'
         ];
     }
 

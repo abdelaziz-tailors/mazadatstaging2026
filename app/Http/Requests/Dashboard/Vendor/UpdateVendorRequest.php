@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard\Vendor;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 
 class UpdateVendorRequest extends FormRequest
 {
@@ -22,12 +23,17 @@ class UpdateVendorRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,'.request()->route('vendor').',id,deleted_at,NULL',
-            'phone' => 'required|unique:users,phone,'.request()->route('vendor').',id,deleted_at,NULL',
+            'email' => MobileNumber::emailRules($this->route('vendor')),
+            'phone' => MobileNumber::rules($this->route('vendor')),
         ];
     }
 

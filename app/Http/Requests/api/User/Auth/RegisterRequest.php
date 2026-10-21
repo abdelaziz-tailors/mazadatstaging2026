@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 
 class RegisterRequest extends FormRequest
 {
@@ -24,17 +25,22 @@ class RegisterRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'name' => 'required|min:3',
 //            'name' => 'required|regex:/^[\pL\s]+$/u|min:3',
-            'phone' => 'nullable|numeric|unique:users,phone,NULL,id,deleted_at,NULL',
+            'phone' => MobileNumber::rules(),
             'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
 //            'user_name' => 'required|min:3',
 
             'national_id' => 'nullable|string|max:32|unique:users,national_id,NULL,id,deleted_at,NULL',
-            'email' => 'required|email|unique:users,email,NULL,id,deleted_at,NULL',
+            'email' => MobileNumber::emailRules(),
             // 'account_type' => 'required',
             'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',
@@ -60,7 +66,7 @@ class RegisterRequest extends FormRequest
             'email.email' => TranslationHelper::translate('please_enter_valid_email'),
             'email.unique' => TranslationHelper::translate('email_address_exists'),
             'phone.required' => TranslationHelper::translate('please_enter_phone'),
-            'phone.numeric' => TranslationHelper::translate('phone must be a number'),
+            'phone.regex' => TranslationHelper::translate('please_enter_valid_phone_with_country_code'),
             'phone.unique' => TranslationHelper::translate('phone_number_exists'),
             'phone.max' => TranslationHelper::translate('phone should have at least 11 number'),
             'phone.min' => TranslationHelper::translate('phone should have at least 11 number'),

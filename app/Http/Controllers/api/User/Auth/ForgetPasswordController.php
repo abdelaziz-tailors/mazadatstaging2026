@@ -37,7 +37,7 @@ class ForgetPasswordController extends Controller
             ]);
 
         $otpResult = $smsService->sendWhatsappOtp(
-            $request->phone,
+            $user->phone,
             (string) $otp
         );
 

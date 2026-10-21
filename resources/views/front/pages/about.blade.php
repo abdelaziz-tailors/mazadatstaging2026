@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -22,6 +22,8 @@
             font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #ffffff;
             color: #333;
+            overflow-wrap: anywhere;
+            text-align: start;
             line-height: 1.8;
             padding: 40px 20px;
         }
@@ -35,7 +37,7 @@
         .page-header {
             border-bottom: 3px solid #000;
             padding-bottom: 20px;
-            margin-bottom: 40px;
+            margin-bottom: 24px;
         }
         
         h1 {
@@ -50,34 +52,24 @@
             font-size: 0.95rem;
         }
         
-        @if($page && $page->image)
-        .page-image {
-            margin: 30px 0;
-            text-align: center;
-        }
-        
-        .page-image img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-        }
-        @endif
         
         .content {
             font-size: 1.05rem;
             line-height: 1.9;
             color: #333;
+            overflow-wrap: anywhere;
+            text-align: start;
         }
         
         .content p {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         .content h2 {
             font-size: 1.8rem;
             font-weight: 600;
             margin-top: 40px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #000;
         }
         
@@ -91,7 +83,7 @@
         
         .content ul, .content ol {
             margin: 20px 0;
-            padding-right: 25px;
+            padding-inline-start: 25px;
         }
         
         .content li {
@@ -162,15 +154,12 @@
             <p class="meta-info">آخر تحديث: {{ now()->translatedFormat('F d, Y') }}</p>
         </div>
         
-        @if($page && $page->image)
-        <div class="page-image">
-            <img src="{{ Storage::disk('public')->url($page->image) }}" alt="{{ $page->name }}">
-        </div>
-        @endif
         
         <div class="content">
             @if($page && $page->description)
-                {!! nl2br(e($page->description)) !!}
+                @foreach(preg_split('/\R[\t ]*\R(?:[\t ]*\R)*/u', trim($page->description)) as $paragraph)
+                <p>{!! nl2br(e($paragraph)) !!}</p>
+                @endforeach
             @else
                 <p>محتوى صفحة من نحن غير متوفر حالياً.</p>
                 <p>نحن منصة رائدة في مجال الفيديوهات والبث المباشر، نسعى لتقديم أفضل تجربة لمستخدمينا.</p>

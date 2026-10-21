@@ -60,6 +60,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'registration_phone_key',
+        'registration_email_key',
     ];
 
     protected $casts = [

@@ -24,6 +24,15 @@ class LoginRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        $phone = $this->input('phone');
+        if (is_string($phone)) {
+            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
+            $this->merge(['phone' => $user ? $user->phone : $phone]);
+        }
+    }
+
     public function rules()
     {
         return [

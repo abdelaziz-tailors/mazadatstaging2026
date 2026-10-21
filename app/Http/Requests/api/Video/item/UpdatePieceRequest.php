@@ -30,7 +30,7 @@ class UpdatePieceRequest extends FormRequest
     {
         return [
             'age' => 'nullable|string|max:255',
-            'weight' => 'nullable|numeric',
+            'weight' => 'nullable|numeric|gt:0',
             'identifier' => 'nullable|string|max:255',
             'baham_count' => 'nullable|string|max:255',
         ];
@@ -39,7 +39,8 @@ class UpdatePieceRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.numeric' => TranslationHelper::translate('weight must be a number.'),
+            'weight.numeric' => trans('validation.head_weight_numeric'),
+            'weight.gt' => trans('validation.head_weight_positive'),
         ];
     }
 
@@ -55,6 +56,7 @@ class UpdatePieceRequest extends FormRequest
             'code' => 422,
             'success' => false,
             'message' => $validator->errors()->first(),
+            'errors' => $validator->errors()->toArray(),
         ], 422));
     }
 }

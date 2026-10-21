@@ -11,7 +11,7 @@
         <form action="{{ route('admin.auth.login') }}" method="POST">
             {{ csrf_field() }}
             <div class="form-group">
-                {!! Form::email('email', null, ['class' => 'form-control', 'placeholder'=>TranslationHelper::translate('email')]) !!}
+                {!! Form::text('email', null, ['class' => 'form-control', 'placeholder'=>TranslationHelper::translate('email').' / '.TranslationHelper::translate('phone')]) !!}
             </div>
             <div class="form-group">
                 {!! Form::password('password', ['class' => 'form-control', 'placeholder'=>TranslationHelper::translate('password')]) !!}

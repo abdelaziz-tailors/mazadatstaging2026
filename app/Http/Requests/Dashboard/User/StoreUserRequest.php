@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dashboard\User;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Helpers\TranslationHelper;
+use App\Helpers\MobileNumber;
 
 class StoreUserRequest extends FormRequest
 {
@@ -18,35 +19,22 @@ class StoreUserRequest extends FormRequest
     }
 
     /**
-     * The form only collects the 9-digit local mobile number (matching the
-     * "5X XXX XXXX" placeholder next to a fixed "+966" badge in the UI) —
-     * normalize it to the same "+966XXXXXXXXX" format already used by every
-     * existing phone value in the users table before validating, so the
-     * uniqueness check actually compares against real stored data instead
-     * of silently never matching.
-     */
-    protected function prepareForValidation()
-    {
-        if ($this->filled('phone')) {
-            $digits = preg_replace('/\D/', '', $this->phone);
-            $digits = ltrim($digits, '0');
-
-            $this->merge(['phone' => '+966'.$digits]);
-        }
-    }
-
-    /**
      * Get the validation rules that apply to the request.
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'name' => 'required|string|max:255',
             'user_name' => 'required|string|max:255|unique:users,user_name,NULL,id,deleted_at,NULL',
-            'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/', 'unique:users,phone,NULL,id,deleted_at,NULL'],
-            'email' => 'required|email|max:255|unique:users,email,NULL,id,deleted_at,NULL',
+            'phone' => MobileNumber::rules(),
+            'email' => MobileNumber::emailRules(),
             'password' => 'required|string|min:8',
             'city_id' => 'required|exists:cities,id',
         ];
