@@ -1644,7 +1644,7 @@
   'added_successfully' => 'Added Successfully',
   'subscription_rejected_successfully' => 'Subscription Rejected Successfully',
   'test_mazad' => 'Test mazad',
-  'please_enter_item_service_name' => 'يرجى إدخال اسم خدمة العنصر',
+  'please_enter_item_service_name' => 'يرجى إدخال اسم الخدمة',
   'bshsh' => 'Bshsh',
   'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
   'not_found' => 'not found',

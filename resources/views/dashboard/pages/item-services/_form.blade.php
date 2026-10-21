@@ -1,4 +1,10 @@
-@php $names = isset($data) ? (json_decode($data->name, true) ?: []) : []; @endphp
+@php
+    $names = isset($data) ? (json_decode($data->name, true) ?: []) : [];
+    $selectedMethod = old('cost_pricing_method', isset($data) ? $data->pricingMethod() : 'fixed');
+    if (! in_array($selectedMethod, \App\Models\ItemService::PRICING_METHODS, true)) {
+        $selectedMethod = 'fixed';
+    }
+@endphp
 
 @if(!empty($showDefaultToggle))
     <div class="form-group mb-3">
@@ -46,7 +52,20 @@
 </div>
 
 <div class="form-group mb-3">
-    {!! Form::label('default_price', TranslationHelper::translate('default_price'), ['class' => 'form-label']) !!}
+    <label for="cost_pricing_method" class="form-label">{{ __('service_price.method') }}</label>
+    <select name="cost_pricing_method" id="cost_pricing_method" class="form-control{{ $errors->has('cost_pricing_method') ? ' is-invalid' : '' }}">
+        @foreach (\App\Models\ItemService::PRICING_METHODS as $method)
+            <option value="{{ $method }}" data-rate-label="{{ __('service_price.rate_'.$method) }}"
+                {{ $selectedMethod === $method ? 'selected' : '' }}>{{ __('service_price.method_'.$method) }}</option>
+        @endforeach
+    </select>
+    @if ($errors->has('cost_pricing_method'))
+        <div class="invalid-feedback d-block">{{ $errors->first('cost_pricing_method') }}</div>
+    @endif
+</div>
+
+<div class="form-group mb-3">
+    <label for="default_price" class="form-label" id="service-rate-label">{{ __('service_price.rate_'.$selectedMethod) }}</label>
     {!! Form::number('default_price', old('default_price', $data->default_price ?? null), ['class' => 'form-control' . ($errors->has('default_price') ? ' is-invalid' : ''), 'step' => '0.01', 'min' => '0']) !!}
     @if ($errors->has('default_price'))
         <div class="invalid-feedback d-block">{{ $errors->first('default_price') }}</div>
@@ -70,6 +89,18 @@
 </div>
 
 <button type="submit" class="btn btn-primary w-100 mt-2">{{ TranslationHelper::translate('save') }}</button>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const method = document.getElementById('cost_pricing_method');
+    const label = document.getElementById('service-rate-label');
+    function updateRateLabel() {
+        label.textContent = method.options[method.selectedIndex].dataset.rateLabel;
+    }
+    method.addEventListener('change', updateRateLabel);
+    updateRateLabel();
+});
+</script>
 
 
 @if(!empty($showDefaultToggle))

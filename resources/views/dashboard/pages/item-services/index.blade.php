@@ -36,6 +36,7 @@
                         @endif
                         <th>{{ TranslationHelper::translate('name') }}</th>
                         <th>{{ TranslationHelper::translate('default_price') }}</th>
+                        <th>{{ __('service_price.method') }}</th>
                         <th>{{ TranslationHelper::translate('is_active') }}</th>
                         <th>{{ TranslationHelper::translate('actions') }}</th>
                     </tr>
@@ -64,10 +65,17 @@
             @endif
             {data: 'name'},
             {data: 'default_price'},
+            {data: 'pricing_method', searchable: false, orderable: false},
             {data: 'is_active', searchable: false, orderable: false},
             {data: 'action', searchable: false, orderable: false}
         ],
         language: {
+            "processing": "{{ TranslationHelper::translate('loading') }}...",
+            "emptyTable": "{{ TranslationHelper::translate('nothing_found') }}",
+            "aria": {
+                "sortAscending": @json(__('service_price.sort_ascending')),
+                "sortDescending": @json(__('service_price.sort_descending'))
+            },
             "search": "{{ TranslationHelper::translate('search') }}",
             "searchPlaceholder": "{{ TranslationHelper::translate('search_item_services_placeholder') }}",
             "lengthMenu": "{{ TranslationHelper::translate('display') }} _MENU_ {{ TranslationHelper::translate('records_per_page') }}",

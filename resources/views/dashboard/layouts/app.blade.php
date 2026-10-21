@@ -166,6 +166,7 @@
         @endforeach
     @endif
     {!! Toastr::message() !!}
+    @stack('scripts')
 
 
     {{-- <script src="assets/plugins/morris/morris.min.js"></script>

@@ -29,7 +29,7 @@ class OrderPieceServiceController extends Controller
         PieceServiceService::addToOrderItem($orderItem, [
             'item_service_id' => $request->input('item_service_id'),
             'custom_name' => $request->input('custom_name'),
-            'price' => $request->input('price'),
+            'price' => $request->servicePrice(),
         ]);
 
         Toastr::success(TranslationHelper::translate('item_service_added_successfully'));
