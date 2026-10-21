@@ -27,4 +27,13 @@ class UpdateOrderPieceServiceRequest extends FormRequest
 
         return $rules;
     }
+
+    public function attributes(): array
+    {
+        return [
+            'item_service_id' => __('service_price.service'),
+            'price' => __('service_price.price'),
+            'custom_name.*' => __('service_price.name'),
+        ];
+    }
 }

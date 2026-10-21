@@ -10,9 +10,14 @@ class ItemService extends Model
 {
     use SoftDeletes;
 
+    public const PRICING_METHODS = ['fixed', 'per_animal', 'per_animal_per_day'];
+
     protected $table = 'item_services';
 
     protected $guarded = ['id'];
+
+    // Catalog configuration is Dashboard-only; keep serialized mobile contracts unchanged.
+    protected $hidden = ['cost_pricing_method'];
 
     protected $casts = [
         'default_price' => 'float',
@@ -23,6 +28,13 @@ class ItemService extends Model
     public function admin()
     {
         return $this->belongsTo(Admin::class);
+    }
+
+    public function pricingMethod(): string
+    {
+        $method = $this->getAttribute('cost_pricing_method');
+
+        return in_array($method, self::PRICING_METHODS, true) ? $method : 'fixed';
     }
 
     /**

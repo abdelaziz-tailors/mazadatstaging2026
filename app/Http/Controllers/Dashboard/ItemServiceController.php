@@ -35,6 +35,7 @@ class ItemServiceController extends Controller
                 'id',
                 'name->'.app()->getLocale().' as name',
                 'default_price',
+                'cost_pricing_method',
                 'is_active',
                 'is_default',
                 'admin_id'
@@ -43,6 +44,9 @@ class ItemServiceController extends Controller
         PartnerDashboardScope::scopeItemServices($types);
 
         $datatable = Datatables::of($types)
+            ->addColumn('pricing_method', function (ItemService $item) {
+                return __('service_price.method_'.$item->pricingMethod());
+            })
             ->editColumn('default_price', function (ItemService $item) {
                 return $item->default_price !== null ? number_format($item->default_price, 2) : '—';
             })
@@ -87,6 +91,7 @@ class ItemServiceController extends Controller
         ItemService::create([
             'name' => json_encode($request->name),
             'default_price' => $request->input('default_price'),
+            'cost_pricing_method' => $request->input('cost_pricing_method') ?? 'fixed',
             'sort_order' => (int) ($request->input('sort_order') ?? 0),
             'admin_id' => $adminId,
             'is_active' => $request->has('is_active'),
@@ -121,6 +126,7 @@ class ItemServiceController extends Controller
         $payload = [
             'name' => json_encode($request->name),
             'default_price' => $request->input('default_price'),
+            'cost_pricing_method' => $request->input('cost_pricing_method') ?? $data->pricingMethod(),
             'sort_order' => (int) ($request->input('sort_order') ?? 0),
             'is_active' => $request->has('is_active'),
             'is_default' => $isDefault,
@@ -189,7 +195,7 @@ class ItemServiceController extends Controller
 
         $request->validate([
             'admin_id' => 'required|integer|exists:admins,id',
-        ]);
+        ], [], ['admin_id' => __('service_price.owner')]);
 
         $partner = Admin::query()
             ->where('type', 'partner')
