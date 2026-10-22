@@ -14,9 +14,9 @@ class AddSoundToVideosTable extends Migration
     public function up()
     {
         Schema::table('videos', function (Blueprint $table) {
-            //
-            $table->string('sound')->nullable();
-
+            if (!Schema::hasColumn('videos', 'sound')) {
+                $table->string('sound')->nullable();
+            }
         });
     }
 
