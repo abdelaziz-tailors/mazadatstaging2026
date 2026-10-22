@@ -11,17 +11,28 @@ class VideosFavouritesTable extends Migration
      *
      * @return void
      */
+
     public function up()
     {
-        Schema::create('video_favorites', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->unsignedBigInteger('video_id')->nullable();;
-            $table->timestamps();
-            $table->softDeletes();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('video_id')->references('id')->on('videos')->onDelete('cascade');
-        });
+        if (!Schema::hasTable('video_favorites')) {
+            Schema::create('video_favorites', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->unsignedBigInteger('video_id')->nullable();
+                $table->timestamps();
+                $table->softDeletes();
+
+                $table->foreign('user_id')
+                    ->references('id')
+                    ->on('users')
+                    ->onDelete('cascade');
+
+                $table->foreign('video_id')
+                    ->references('id')
+                    ->on('videos')
+                    ->onDelete('cascade');
+            });
+        }
     }
 
     /**
