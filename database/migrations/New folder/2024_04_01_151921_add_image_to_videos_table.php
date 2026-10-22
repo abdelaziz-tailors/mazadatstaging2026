@@ -13,12 +13,17 @@ class AddImageToVideosTable extends Migration
      */
     public function up()
     {
-        Schema::table('sounds', function (Blueprint $table) {
-            //
-            $table->string('image')->nullable();
-            $table->text('artist_name')->nullable();
+        if (!Schema::hasColumn('sounds', 'image')) {
+            Schema::table('sounds', function (Blueprint $table) {
+                $table->string('image')->nullable();
+            });
+        }
 
-        });
+        if (!Schema::hasColumn('sounds', 'artist_name')) {
+            Schema::table('sounds', function (Blueprint $table) {
+                $table->text('artist_name')->nullable();
+            });
+        }
     }
 
     /**
