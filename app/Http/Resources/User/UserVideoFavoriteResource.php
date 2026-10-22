@@ -97,7 +97,7 @@ class UserVideoFavoriteResource extends JsonResource
             'partners_type'=>$this->video['partners_type'],
             'partner'=> New PartnerResource($this->video->partnerData),
             'city'=> New CitiesResource($this->video->city),
-            'video_items'=> VideoItemResource::collection($this->video->video_items),
+            'video_items'=> VideoItemResource::collection($this->video->currentVideoItems),
             'user'=> New UserDataResource($this->video->user_Video),
 
         ];

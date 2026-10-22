@@ -64,9 +64,9 @@ class FavoritesVideoController extends Controller
         if (!$video){
             return $this->failed_response(TranslationHelper::translate('Video not found'));
         }
-        $Video_Unfavorite=VideoFavorites::where( 'video_id',$id)->where( 'user_id',auth('api')->user()->id)->first();
+        $Video_Unfavorite=VideoFavorites::where( 'video_id',$id)->where( 'user_id',auth('api')->user()->id);
 
-        if (!$Video_Unfavorite){
+        if (!$Video_Unfavorite->exists()){
             return $this->failed_response(TranslationHelper::translate('Video not In Favorite'));
         }
 

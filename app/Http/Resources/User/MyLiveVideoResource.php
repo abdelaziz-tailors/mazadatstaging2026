@@ -42,6 +42,7 @@ class MyLiveVideoResource extends JsonResource
 
         $data = [
             'id' => $this->id ??'',
+            'is_favorites' => $this->isfavorite->isNotEmpty(),
             'title'=>app()->getLocale()=='en'? $this['title']??'' :$this['title_ar']??'',
             'title_en' => $this->title ??'',
             'title_ar' => $this->title_ar ??'',

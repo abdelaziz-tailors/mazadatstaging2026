@@ -28,6 +28,16 @@ class LiveVideoItem extends Model
         return $query->whereDoesntHave('transferredCopies');
     }
 
+    public function favorites()
+    {
+        return $this->hasMany(LiveVideoItemFavorite::class);
+    }
+
+    public function isfavorite()
+    {
+        return $this->favorites()->where('user_id', auth('api')->id() ?? 0);
+    }
+
     public function user_auction()
     {
         return $this->belongsTo(User::class, 'user_finished_id');

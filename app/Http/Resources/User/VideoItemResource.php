@@ -41,6 +41,7 @@ class VideoItemResource extends JsonResource
 
         $data = [
             'id' => $this->id ??'',
+            'is_favorites' => $this->isfavorite->isNotEmpty(),
             // 'lineage_title'=>app()->getLocale()=='en'? $this['title']??'' :$this['title_ar']??'',
             // 'lineage_title_en' => $this->title ??'',
             // 'lineage_title_ar' => $this->title_ar ??'',

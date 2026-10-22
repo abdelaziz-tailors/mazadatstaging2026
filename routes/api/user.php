@@ -273,6 +273,9 @@ Route::group(['middleware' => ['auth:api']], function() {
             Route::post('transfer', 'LiveVideoItemTransferController@transfer');
 
             Route::group(['prefix' => 'items'], function(){
+                Route::get('favorites/list', 'LiveVideoItemFavoriteController@index');
+                Route::post('favorites/add/{id}', 'LiveVideoItemFavoriteController@add');
+                Route::post('favorites/unfavorited/{id}', 'LiveVideoItemFavoriteController@unfavorited');
                 Route::post('add/{id}', 'LiveVideoItemController@add');
                 Route::post('update/{id}', 'LiveVideoItemController@update');
                 Route::post('delete/{id}', 'LiveVideoItemController@delete');
