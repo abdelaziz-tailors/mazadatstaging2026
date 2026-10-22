@@ -68,7 +68,7 @@ class ProductController extends Controller
         $targetAuctions = collect();
 
         if ($canTransferItems) {
-            $targetAuctions = LiveVideo::query()->where('id', '!=', $live->id);
+            $targetAuctions = LiveVideo::query()->where('id', '!=', $live->id)->where('type', $live->type);
             PartnerDashboardScope::scopeLiveVideos($targetAuctions);
             $targetAuctions = $targetAuctions->orderByDesc('id')->get();
         }

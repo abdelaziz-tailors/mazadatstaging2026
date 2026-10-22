@@ -13,7 +13,7 @@ class AuctionItemTransferService
 {
     public function transferableItems(LiveVideo $source, ?LiveVideo $target = null): Collection
     {
-        if (! $source->isEnded()) {
+        if (! $source->isEnded() || ($target && $source->type !== $target->type)) {
             return new Collection();
         }
 
@@ -40,6 +40,7 @@ class AuctionItemTransferService
 
     public function transferItems(LiveVideo $source, LiveVideo $target, array $itemIds): Collection
     {
+        $this->ensureMatchingType($source, $target->type, 'target_auction_id');
         if (! $source->isEnded()) {
             throw ValidationException::withMessages([
                 'source_auction_id' => ['Items can only be transferred from ended auctions.'],
@@ -184,6 +185,7 @@ class AuctionItemTransferService
 
     public function createAuctionFromSource(LiveVideo $source, array $attributes): LiveVideo
     {
+        $this->ensureMatchingType($source, ($attributes['type'] ?? null) ?: $source->type, 'new_auction.type');
         $target = $source->replicate([
             'status',
             'end_at',
@@ -226,6 +228,15 @@ class AuctionItemTransferService
         }
 
         return $target;
+    }
+
+    private function ensureMatchingType(LiveVideo $source, ?string $type, string $field): void
+    {
+        if ($source->type !== $type) {
+            throw ValidationException::withMessages([
+                $field => ['The destination auction must have the same type as the source auction.'],
+            ]);
+        }
     }
 
     /**

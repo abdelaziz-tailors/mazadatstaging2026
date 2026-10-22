@@ -27,9 +27,17 @@ class AddStreamingFieldsToLiveVideosTable extends Migration
      */
     public function down()
     {
-        Schema::table('live_videos', function (Blueprint $table) {
-            $table->dropColumn(['agora_channel_name', 'agora_token_publisher', 'agora_token_subscriber', 'agora_app_id']);
-        });
+        // Reverse the current up() without deleting legacy token columns.
+        $columns = array_values(array_filter(
+            ['agora_channel_name', 'agora_token', 'agora_app_id'],
+            fn ($column) => Schema::hasColumn('live_videos', $column)
+        ));
+
+        if ($columns !== []) {
+            Schema::table('live_videos', function (Blueprint $table) use ($columns) {
+                $table->dropColumn($columns);
+            });
+        }
     }
 }
 

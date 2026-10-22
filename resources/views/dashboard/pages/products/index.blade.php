@@ -342,8 +342,7 @@
                                 <div class="col-md-6 form-group mb-3">
                                     <label class="form-label">{{ TranslationHelper::translate('auction_type') }}</label>
                                     <select name="new_auction_type" class="form-control">
-                                        <option value="live">{{ TranslationHelper::translate('live') }}</option>
-                                        <option value="recorded">{{ TranslationHelper::translate('recorded') }}</option>
+                                        <option value="{{ $live->type }}">{{ TranslationHelper::translate($live->type) }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 form-group mb-3">

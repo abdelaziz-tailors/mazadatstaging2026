@@ -15,7 +15,7 @@ class AuctionSearchController extends Controller
     use ResponseTrait;
 
     private const EAGER_LOAD = [
-        'islike', 'isfavorite', 'all_views', 'partnerData', 'city', 'video_items', 'user_Video',
+        'islike', 'isfavorite', 'all_views', 'partnerData', 'city', 'currentVideoItems', 'user_Video',
     ];
 
     /**

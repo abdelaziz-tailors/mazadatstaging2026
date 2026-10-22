@@ -192,6 +192,15 @@ class MobileExistingAuctionTransferTest extends TestCase
         $this->assertNotNull($entry);
         $this->assertEquals($expectedIds, collect($entry['video_items'])->pluck('id')->all());
 
+        $home = $this->withHeaders($this->headers())->getJson('/api/home/video/' . $auction->id);
+        $home->assertOk();
+        $this->assertEquals($expectedIds, collect($home->json('data.video_items'))->pluck('id')->all());
+        $search = $this->withHeaders($this->headers())->getJson('/api/home/auctions/search?q=' . urlencode($auction->title));
+        $search->assertOk();
+        $card = collect($search->json('data'))->firstWhere('id', $auction->id);
+        $this->assertNotNull($card);
+        $this->assertEquals($expectedIds, collect($card['video_items'])->pluck('id')->all());
+
         // The dashboard page loads this auction-specific DataTables action,
         // not VideoItemResource. Call directly, as other dashboard tests do.
         $request = \Illuminate\Http\Request::create('/', 'POST', [
@@ -212,6 +221,78 @@ class MobileExistingAuctionTransferTest extends TestCase
         $this->assertSame(count($expectedIds), $table['recordsTotal']);
         $this->assertSame(count($expectedIds), $table['recordsFiltered']);
         $this->assertEquals($expectedIds, collect($table['data'])->pluck('id')->all());
+    }
+
+    /** @dataProvider auctionTypes */
+    public function test_destination_picker_filters_types_and_api_enforces_them(string $type, string $otherType): void
+    {
+        $scenario = $this->createScenario();
+        $scenario['source']->update(['type' => $type]);
+        $scenario['target']->update(['type' => $type]);
+        $wrong = LiveVideo::create(['user_id' => $scenario['user']->id, 'title' => 'Wrong type', 'type' => $otherType]);
+        $page = app(\App\Http\Controllers\Dashboard\ProductController::class)
+            ->index(\Illuminate\Http\Request::create('/'), $scenario['source']->id);
+        $this->assertContains($scenario['target']->id, $page->getData()['targetAuctions']->pluck('id')->all());
+        $this->assertNotContains($wrong->id, $page->getData()['targetAuctions']->pluck('id')->all());
+        $list = $this->withHeaders($this->headers())->getJson('/api/live/my-list?source_auction_id=' . $scenario['source']->id);
+        $list->assertOk();
+        $this->assertSame([$scenario['target']->id], collect($list->json('data'))->pluck('id')->all());
+        $this->withHeaders($this->headers())->postJson('/api/live/transfer', [
+            'item_id' => $scenario['item']->id, 'target_auction_id' => $wrong->id, 'transfer_mode' => 'existing',
+        ])->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertSame(0, $scenario['item']->transferredCopies()->count());
+        $response = $this->withHeaders($this->headers())->postJson('/api/live/transfer', [
+            'item_id' => $scenario['item']->id, 'target_auction_id' => $scenario['target']->id, 'transfer_mode' => 'existing',
+        ]);
+        $response->assertOk()->assertJson(['success' => true]);
+        $this->assertCount(1, $response->json('data.target_auction.video_items'));
+        $this->assertCurrentAuctionItems($scenario['source'], []);
+        $this->assertCurrentAuctionItems($scenario['target'], [$response->json('data.transferred_items.0.id')]);
+    }
+
+    public static function auctionTypes(): array
+    {
+        return [['live', 'recorded'], ['recorded', 'live']];
+    }
+
+    /** @dataProvider auctionTypes */
+    public function test_new_auction_api_rejects_type_changes_without_consuming_quota(string $type, string $otherType): void
+    {
+        $scenario = $this->createScenario();
+        $scenario['source']->update(['type' => $type]);
+        $subscription = \App\Models\UserSubscription::create([
+            'user_id' => $scenario['user']->id, 'status' => 'approved',
+            'remaining_auctions' => 2, 'expires_at' => now()->addMonth(),
+        ]);
+        $count = LiveVideo::count();
+        $payload = [
+            'item_id' => $scenario['item']->id, 'transfer_mode' => 'new',
+            'new_auction' => [
+                'type' => $otherType, 'title_ar' => 'New auction',
+                'date_start_at' => now()->addDay()->toDateString(),
+                'date_end_at' => now()->addDays(2)->toDateString(),
+                'time_start_at' => '10:00', 'time_end_at' => '11:00', 'start_price' => 10,
+            ],
+        ];
+        $this->withHeaders($this->headers())->postJson('/api/live/transfer', $payload)
+            ->assertStatus(422)->assertJson(['success' => false]);
+        $this->assertSame($count, LiveVideo::count());
+        $this->assertSame(2, (int) $subscription->fresh()->remaining_auctions);
+        $this->assertSame(0, $scenario['item']->transferredCopies()->count());
+
+        if ($type === 'live') {
+            $agora = \Mockery::mock(\App\Services\AgoraService::class);
+            $agora->shouldReceive('generateChannelName')->once()->andReturn('test-transfer-channel');
+            $agora->shouldReceive('generateToken')->once()->andReturn('test-transfer-token');
+            $agora->shouldReceive('getAppId')->once()->andReturn('test-app-id');
+            $this->app->instance(\App\Services\AgoraService::class, $agora);
+        }
+        $payload['new_auction']['type'] = $type;
+        $response = $this->withHeaders($this->headers())->postJson('/api/live/transfer', $payload);
+        $response->assertOk()->assertJson(['success' => true]);
+        $response->assertJsonPath('data.target_auction.video_type', $type);
+        $this->assertCount(1, $response->json('data.target_auction.video_items'));
+        $this->assertSame(1, (int) $subscription->fresh()->remaining_auctions);
     }
 
     public function test_location_alias_that_is_not_an_owned_auction_is_rejected(): void

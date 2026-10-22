@@ -41,7 +41,7 @@ class AuctionItemTransferServiceTest extends TestCase
         $agora->shouldReceive('getAppId')->once()->andReturn('valid-test-app-id');
         $this->app->instance(\App\Services\AgoraService::class, $agora);
 
-        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'recorded']);
+        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'live']);
         $item = LiveVideoItem::create([
             'live_video_id' => $source->id,
             'title' => 'Unsold item',
@@ -66,5 +66,47 @@ class AuctionItemTransferServiceTest extends TestCase
         $this->assertNotEmpty($target->agora_channel_name);
         $this->assertNotEmpty($target->agora_token);
         $this->assertNotEmpty($created->first()->live_video_id);
+    }
+
+    /** @dataProvider mismatchedTypes */
+    public function test_service_rejects_mismatches_without_creating_copies_or_auctions(string $sourceType, string $targetType): void
+    {
+        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => $sourceType]);
+        $target = LiveVideo::create(['title' => 'Target', 'status' => 'pending', 'type' => $targetType]);
+        $item = LiveVideoItem::create(['live_video_id' => $source->id, 'quantity' => 1]);
+        $service = app(AuctionItemTransferService::class);
+        $this->assertCount(0, $service->transferableItems($source, $target));
+        $count = LiveVideo::count();
+        foreach (['existing', 'new'] as $mode) {
+            try {
+                if ($mode === 'existing') {
+                    $service->transferItems($source, $target, [$item->id]);
+                } else {
+                    $service->createAuctionAndTransferItems($source, ['type' => $targetType], [$item->id]);
+                }
+                $this->fail('Mismatched auction types must be rejected.');
+            } catch (\Illuminate\Validation\ValidationException $exception) {
+                $this->assertArrayHasKey($mode === 'existing' ? 'target_auction_id' : 'new_auction.type', $exception->errors());
+            }
+        }
+        $this->assertSame($count, LiveVideo::count());
+        $this->assertSame(0, $item->transferredCopies()->count());
+    }
+
+    public static function mismatchedTypes(): array
+    {
+        return [['live', 'recorded'], ['recorded', 'live']];
+    }
+
+    public function test_new_recorded_auction_preserves_type_and_transfers_pieces(): void
+    {
+        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'recorded']);
+        $item = LiveVideoItem::create(['live_video_id' => $source->id, 'quantity' => 1]);
+        $item->pieces()->create(['piece_number' => 1, 'identifier' => 'recorded-piece']);
+        [$target, $copies] = app(AuctionItemTransferService::class)->createAuctionAndTransferItems($source, [], [$item->id]);
+        $this->assertSame('recorded', $target->type);
+        $this->assertSame('recorded-piece', $copies->first()->pieces->first()->identifier);
+        $this->assertSame(0, $source->currentVideoItems()->count());
+        $this->assertSame(1, $target->currentVideoItems()->count());
     }
 }

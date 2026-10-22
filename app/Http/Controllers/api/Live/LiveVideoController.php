@@ -434,7 +434,20 @@ class LiveVideoController extends Controller
             }
         }
 
+        $request->validate(['source_auction_id' => 'nullable|integer|exists:live_videos,id']);
+        $source = null;
+        if ($request->filled('source_auction_id')) {
+            $source = LiveVideo::where('user_id', auth('api')->id())->find($request->source_auction_id);
+            if (! $source) {
+                return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
+            }
+        }
+
         $data = LiveVideo::query()
+            ->with('currentVideoItems')
+            ->when($source, function ($query) use ($source) {
+                $query->where('type', $source->type)->where('id', '!=', $source->id);
+            })
             ->where('user_id', auth('api')->user()->id)
             ->when($request->status === 'inprogress', function ($query) {
                 $query->where('status', 'start');
