@@ -171,24 +171,23 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         PartnerDashboardScope::ensureOwnOrder($order);
 
-        $wasPaid = $order->payment_status === 'paid';
-
         if ($request->payment_status == 'paid' && $request->status == 'pending') {
             $request['status'] = 'confirmed';
         }
 
         try {
-            DB::transaction(function () use ($request, $order, $wasPaid) {
-                OrderService::updateOrderStatus(
-                    $order,
-                    $request->payment_status,
-                    $request->status
-                );
-
+            DB::transaction(function () use ($request, $id) {
+                // Reload on every attempt: rolled-back Eloquent models retain
+                // their dirty-state history and must not drive payment retries.
+                $order = Order::whereKey($id)->lockForUpdate()->firstOrFail();
+                $order->setRelation('liveVideo', LiveVideo::whereKey($order->live_video_id)->sharedLock()->first());
+                PartnerDashboardScope::ensureOwnOrder($order);
+                $wasPaid = $order->payment_status === 'paid';
+                OrderService::updateOrderStatus($order, $request->payment_status, $request->status, false);
                 if ($request->payment_status === 'paid' && ! $wasPaid) {
-                    AuctionWalletSettlement::settleOrderIfNeeded($order->fresh(['items.liveVideoItem.videoLive']));
+                    AuctionWalletSettlement::settleOrderIfNeeded($order);
                 }
-            });
+            }, 3);
         } catch (\RuntimeException $e) {
             if (in_array($e->getMessage(), ['insufficient_wallet_balance', 'user_not_found'], true)) {
                 $key = $e->getMessage() === 'user_not_found'

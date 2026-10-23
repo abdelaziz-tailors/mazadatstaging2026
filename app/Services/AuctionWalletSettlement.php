@@ -24,8 +24,6 @@ class AuctionWalletSettlement
             return;
         }
 
-        $order->loadMissing(['items.liveVideoItem.videoLive', 'items.services']);
-
         DB::transaction(function () use ($order) {
             $lockedOrder = Order::query()->whereKey($order->id)->lockForUpdate()->first();
 
@@ -33,7 +31,9 @@ class AuctionWalletSettlement
                 return;
             }
 
-            foreach ($lockedOrder->items as $orderItem) {
+            $items = $lockedOrder->items()->orderBy('id')->lockForUpdate()->get();
+            self::lockSettlementWallets($items);
+            foreach ($items as $orderItem) {
                 self::settleOrderItemIfNeeded($orderItem);
             }
 
@@ -43,7 +43,35 @@ class AuctionWalletSettlement
             if ($allSettled && ! $lockedOrder->settled_at) {
                 $lockedOrder->update(['settled_at' => now()]);
             }
-        });
+        }, 3);
+    }
+
+    /**
+     * Acquire every potential participant wallet in one global ID order.
+     * Current locking reads precede snapshots, including on MariaDB snapshot
+     * isolation. Shared item/auction/admin locks keep participant mapping stable.
+     */
+    private static function lockSettlementWallets($items): void
+    {
+        $ids = [];
+        foreach ($items as $line) {
+            if ($line->settled_at) { continue; }
+            $item = LiveVideoItem::without('pieces')->whereKey($line->live_video_item_id)->sharedLock()->first();
+            if (! $item || ! $item->user_finished_id) { continue; }
+            $live = LiveVideo::whereKey($item->live_video_id)->sharedLock()->first();
+            if (! $live) { continue; }
+            $ids[] = $item->user_finished_id;
+            $ids[] = $line->seller_id;
+            if ($live->partner_id) {
+                $admin = Admin::whereKey($live->partner_id)->sharedLock()->first();
+                // Lock both candidate IDs. The existing resolver still decides
+                // admin-user versus direct-user mapping without formula changes.
+                $ids[] = $live->partner_id;
+                $ids[] = $admin?->user_id;
+            }
+        }
+        User::whereIn('id', array_values(array_unique(array_filter($ids))))
+            ->orderBy('id')->lockForUpdate()->get();
     }
 
     /**

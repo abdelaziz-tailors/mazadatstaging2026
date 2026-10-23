@@ -44,6 +44,7 @@ class OrderVisibleAfterConfirmationTest extends TestCase
     {
         return User::create([
             'name' => 'Buyer',
+            'user_name' => 'orders_' . bin2hex(random_bytes(8)),
             'phone' => '01' . random_int(100000000, 999999999),
             'password' => bcrypt('secret123'),
             'user_type' => 'buyer',

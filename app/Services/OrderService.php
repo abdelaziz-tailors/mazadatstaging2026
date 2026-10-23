@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
@@ -29,49 +30,50 @@ class OrderService
 
     public static function attachWonItem(LiveVideoItem $item): ?Order
     {
-        if (! $item->user_finished_id || ! $item->live_video_id) {
-            return null;
-        }
-
-        $item->loadMissing('videoLive');
-        $live = $item->videoLive;
-
-        if (! $live) {
-            return null;
-        }
-
-        $order = Order::query()->firstOrCreate(
-            [
-                'live_video_id' => $item->live_video_id,
-                'buyer_id' => (int) $item->user_finished_id,
-            ],
-            [
-                'order_number' => self::generateOrderNumber(),
-                'tax_percent' => 0.0,
-                'commission_percent' => (float) ($live->commission_amount ?? 0),
-                'commission_payer' => $live->commission_payer ?? 'buyer',
-                'service_fee_per_item' => (float) ($live->service_fee ?? 0),
-                'payment_status' => 'unpaid',
-                'status' => 'pending',
-            ],
-        );
-
-        self::ensureOrderNumber($order);
-
-        OrderItem::query()->updateOrCreate(
-            ['live_video_item_id' => $item->id],
-            [
-                'order_id' => $order->id,
-                'finished_price' => (float) ($item->finished_price ?? 0),
-                'seller_id' => $item->seller_id == null ? $item->user_id : $item->seller_id,
-            ]
-        );
-
-        self::recalculateTotals($order->fresh(['items']));
-
-        return $order->fresh(['items', 'liveVideo', 'buyer']);
+        return DB::transaction(function () use ($item) {
+            // Ignore stale caller models. Same ordering as manual/scheduled award.
+            $item = LiveVideoItem::without('pieces')->whereKey($item->id)->lockForUpdate()->first();
+            if (! $item || ! $item->user_finished_id || ! $item->live_video_id) { return null; }
+            $live = LiveVideo::whereKey($item->live_video_id)->lockForUpdate()->first();
+            if (! $live) { return null; }
+            $order = Order::withTrashed()->where('live_video_id', $live->id)
+                ->where('buyer_id', $item->user_finished_id)->lockForUpdate()->first();
+            $line = OrderItem::where('live_video_item_id', $item->id)->lockForUpdate()->first();
+            $sellerId = $item->seller_id ?? $item->user_id;
+            if ($line && (! $order || (int) $line->order_id !== (int) $order->id
+                || (float) $line->finished_price !== (float) $item->finished_price
+                || (int) $line->seller_id !== (int) $sellerId)) {
+                throw new \DomainException('Award conflicts with its existing order line.');
+            }
+            if ($order && $order->trashed()) {
+                throw new \DomainException('Cannot attach an award to an archived order.');
+            }
+            if ($line) {
+                return $order; // A retry must not rewrite paid/settled financial state.
+            }
+            if ($order && ($order->payment_status !== 'unpaid' || $order->settled_at)) {
+                throw new \DomainException('Cannot add an award to a paid or settled order.');
+            }
+            if (! $order) {
+                $order = Order::create([
+                    'live_video_id' => $live->id, 'buyer_id' => $item->user_finished_id,
+                    'order_number' => self::generateOrderNumber(),
+                    'tax_percent' => 0.0,
+                    'commission_percent' => (float) ($live->commission_amount ?? 0),
+                    'commission_payer' => $live->commission_payer ?? 'buyer',
+                    'service_fee_per_item' => (float) ($live->service_fee ?? 0),
+                    'payment_status' => 'unpaid', 'status' => 'pending',
+                ]);
+            }
+            self::ensureOrderNumber($order);
+            OrderItem::create([
+                'live_video_item_id' => $item->id, 'order_id' => $order->id,
+                'finished_price' => (float) ($item->finished_price ?? 0), 'seller_id' => $sellerId,
+            ]);
+            self::recalculateTotals($order->fresh(['items']));
+            return $order->fresh(['items', 'liveVideo', 'buyer']);
+        }, 3);
     }
-
     public static function recalculateTotals(Order $order): void
     {
         $order->loadMissing('items.services');
@@ -97,7 +99,7 @@ class OrderService
         ]);
     }
 
-    public static function updateOrderStatus(Order $order, string $paymentStatus, string $status): Order
+    public static function updateOrderStatus(Order $order, string $paymentStatus, string $status, bool $refresh = true): Order
     {
         if ($paymentStatus === 'paid' && $status === 'pending') {
             $status = 'confirmed';
@@ -108,7 +110,8 @@ class OrderService
             'status' => $status,
         ]);
 
-        return $order->fresh(['items', 'liveVideo']);
+        // Payment defers eager reads until participant locks are held.
+        return $refresh ? $order->fresh(['items', 'liveVideo']) : $order;
     }
 
     public static function applyPaymentProof(Order $order, string $relativePath): Order
@@ -161,7 +164,8 @@ class OrderService
 
         $last = Order::withTrashed()
             ->where('order_number', 'like', $prefix.'%')
-            ->orderByDesc('order_number')
+            // Current next-key lock serializes sequence allocation inside attach/award transactions.
+            ->orderByDesc('order_number')->lockForUpdate()
             ->value('order_number');
 
         $sequence = $last ? ((int) substr($last, -5)) + 1 : 1;

@@ -40,6 +40,7 @@ class WalletControllerTest extends TestCase
     {
         return User::create(array_merge([
             'name' => 'Test User',
+            'user_name' => 'wallet_' . bin2hex(random_bytes(8)),
             'phone' => '01' . random_int(100000000, 999999999),
             'password' => bcrypt('secret123'),
             'user_type' => 'seller',
@@ -99,7 +100,8 @@ class WalletControllerTest extends TestCase
             'live_video_id' => $liveVideo->id,
             'buyer_id' => $buyer->id,
             'total' => 2270,
-            'payment_status' => 'paid',
+            // Pending seller earnings come from unpaid sales.
+            'payment_status' => 'unpaid',
         ]);
         $item = LiveVideoItem::create(['live_video_id' => $liveVideo->id, 'finished_price' => 2270]);
         OrderItem::create([
@@ -122,7 +124,17 @@ class WalletControllerTest extends TestCase
 
     public function test_wallet_pending_balance_is_zero_for_a_buyer_with_no_unpaid_orders()
     {
-        $buyer = $this->createUser(['user_type' => 'buyer', 'wallet_balance' => 100]);
+        $buyer = $this->createUser(['user_type' => 'buyer', 'wallet_balance' => 999]);
+        // Buyer available balance represents paid purchases, not wallet funds.
+        $auction = LiveVideo::create(['title' => 'Paid purchase']);
+        Order::create([
+            'live_video_id' => $auction->id,
+            'buyer_id' => $buyer->id,
+            'subtotal' => 100,
+            'total' => 100,
+            'payment_status' => 'paid',
+            'status' => 'confirmed',
+        ]);
         Passport::actingAs($buyer, [], 'api');
 
         $response = $this->withHeaders($this->headers())->getJson('/api/user/wallet');

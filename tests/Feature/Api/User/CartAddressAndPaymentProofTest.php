@@ -43,6 +43,7 @@ class CartAddressAndPaymentProofTest extends TestCase
     {
         return User::create([
             'name' => 'Buyer',
+            'user_name' => 'cart_' . bin2hex(random_bytes(8)),
             'phone' => '01' . random_int(100000000, 999999999),
             'password' => bcrypt('secret123'),
             'user_type' => 'buyer',
@@ -174,7 +175,7 @@ class CartAddressAndPaymentProofTest extends TestCase
     public function test_my_cart_still_returns_the_pre_existing_fields_unchanged()
     {
         $buyer = $this->createBuyer();
-        $this->createActiveCartOrder($buyer, ['total' => 750]);
+        $this->createActiveCartOrder($buyer, ['subtotal' => 750, 'total' => 750]);
         Passport::actingAs($buyer, [], 'api');
 
         $response = $this->withHeaders($this->headers())->getJson('/api/user/my-cart');

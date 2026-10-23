@@ -14,15 +14,16 @@ class PieceServiceService
 {
     public static function addToOrderItem(OrderItem $orderItem, array $data): OrderItemService
     {
-        self::assertEditableOrderItem($orderItem);
-        self::assertItemServiceAvailableForOrderItem(
-            $orderItem,
-            isset($data['item_service_id'])
-                ? (int) $data['item_service_id']
-                : null
-        );
-
         $service = DB::transaction(function () use ($orderItem, $data) {
+            $orderItem = self::lockEditableOrderItem($orderItem);
+
+            self::assertItemServiceAvailableForOrderItem(
+                $orderItem,
+                isset($data['item_service_id'])
+                    ? (int) $data['item_service_id']
+                    : null
+            );
+
             $service = OrderItemService::query()->create([
                 'order_item_id' => $orderItem->id,
                 'item_service_id' => $data['item_service_id'] ?? null,
@@ -43,18 +44,19 @@ class PieceServiceService
     public static function update(OrderItemService $service, array $data): OrderItemService
     {
         $orderItem = $service->orderItem()->with('order')->firstOrFail();
-        self::assertEditableOrderItem($orderItem);
-
-        if (array_key_exists('item_service_id', $data)) {
-            self::assertItemServiceAvailableForOrderItem(
-                $orderItem,
-                $data['item_service_id'] !== null
-                    ? (int) $data['item_service_id']
-                    : null
-            );
-        }
-
         DB::transaction(function () use ($service, $data, $orderItem) {
+            $orderItem = self::lockEditableOrderItem($orderItem);
+            $service = OrderItemService::whereKey($service->id)->where('order_item_id', $orderItem->id)->lockForUpdate()->firstOrFail();
+
+            if (array_key_exists('item_service_id', $data)) {
+                self::assertItemServiceAvailableForOrderItem(
+                    $orderItem,
+                    $data['item_service_id'] !== null
+                        ? (int) $data['item_service_id']
+                        : null
+                );
+            }
+
             $payload = [];
             $merged = [
                 'item_service_id' => array_key_exists('item_service_id', $data)
@@ -91,9 +93,10 @@ class PieceServiceService
     public static function delete(OrderItemService $service): void
     {
         $orderItem = $service->orderItem()->with('order')->firstOrFail();
-        self::assertEditableOrderItem($orderItem);
 
         DB::transaction(function () use ($service, $orderItem) {
+            $orderItem = self::lockEditableOrderItem($orderItem);
+            $service = OrderItemService::whereKey($service->id)->where('order_item_id', $orderItem->id)->lockForUpdate()->firstOrFail();
             $service->delete();
             self::recalculateOrderForOrderItem($orderItem);
         });
@@ -232,6 +235,18 @@ class PieceServiceService
         }
 
         abort(422, TranslationHelper::translate('price_required'));
+    }
+
+    protected static function lockEditableOrderItem(OrderItem $orderItem): OrderItem
+    {
+        // Same order -> line ordering as payment/settlement. Never authorize
+        // a write from a cached unpaid relation or an unlocked status check.
+        $order = Order::whereKey($orderItem->order_id)->lockForUpdate()->firstOrFail();
+        $orderItem = OrderItem::whereKey($orderItem->id)->lockForUpdate()->firstOrFail();
+        abort_unless((int) $orderItem->order_id === (int) $order->id, 422);
+        $orderItem->setRelation('order', $order);
+        self::assertEditableOrderItem($orderItem);
+        return $orderItem;
     }
 
     protected static function assertEditableOrderItem(OrderItem $orderItem): void

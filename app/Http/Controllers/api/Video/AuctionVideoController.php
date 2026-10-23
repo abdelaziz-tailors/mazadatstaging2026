@@ -37,25 +37,11 @@ class AuctionVideoController extends Controller
         if (!auth('api')->user()){
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $video=LiveVideoItem::find($request->live_video_item_id);
-        if (!$video){
-            return $this->failed_response(TranslationHelper::translate('Video Item not found'));
-        }
-        // if ($video->status != 'working'){
-        //     return $this->failed_response(TranslationHelper::translate(' You cannot add auctions at that time'));
-        // }
-        $data=VideoComment::create([
-            'video_id'=>$video->live_video_id,
-            'live_video_item_id' => $request->live_video_item_id,
-            'comment' => $request->comment,
-            'user_id' => auth('api')->user()->id
-        ]);
-
-        try {
-            $firebase = new FirebaseController();
-            $firebase->AddAuctions($data);
-        }
-        catch(\Exception $t){}
+        app(\App\Services\AuctionBidService::class)->place(
+            (int) $request->live_video_item_id,
+            (int) auth('api')->id(),
+            $request->comment
+        );
 
         return $this->success_response(TranslationHelper::translate('Added Successfully '), '');
 

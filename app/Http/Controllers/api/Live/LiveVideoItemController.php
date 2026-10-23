@@ -166,29 +166,9 @@ class LiveVideoItemController extends Controller
 
 
 
-        $live_video=LiveVideoItem::where('id',$id)->first();
-        if (!$live_video){
-            return $this->failed_response(TranslationHelper::translate('Live Video Item Not Found'));
-        }
-
-        $hight_pirce=VideoComment::where('id',$request->comment_id)->first();
-
-        $live_video->update([
-            'finished_price'=>$hight_pirce->comment,
-            'user_finished_id'=>$hight_pirce->user_id,
-        ]);
-
-        OrderService::attachWonItem($live_video->fresh());
-
-
-        try {
-            $firebase = new FirebaseController();
-            $firebase->UserAuctions($hight_pirce);
-        }
-        catch(\Exception $t){}
-
-
-
+        $live_video = app(\App\Services\AuctionAwardService::class)->award(
+            (int) $id, (int) $request->comment_id, (int) auth('api')->id()
+        );
         $data= new VideoItemResource($live_video);
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
     }

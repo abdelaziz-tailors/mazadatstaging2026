@@ -73,32 +73,24 @@ class CheckLiveVideoEnd extends Command
 
 
         foreach ($videos as $video) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($video) {
+                // Match bid/award ordering: lock items first, then their parent.
+                $items = \App\Models\LiveVideoItem::without('pieces')
+                    ->where('live_video_id', $video->id)->orderBy('id')->lockForUpdate()->get();
+                $video = LiveVideo::whereKey($video->id)->lockForUpdate()->first();
+                if (! $video || $video->status === 'end') { return; }
                 $video->update([
                     'status'=>'end',
                     'end_at'=>date('Y-m-d H:i:s'),
                 ]);
 
 
-                foreach ($video->video_items as $item) {
-                    $item->update([
-                        'status'=>'finished',
-                        'end_at'=>date('Y-m-d H:i:s'),
-                    ]);
-
-
-                    if($item->user_finished_id==null){
-
-
-                        $hight_pirce=VideoComment::where('video_id',$item->id)->orderBy('id','desc')->first();
-
-                        if($hight_pirce){
-                            $item->update([
-                                'finished_price'=>$hight_pirce->comment,
-                                'user_finished_id'=>$hight_pirce->user_id,
-                            ]);
-
-                            OrderService::attachWonItem($item->fresh());
-
+                foreach ($items as $item) {
+                    $wasAwarded = $item->user_finished_id !== null;
+                    $item = app(\App\Services\AuctionAwardService::class)->award(
+                        (int) $item->id, null, null, true
+                    );
+                    if (! $wasAwarded && $item->user_finished_id) {
                             $tokens_en = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
                             $tokens_ar = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
                                 $notification_record = [
@@ -107,6 +99,7 @@ class CheckLiveVideoEnd extends Command
                                     'body_en'  => 'Congratulations! You won the auction "' . $video->title . '" on ' . $video->date_end_at . ' at ' . $video->time_end_at,
                                     'body_ar'  => 'تهانينا! لقد فزت بالمزاد "' . $video->title . '" بتاريخ ' . $video->date_end_at . ' في ' . $video->time_end_at,
                                 ];
+                            \Illuminate\Support\Facades\DB::afterCommit(function () use ($tokens_en, $tokens_ar, $notification_record) {
                             // Send using job queue
                             dispatch(new SendFCMNotification(
                                 $tokens_en,
@@ -118,35 +111,21 @@ class CheckLiveVideoEnd extends Command
                                 $notification_record['title_ar'],
                                 $notification_record['body_ar'],
                             ));
-
-
-                        }
-
+                            });
                     }
-
-                    if ($item->user_finished_id) {
-                        OrderService::attachWonItem($item->fresh());
-                    }
-
+                    \Illuminate\Support\Facades\DB::afterCommit(function () use ($item) {
+                        try {
+                            app(FirebaseController::class)->ChangeLiveItemStatus($item->live_video_id, $item->id, 'finished');
+                        } catch (\Exception $t) {}
+                    });
+                }
+                \Illuminate\Support\Facades\DB::afterCommit(function () use ($video) {
                     try {
-                        $firebase = new FirebaseController();
-                        $firebase->ChangeLiveItemStatus($item->live_video_id,$item->id,'finished');
-                    }
-                    catch(\Exception $t){}
-                }
-
-
-
-
-
-                try {
-                    $firebase = new FirebaseController();
-                    $firebase->removeLive($video->id);
-                }
-                catch(\Exception $t){}
-
-            }
-
+                        app(FirebaseController::class)->removeLive($video->id);
+                    } catch (\Exception $t) {}
+                });
+            }, 3);
+        }
         $this->info('Live video status check completed.');
     }
 }
