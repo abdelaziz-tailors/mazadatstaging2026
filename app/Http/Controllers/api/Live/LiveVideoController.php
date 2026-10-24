@@ -48,6 +48,59 @@ class LiveVideoController extends Controller
 {
     use ResponseTrait;
 
+    public function addView($id): JsonResponse
+    {
+        return $this->setViewerPresence($id, false);
+    }
+
+    public function leaveView($id): JsonResponse
+    {
+        return $this->setViewerPresence($id, true);
+    }
+
+    private function setViewerPresence($id, bool $leave): JsonResponse
+    {
+        if (!auth('api')->user()) {
+            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+        }
+
+        $found = DB::transaction(function () use ($id, $leave) {
+            // Serialize presence changes for this auction, including publication.
+            $video = LiveVideo::whereKey($id)->lockForUpdate()->first();
+            if (!$video) {
+                return false;
+            }
+
+            $userId = auth('api')->user()->id;
+            if ($leave) {
+                LiveVideoUser::where('live_video_id', $id)->where('user_id', $userId)
+                    ->update(['leave' => 1]);
+            } else {
+                LiveVideoUser::updateOrCreate(
+                    ['live_video_id' => $id, 'user_id' => $userId],
+                    ['leave' => 0]
+                );
+                VideoView::updateOrCreate(['video_id' => $id, 'user_id' => $userId]);
+            }
+
+            $count = $video->in_live_video_user()->distinct()->count('user_id');
+            try {
+                app(FirebaseController::class)->LiveCount($id, $count);
+            } catch (\Exception $e) {
+                // Retrying either endpoint republishes the current count.
+                Log::warning('Live viewer count publication failed', ['live_video_id' => $id]);
+            }
+
+            return true;
+        });
+
+        if (!$found) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+        }
+
+        return $this->success_response(TranslationHelper::translate(' Added Successfully '), '');
+    }
+
     public function add(AddVideoRequest $request): JsonResponse
     {
         if (!auth('api')->user()) {

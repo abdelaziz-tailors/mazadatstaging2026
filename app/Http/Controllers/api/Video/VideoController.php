@@ -22,6 +22,7 @@ use App\Models\VideoShare;
 use App\Models\VideoView;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 
 use App\Traits\ResponseTrait;
@@ -104,26 +105,21 @@ class VideoController extends Controller
 
         }
 
-        $video=LiveVideo::find($id);
-        if (!$video){
-            return $this->failed_response(TranslationHelper::translate('Video not found'));
-        }
+        return DB::transaction(function () use ($id) {
+            // Share the live join lock: both endpoints record unique-user history.
+            $video = LiveVideo::whereKey($id)->lockForUpdate()->first();
+            if (!$video) {
+                return $this->failed_response(TranslationHelper::translate('Video not found'));
+            }
 
+            VideoView::updateOrCreate([
+                'video_id' => $id,
+                'user_id' => auth('api')->user()->id,
+            ]);
 
-        VideoView::updateOrCreate([
-            'video_id' => $id,
-            'user_id' => auth('api')->user()->id,
-        ]);
-
-
-        $count=VideoView::where('video_id', $id)->count();
-        try {
-            $firebase = new FirebaseController();
-            $firebase->LiveCount($id,$count);
-        }
-        catch(\Exception $t){}
-
-        return $this->success_response(TranslationHelper::translate('Added Successfully '), '');
+            // Historical unique views must not overwrite live presence in Firebase.
+            return $this->success_response(TranslationHelper::translate('Added Successfully '), '');
+        });
 
     }
     public function delete($id): JsonResponse
