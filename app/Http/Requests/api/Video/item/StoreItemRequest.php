@@ -3,6 +3,7 @@
 namespace App\Http\Requests\api\Video\item;
 
 use App\Helpers\TranslationHelper;
+use App\Models\LiveVideo;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -67,8 +68,13 @@ class StoreItemRequest extends FormRequest
             'baham_count.*' => 'nullable|string|max:255',
         ];
 
+        $requiresVideo = LiveVideo::whereKey($this->route('id'))->value('type') === 'recorded';
+
         foreach ((array) $this->input('lineage_title_ar', []) as $index => $title) {
             $rules["image.$index"] = 'required|array|min:1';
+            if ($requiresVideo) {
+                $rules["video.$index"] = 'required|file|mimes:mp4,avi,wmv,flv|max:20000';
+            }
         }
 
         return $rules;
