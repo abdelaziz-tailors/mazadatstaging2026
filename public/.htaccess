@@ -9,6 +9,11 @@ Options -Indexes
 
     RewriteEngine On
 
+    # Association responses must reach Laravel even if an old upload left static files.
+    # Set cache policy separately: mod_rewrite ignores E flags on per-directory substitutions.
+    RewriteRule ^(?:\.well-known/(?:assetlinks\.json|apple-app-site-association)|apple-app-site-association)$ - [E=Cache-Control:no-cache]
+    RewriteRule ^(?:\.well-known/(?:assetlinks\.json|apple-app-site-association)|apple-app-site-association)$ index.php [L]
+
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 

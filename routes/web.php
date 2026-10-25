@@ -37,6 +37,11 @@ Route::get('/u/{id}', [SharedProfileController::class, 'show'])
     ->whereNumber('id')
     ->name('shared.profile');
 
+Route::get('/share/auction/{id}', [\App\Http\Controllers\Web\SharedAuctionController::class, 'auction'])
+    ->where('id', '[1-9][0-9]{0,17}')->name('shared.auction');
+Route::get('/share/lot/{id}', [\App\Http\Controllers\Web\SharedAuctionController::class, 'lot'])
+    ->where('id', '[1-9][0-9]{0,17}')->name('shared.lot');
+
 Route::group([
     'prefix' => LaravelLocalization::setLocale(),
     'middleware' => ['localeSessionRedirect', 'localizationRedirect', 'localeViewPath'],
@@ -49,4 +54,3 @@ Route::get('/', [HomeController::class, 'index'])->name('dashboard.index');
 
 Route::namespace('Front')->group(function () {
 });
-
