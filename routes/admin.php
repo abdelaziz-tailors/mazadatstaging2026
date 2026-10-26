@@ -138,7 +138,7 @@ Route::group(['prefix' => LaravelLocalization::setLocale(), 'middleware' => ['lo
             Route::post('packages/getData', [PackageController::class, 'get_data'])->name('packages.getData');
             // packages
             // user-subscriptions
-            Route::resource('/user-subscriptions', UserSubscriptionController::class)->except(['create', 'store', 'edit', 'update']);
+            Route::resource('/user-subscriptions', UserSubscriptionController::class)->except(['create', 'edit', 'update']);
             Route::post('user-subscriptions/getData', [UserSubscriptionController::class, 'get_data'])->name('user-subscriptions.getData');
             Route::post('user-subscriptions/{id}/approve', [UserSubscriptionController::class, 'approve'])->name('user-subscriptions.approve');
             Route::post('user-subscriptions/{id}/reject', [UserSubscriptionController::class, 'reject'])->name('user-subscriptions.reject');

@@ -4,17 +4,14 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\UserSubscription;
-use App\Models\User\User;
 use App\Models\Package;
 use Illuminate\Http\Request;
 use App\Helpers\TranslationHelper;
-use App\Models\Admin;
 use Yajra\DataTables\DataTables;
 use App\Traits\AuthorizeTrait;
 use App\Traits\ActionTrait;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 class UserSubscriptionController extends Controller
 {
     use AuthorizeTrait, ActionTrait;
@@ -26,7 +23,15 @@ class UserSubscriptionController extends Controller
      */
     public function index()
     {
-        // $this->authorizable('view user subscriptions');
+        if (\App\Support\PartnerDashboardScope::isPartner()) {
+            $userId = auth('admin')->user()->user_id;
+            return view('dashboard.pages.user-subscriptions.index', [
+                'plans' => Package::where('is_active', 1)->get(),
+                'current' => UserSubscription::currentSubscription($userId),
+                'history' => UserSubscription::where('user_id', $userId)->orderByDesc('id')->get(),
+            ]);
+        }
+        $this->authorizable('view user subscriptions');
 
         $thisMonthCount = UserSubscription::whereYear('created_at', now()->year)->whereMonth('created_at', now()->month)->count();
         $lastMonthCount = UserSubscription::whereYear('created_at', now()->subMonthNoOverflow()->year)->whereMonth('created_at', now()->subMonthNoOverflow()->month)->count();
@@ -55,6 +60,8 @@ class UserSubscriptionController extends Controller
      */
     public function get_data(Request $request)
     {
+        abort_if(\App\Support\PartnerDashboardScope::isPartner(), 403);
+        $this->authorizable('view user subscriptions');
         $subscriptions = UserSubscription::with(['user'])
             ->select('user_subscriptions.*');
 
@@ -157,6 +164,7 @@ class UserSubscriptionController extends Controller
      */
     public function show($id)
     {
+        abort_if(\App\Support\PartnerDashboardScope::isPartner(), 403);
         $this->authorizable('view user subscriptions');
         $subscription = UserSubscription::with(['user', 'package'])->findOrFail($id);
         return view('dashboard.pages.user-subscriptions.show', compact('subscription'));
@@ -170,41 +178,9 @@ class UserSubscriptionController extends Controller
      */
     public function approve($id)
     {
-        // $this->authorizable('approve user subscription');
-        $subscription = UserSubscription::findOrFail($id);
-        
-        if ($subscription->status === 'approved') {
-            Toastr::warning(TranslationHelper::translate('Subscription is already approved'));
-            return redirect()->back();
-        }
-        DB::beginTransaction();
-        try {
-            $subscription->update([
-                'status' => 'approved',
-                'rejection_reason' => null,
-            ]);
-
-            $subscription->user->update([
-                'user_type' => 'vendor',
-                'is_verified' => 1,
-            ]);
-
-            // $admin = Admin::create([
-            //     'name' => $subscription->user->name,
-            //     'email' => $subscription->user->email,
-            //     'phone' => $subscription->user->phone,
-            //     'type' => 'partner',
-            //     'user_id' => $subscription->user_id,
-            //     'password' => bcrypt($subscription->user->password ?? '123456789'),
-            //     'image' => $subscription->user->image ?? 'partners/default.png',
-            // ]);
-
-            DB::commit();
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            Toastr::error(TranslationHelper::translate('Failed to approve subscription'));
-            return redirect()->back();
-        }
+        abort_if(\App\Support\PartnerDashboardScope::isPartner(), 403);
+        $this->authorizable('approve user subscription');
+        app(\App\Services\SubscriptionService::class)->decide((int) $id, true);
         Toastr::success(TranslationHelper::translate('Subscription Approved Successfully'));
         return redirect()->back();
     }
@@ -218,23 +194,10 @@ class UserSubscriptionController extends Controller
      */
     public function reject($id, Request $request)
     {
-        // $this->authorizable('reject user subscription');
-        $request->validate([
-            'rejection_reason' => 'nullable|string|max:500',
-        ]);
-
-        $subscription = UserSubscription::findOrFail($id);
-        
-        if ($subscription->status === 'rejected') {
-            Toastr::warning(TranslationHelper::translate('Subscription is already rejected'));
-            return redirect()->back();
-        }
-
-        $subscription->update([
-            'status' => 'rejected',
-            'rejection_reason' => $request->rejection_reason,
-        ]);
-
+        abort_if(\App\Support\PartnerDashboardScope::isPartner(), 403);
+        $this->authorizable('reject user subscription');
+        $request->validate(['rejection_reason' => 'nullable|string|max:500']);
+        app(\App\Services\SubscriptionService::class)->decide((int) $id, false, $request->rejection_reason);
         Toastr::success(TranslationHelper::translate('Subscription Rejected Successfully'));
         return redirect()->back();
     }
@@ -247,10 +210,20 @@ class UserSubscriptionController extends Controller
      */
     public function destroy($id)
     {
-        // $this->authorizable('delete user subscription');
-        $subscription = UserSubscription::findOrFail($id);
-        $subscription->delete();
-        Toastr::success(TranslationHelper::translate('Subscription Deleted Successfully'));
+        $this->authorizable('delete user subscription');
+        abort(403, 'Subscription history cannot be deleted.');
+    }
+
+    public function store(Request $request)
+    {
+        abort_unless(\App\Support\PartnerDashboardScope::isPartner(), 403);
+        $request->validate([
+            'package_id' => 'required|exists:packages,id',
+            'subscription_type' => 'required|in:monthly,annual',
+        ]);
+        app(\App\Services\SubscriptionService::class)->request(
+            auth('admin')->user()->user_id, Package::findOrFail($request->package_id), $request->subscription_type
+        );
         return redirect()->back();
     }
 }

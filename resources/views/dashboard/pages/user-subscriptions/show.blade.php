@@ -39,14 +39,11 @@
                             <tr>
                                 <th>{{ TranslationHelper::translate('Package') }}</th>
                                 <td>
-                                    @if($subscription->package)
-                                        @php
-                                            $packageName = json_decode($subscription->package->name, true);
-                                        @endphp
-                                        {{ $packageName[app()->getLocale()] ?? '-' }}
-                                    @else
-                                        -
-                                    @endif
+                                    @php
+                                        $snapshot = $subscription->package_snapshot;
+                                        $packageName = $snapshot ? json_decode($snapshot['name'] ?? '{}', true) : [];
+                                    @endphp
+                                    {{ $packageName[app()->getLocale()] ?? optional($subscription->package)->name ?? '-' }}
                                 </td>
                             </tr>
                             <tr>
@@ -72,6 +69,14 @@
                             <tr>
                                 <th width="40%">{{ TranslationHelper::translate('Auctions Limit') }}</th>
                                 <td>{{ $subscription->auctions_limit ?? '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ TranslationHelper::translate('Used Auctions') }}</th>
+                                <td>{{ $subscription->used_auctions }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ TranslationHelper::translate('Started At') }}</th>
+                                <td>{{ $subscription->started_at }}</td>
                             </tr>
                             <tr>
                                 <th>{{ TranslationHelper::translate('Remaining Auctions') }}</th>
@@ -164,7 +169,7 @@
                         @php
                             $status = $subscription->status ?? 'pending';
                         @endphp
-                        @if($status === 'pending')
+                        @if($status === 'pending' && !\App\Support\PartnerDashboardScope::isPartner())
                             <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
                                 {{ csrf_field() }}
                                 <button type="submit" class="btn btn-success">
@@ -174,20 +179,9 @@
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectSubscriptionModal">
                                 <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
                             </button>
-                        @elseif($status === 'approved')
-                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectSubscriptionModal">
-                                <i class="fas fa-times"></i> {{ TranslationHelper::translate('Reject') }}
-                            </button>
-                        @elseif($status === 'rejected')
-                            <form action="{{ route('admin.user-subscriptions.approve', $subscription->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('{{ TranslationHelper::translate('are_you_sure_you_want_to_approve_this_subscription_') }}')">
-                                {{ csrf_field() }}
-                                <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-check"></i> {{ TranslationHelper::translate('Approve') }}
-                                </button>
-                            </form>
                         @endif
                         
-                        @if(in_array($status, ['pending', 'approved']))
+                        @if($status === 'pending' && !\App\Support\PartnerDashboardScope::isPartner())
                             <!-- Reject Modal -->
                             <div class="modal fade" id="rejectSubscriptionModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                                 <div class="modal-dialog">
@@ -218,4 +212,3 @@
 </div>
 
 @endsection
-

@@ -35,6 +35,7 @@ class SendSubscriptionExpiryReminders extends Command
 
         $subscriptions = UserSubscription::query()
             ->where('status', 'approved')
+            ->whereNull('replaced_at')
             ->whereNull('expiry_reminder_sent_at')
             ->whereNotNull('expires_at')
             ->where('expires_at', '>=', $now)

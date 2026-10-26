@@ -221,7 +221,7 @@ class AuctionItemTransferService
         $target->status = 'pending';
         $target->is_active = false;
         $target->type = $target->type ?: 'live';
-        $target->save();
+        $target = app(SubscriptionService::class)->saveAuction($target);
 
         if ($target->type === 'live') {
             $this->initializeLiveAgora($target);

@@ -6,10 +6,8 @@ use App\Helpers\TranslationHelper;
 use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Models\UserSubscription;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Traits\ResponseTrait;
 
 class AuctionSubscriptionController extends Controller
@@ -29,6 +27,7 @@ class AuctionSubscriptionController extends Controller
             ->get()
             ->map(function (Package $plan) {
                 $plan->features = $plan->featuresList();
+                $plan->is_current = auth('api')->check() && optional(UserSubscription::currentSubscription(auth('api')->id()))->package_id == $plan->id;
 
                 return $plan;
             });
@@ -80,7 +79,7 @@ class AuctionSubscriptionController extends Controller
         }
 
         $latestSubscription = UserSubscription::where('user_id', auth('api')->user()->id)
-            ->latest()
+            ->orderByDesc('id')
             ->first();
 
         if (!$latestSubscription) {
@@ -116,31 +115,7 @@ class AuctionSubscriptionController extends Controller
      */
     private function createPendingSubscription(int $userId, Package $package, string $subscriptionType, $transactionImage): UserSubscription
     {
-        $expiresAt = $subscriptionType === 'monthly'
-            ? Carbon::now()->addMonth()
-            : Carbon::now()->addYear();
-
-        $price = $subscriptionType === 'monthly'
-            ? $package->monthly_price
-            : $package->annual_price;
-
-        $imageName = null;
-        if ($transactionImage) {
-            $imageName = 'user/transaction_image/'.rand(11111, 99999).'_'.$transactionImage->getClientOriginalName();
-            $transactionImage->move(public_path('../storage/app/public/user/transaction_image'), $imageName);
-        }
-
-        return UserSubscription::create([
-            'user_id' => $userId,
-            'package_id' => $package->id,
-            'subscription_type' => $subscriptionType,
-            'auctions_limit' => $package->auctions_limit,
-            'remaining_auctions' => $package->auctions_limit,
-            'expires_at' => $expiresAt,
-            'price' => $price,
-            'image' => $imageName,
-            'status' => 'pending', // Set status to pending for admin approval
-        ]);
+        return app(\App\Services\SubscriptionService::class)->request($userId, $package, $subscriptionType, $transactionImage);
     }
 
     /**
@@ -154,7 +129,7 @@ class AuctionSubscriptionController extends Controller
 
         $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
         $latestSubscription = UserSubscription::where('user_id', auth('api')->user()->id)
-            ->latest()
+            ->orderByDesc('id')
             ->first();
 
         if (!$latestSubscription) {
@@ -167,6 +142,7 @@ class AuctionSubscriptionController extends Controller
             );
         }
 
+        $latestSubscription = UserSubscription::currentSubscription(auth('api')->id()) ?? $latestSubscription;
         $package = $latestSubscription->package;
         if ($package) {
             $package->features = $package->featuresList();
@@ -174,6 +150,7 @@ class AuctionSubscriptionController extends Controller
 
         $response = [
             'has_subscription' => true,
+            'pending_request' => UserSubscription::where('user_id', auth('api')->id())->pending()->first(),
             'subscription' => [
                 'id' => $latestSubscription->id,
                 'status' => $latestSubscription->status,
@@ -181,7 +158,11 @@ class AuctionSubscriptionController extends Controller
                 'price' => $latestSubscription->price,
                 'auctions_limit' => $latestSubscription->auctions_limit,
                 'remaining_auctions' => $latestSubscription->remaining_auctions,
-                'started_at' => $latestSubscription->created_at ? $latestSubscription->created_at->format('Y-m-d') : null,
+                'used_auctions' => $latestSubscription->used_auctions,
+                'package_snapshot' => $latestSubscription->package_snapshot,
+                'started_at' => optional($latestSubscription->started_at ?? ($latestSubscription->status === 'approved' ? $latestSubscription->created_at : null))->format('Y-m-d'),
+                'is_active' => $latestSubscription->isActive(),
+                'replaced_at' => $latestSubscription->replaced_at,
                 'expires_at' => $latestSubscription->expires_at ? $latestSubscription->expires_at->format('Y-m-d H:i:s') : null,
                 'package' => $package,
                 'rejection_reason' => $latestSubscription->rejection_reason,
@@ -216,6 +197,7 @@ class AuctionSubscriptionController extends Controller
         $subscriptions = UserSubscription::where('user_id', auth('api')->user()->id)
             ->with('package')
             ->orderBy('created_at', 'desc')
+            ->orderByDesc('id')
             ->get();
 
         return $this->success_response(TranslationHelper::translate('Successfully'), $subscriptions);

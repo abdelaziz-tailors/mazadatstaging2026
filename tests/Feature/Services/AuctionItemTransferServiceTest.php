@@ -13,6 +13,20 @@ class AuctionItemTransferServiceTest extends TestCase
 {
     use DatabaseTransactions;
 
+    private function subscribedOwnerId(): int
+    {
+        $user = \App\Models\User\User::create([
+            'name' => 'Transfer subscriber', 'user_name' => 'subscription_'.bin2hex(random_bytes(8)),
+            'phone' => '01'.random_int(100000000, 999999999),
+            'password' => bcrypt('test'), 'user_type' => 'vendor', 'gender' => 'male',
+        ]);
+        \App\Models\UserSubscription::create([
+            'user_id' => $user->id, 'subscription_type' => 'monthly', 'status' => 'approved',
+            'auctions_limit' => 2, 'remaining_auctions' => 2, 'expires_at' => now()->addMonth(),
+        ]);
+        return $user->id;
+    }
+
     public function test_transfer_to_existing_auction_persists_the_destination_relation(): void
     {
         $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'recorded']);
@@ -41,7 +55,7 @@ class AuctionItemTransferServiceTest extends TestCase
         $agora->shouldReceive('getAppId')->once()->andReturn('valid-test-app-id');
         $this->app->instance(\App\Services\AgoraService::class, $agora);
 
-        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'live']);
+        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'live', 'user_id' => $this->subscribedOwnerId()]);
         $item = LiveVideoItem::create([
             'live_video_id' => $source->id,
             'title' => 'Unsold item',
@@ -100,7 +114,7 @@ class AuctionItemTransferServiceTest extends TestCase
 
     public function test_new_recorded_auction_preserves_type_and_transfers_pieces(): void
     {
-        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'recorded']);
+        $source = LiveVideo::create(['title' => 'Source', 'status' => 'end', 'type' => 'recorded', 'user_id' => $this->subscribedOwnerId()]);
         $item = LiveVideoItem::create(['live_video_id' => $source->id, 'quantity' => 1]);
         $item->pieces()->create(['piece_number' => 1, 'identifier' => 'recorded-piece']);
         [$target, $copies] = app(AuctionItemTransferService::class)->createAuctionAndTransferItems($source, [], [$item->id]);

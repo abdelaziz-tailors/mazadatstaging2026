@@ -1,4 +1,10 @@
 <?php return array (
+  'resolve_duplicate_pending_requests_before_approval' => 'Resolve duplicate pending requests before approval',
+  'subscription_request_has_no_valid_saved_duration_or_auction_quota' => 'Subscription request has no valid saved duration or auction quota',
+  'current_package' => 'Current Package',
+  'used_auctions' => 'Used Auctions',
+  'started_at' => 'Started At',
+  'subscribe' => 'Subscribe',
   'access_to_dashboard' => 'Access to our dashboard',
   'actions' => 'Actions',
   'add' => 'Add',
@@ -1634,4 +1640,5 @@
   'edit_slider' => 'edit slider',
   'not_found' => 'not found',
   'new_password_must_differ_from_current_password' => 'The new password must be different from your current password.',
+  'subscription_details' => 'Subscription Details',
 );

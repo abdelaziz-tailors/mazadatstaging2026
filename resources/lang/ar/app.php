@@ -1,4 +1,10 @@
 <?php return array (
+  'resolve_duplicate_pending_requests_before_approval' => 'يجب مراجعة طلبات الاشتراك المعلقة المكررة قبل الموافقة',
+  'subscription_request_has_no_valid_saved_duration_or_auction_quota' => 'طلب الاشتراك لا يحتوي على مدة أو حصة مزادات محفوظة صالحة',
+  'current_package' => 'الباقة الحالية',
+  'used_auctions' => 'المزادات المستخدمة',
+  'started_at' => 'تاريخ البدء',
+  'subscribe' => 'طلب اشتراك',
   'access_to_dashboard' => 'الدخول إلى لوحة التحكم',
   'actions' => 'الإجراءات',
   'add' => 'إضافة',
@@ -1649,4 +1655,5 @@
   'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
   'not_found' => 'not found',
   'new_password_must_differ_from_current_password' => 'يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية.',
+  'subscription_details' => 'تفاصيل الاشتراك',
 );

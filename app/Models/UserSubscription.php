@@ -6,15 +6,18 @@ use App\Models\User\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class UserSubscription extends Model
 {
     use HasFactory,SoftDeletes;
     protected $guarded=['id'];
+    protected $appends = ['used_auctions'];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'started_at' => 'datetime',
+        'replaced_at' => 'datetime',
+        'package_snapshot' => 'array',
     ];
 
     public function user()
@@ -33,6 +36,7 @@ class UserSubscription extends Model
     public function isActive()
     {
         return $this->status === 'approved' 
+            && !$this->replaced_at
             && $this->expires_at 
             && $this->expires_at->isFuture() 
             && $this->remaining_auctions > 0;
@@ -43,7 +47,14 @@ class UserSubscription extends Model
      */
     public function isPending()
     {
-        return $this->status === 'pending';
+        return $this->status === 'pending' || $this->status === null;
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where(function ($query) {
+            $query->where('status', 'pending')->orWhereNull('status');
+        });
     }
 
     /**
@@ -63,25 +74,23 @@ class UserSubscription extends Model
     }
 
     /**
-     * Decrement remaining auctions
-     */
-    public function decrementAuctions()
-    {
-        if ($this->remaining_auctions > 0) {
-            $this->decrement('remaining_auctions');
-        }
-    }
-
-    /**
      * Get active subscription for user
      */
     public static function getActiveSubscription($userId)
     {
-        return self::where('user_id', $userId)
-            ->where('status', 'approved')
-            ->where('expires_at', '>', now())
-            ->where('remaining_auctions', '>', 0)
-            ->latest()
-            ->first();
+        $subscription = self::currentSubscription($userId);
+        return $subscription && $subscription->isActive() ? $subscription : null;
+    }
+
+    public static function currentSubscription($userId, bool $lock = false)
+    {
+        $query = self::where('user_id', $userId)->where('status', 'approved')
+            ->whereNull('replaced_at')->orderByDesc('id');
+        return ($lock ? $query->lockForUpdate() : $query)->first();
+    }
+
+    public function getUsedAuctionsAttribute(): int
+    {
+        return max(0, (int) $this->auctions_limit - (int) $this->remaining_auctions);
     }
 }

@@ -188,7 +188,7 @@ class VideoController extends Controller
             }
         }
 
-        $data=LiveVideo::create([
+        $data=app(\App\Services\SubscriptionService::class)->createAuction([
             'title'=>$request->title,
             'title_ar'=>$request->title_ar,
             'user_id' => $userId,

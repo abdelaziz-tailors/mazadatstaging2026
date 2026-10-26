@@ -159,7 +159,7 @@
                     </li>
                 @endif
 
-                @if (Auth::guard('admin')->user()->canAny(['view packages', 'user-subscriptions.view']))
+                @if (\App\Support\PartnerDashboardScope::isPartner() || Auth::guard('admin')->user()->canAny(['view packages', 'user-subscriptions.view', 'view user subscriptions']))
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-box"></i>

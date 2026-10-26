@@ -133,13 +133,6 @@ class LiveVideoController extends Controller
                 );
             }
 
-            if ($activeSubscription->remaining_auctions <= 0) {
-                return $this->failed_response(
-                    TranslationHelper::translate('You have no remaining auctions. Please renew your subscription.'),
-                    '422'
-                );
-            }
-
             $admin_id = auth('api')->user()->admin->id ?? null;
 
             $videoType = $request->video_type ?? 'live';
@@ -154,7 +147,7 @@ class LiveVideoController extends Controller
                 $agoraAppId = $agoraService->getAppId();
             }
 
-            $data = LiveVideo::create([
+            $data = app(\App\Services\SubscriptionService::class)->createAuction([
                 'user_id' => auth('api')->user()->id,
                 'admin_id' => $admin_id,
                 'partner_id' => auth('api')->user()->admin->id ?? null,
@@ -184,10 +177,6 @@ class LiveVideoController extends Controller
 
 
             ]);
-
-            // Decrement remaining auctions from subscription
-            $activeSubscription->decrementAuctions();
-
         }
         try {
             $firebase = new FirebaseController();

@@ -270,6 +270,41 @@
 
 
 @section('content')
+@if(isset($plans))
+    @if($current)
+        <div class="card"><div class="card-body">
+            <h4>{{ TranslationHelper::translate('Subscription Details') }}</h4>
+            <p>{{ TranslationHelper::translate('Package') }}: {{ json_decode($current->package_snapshot['name'] ?? '{}', true)[app()->getLocale()] ?? optional($current->package)->name ?? '-' }}</p>
+            <p>{{ TranslationHelper::translate('Status') }}: {{ TranslationHelper::translate($current->isActive() ? 'Active' : 'Inactive') }}</p>
+            <p>{{ TranslationHelper::translate('Started At') }}: {{ $current->started_at ?? $current->created_at }} / {{ TranslationHelper::translate('Expires At') }}: {{ $current->expires_at }}</p>
+            <p>{{ TranslationHelper::translate('Auctions Limit') }}: {{ $current->auctions_limit }} / {{ TranslationHelper::translate('Used Auctions') }}: {{ $current->used_auctions }} / {{ TranslationHelper::translate('Remaining Auctions') }}: {{ $current->remaining_auctions }}</p>
+        </div></div>
+    @endif
+    <div class="row">
+    @foreach($plans as $plan)
+        <div class="col-md-4"><div class="card {{ $current && $current->package_id == $plan->id ? 'border border-success' : '' }}"><div class="card-body">
+            <h4>{{ json_decode($plan->name, true)[app()->getLocale()] ?? '-' }}</h4>
+            @if($current && $current->package_id == $plan->id)<span class="badge bg-success">{{ TranslationHelper::translate('Current Package') }}</span>@endif
+            <p>{{ json_decode($plan->description, true)[app()->getLocale()] ?? '-' }}</p>
+            @foreach($plan->featuresList() as $feature)<p>{{ $feature }}</p>@endforeach
+            <p>{{ TranslationHelper::translate('Auctions Limit') }}: {{ $plan->auctions_limit }}</p>
+            <form method="POST" action="{{ route('admin.user-subscriptions.store') }}">
+                @csrf
+                <input type="hidden" name="package_id" value="{{ $plan->id }}">
+                <select name="subscription_type" class="form-control">
+                    <option value="monthly">{{ TranslationHelper::translate('Monthly') }} &mdash; {{ $plan->monthly_price }}</option>
+                    <option value="annual">{{ TranslationHelper::translate('Annual') }} &mdash; {{ $plan->annual_price }}</option>
+                </select>
+                <button class="btn btn-primary mt-2" {{ $history->contains(function ($entry) { return $entry->isPending(); }) ? 'disabled' : '' }}>{{ TranslationHelper::translate('Subscribe') }}</button>
+            </form>
+        </div></div></div>
+    @endforeach
+    </div>
+    <div class="card"><div class="card-body table-responsive"><table class="table">
+        <thead><tr><th>{{ TranslationHelper::translate('ID') }}</th><th>{{ TranslationHelper::translate('Status') }}</th><th>{{ TranslationHelper::translate('Started At') }}</th><th>{{ TranslationHelper::translate('Expires At') }}</th></tr></thead>
+        <tbody>@foreach($history as $entry)<tr><td>{{ $entry->id }}</td><td>{{ TranslationHelper::translate(ucfirst($entry->status)) }}</td><td>{{ $entry->started_at }}</td><td>{{ $entry->expires_at }}</td></tr>@endforeach</tbody>
+    </table></div></div>
+@else
 @include('dashboard.partials.page-header', [
     'title' => TranslationHelper::translate('User Subscriptions'),
     'icon' => 'fa-solid fa-briefcase',
@@ -444,9 +479,11 @@
 </div>
 <!--end::Card-->
 
+@endif
 @endsection
 
 @section('scripts_lib')
+@if(!isset($plans))
 <script src="{{asset('dashboard/plugins/datatables/datatables.min.js')}}"></script>
 <script>
     $('#data-table').DataTable({
@@ -514,5 +551,5 @@
         $('#data-table').DataTable().search('').draw(true);
     });
 </script>
+@endif
 @endsection
-

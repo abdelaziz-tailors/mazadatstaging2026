@@ -199,9 +199,7 @@ class LiveVideoItemTransferController extends Controller
                     'terms_conditions' => $newAuction['terms_conditions'] ?? null,
                     'terms_conditions_ar' => $newAuction['terms_conditions_ar'] ?? null,
                     'city_id' => $newAuction['city_id'] ?? null,
-                ], $request->item_ids, function () use ($activeSubscription) {
-                    $activeSubscription->decrementAuctions();
-                });
+                ], $request->item_ids);
             }
 
             return $this->success_response(TranslationHelper::translate('items_transferred_successfully'), [

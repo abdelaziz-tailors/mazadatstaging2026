@@ -1,5 +1,17 @@
 # AI Handoff
 
+## 2026-10-26 — Subscription runtime and MariaDB verification
+
+- Continue the existing subscription implementation; no parallel endpoints or tables were added.
+- PHP 8.2.12 now boots and passes Composer platform checks with sodium/zip enabled. Added a PHP 8.2 platform constraint; only `lcobucci/clock` (3.6.0 → 3.3.1) and `maennchen/zipstream-php` (3.2.0 → 3.1.2) changed in the lock file.
+- Fresh isolated MariaDB 10.4.32 on loopback port 33317: all 135 discovered migrations applied. Core subscription/auction tables plus notifications/items/pieces were InnoDB, default isolation REPEATABLE READ. No Production connections or operations were performed.
+- Migration now checks engines before DDL, stops on existing/partial snapshot schema or equivalent indexes, restores a needed FK index during unused-schema rollback, and refuses populated-schema rollback. No engine conversion, backfill, or historical cleanup is included.
+- Legacy NULL Pending status uses the shared gate. Duplicate Pending rows block approval until explicitly resolved by an admin; invalid legacy duration/quota cannot replace the current subscription. No historical records are silently changed.
+- Final relevant MariaDB run: 59 tests, 808 assertions, 58 passed / 1 expected NULL-status skip. SQLite run: 24 tests, 138 assertions, 21 passed / 3 MariaDB-only skips. Actual process races verified two simultaneous subscriber-row lock waits. Real Dashboard/Mobile creation and transfers were exercised with external Firebase/FCM mocked.
+- A broader exploratory run exposed six unrelated `AuctionCreationValidationTest` failures because its SQLite fixture lacks `live_videos`; left untouched. Existing opt-in authorization audit tests were skipped by their original environment guards. Missing unique usernames in the subscription API/transfer fixtures were corrected.
+- Do not roll back to pre-feature code after use: it ignores `replaced_at` and can revive forfeited entitlement. Keep the additive schema and deploy a compatible forward fix.
+- Full findings, changed-file list, reproducible isolated test environment, SQL preflight, and deployment steps: `docs/api/user-package-subscription.md`, “MariaDB / PHP 8.2 audit”. No push, merge, or deployment.
+
 ## 2026-08-26 — Production hotfix: transfer persistence and live Agora
 
 - Bug 1 root cause/fix: existing-auction transfer now persists each cloned item
