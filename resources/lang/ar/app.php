@@ -1648,4 +1648,5 @@
   'bshsh' => 'Bshsh',
   'مزاد_عالم_أنعام_تيست' => 'مزاد عالم أنعام تيست',
   'not_found' => 'not found',
+  'new_password_must_differ_from_current_password' => 'يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية.',
 );

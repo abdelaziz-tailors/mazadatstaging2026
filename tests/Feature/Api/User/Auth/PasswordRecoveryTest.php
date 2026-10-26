@@ -75,6 +75,41 @@ class PasswordRecoveryTest extends TestCase
         $this->reset(['otp' => $code])->assertJsonPath('success', false);
     }
 
+    /** @dataProvider reusedPasswordMessages */
+    public function test_current_password_is_rejected_without_consuming_otp(string $locale, string $message): void
+    {
+        app('laravellocalization')->setSupportedLocales([
+            'en' => ['name' => 'English', 'native' => 'English'],
+            'ar' => ['name' => 'Arabic', 'native' => 'العربية'],
+        ]);
+        app()->setLocale($locale);
+        $user = $this->user();
+        $originalPassword = $user->password;
+        $originalExpiry = $user->expire_at;
+        $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
+            $mock->shouldNotReceive('make');
+        });
+
+        $this->reset(['password' => 'old-password', 'password_confirmation' => 'old-password'])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('code', 422)
+            ->assertJsonPath('message', $message);
+
+        $user->refresh();
+        $this->assertSame($originalPassword, $user->password);
+        $this->assertSame('1234', $user->password_otp);
+        $this->assertEquals($originalExpiry, $user->expire_at);
+    }
+
+    public static function reusedPasswordMessages(): array
+    {
+        return [
+            'English' => ['en', 'The new password must be different from your current password.'],
+            'Arabic' => ['ar', 'يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية.'],
+        ];
+    }
+
     public function test_token_failure_rolls_back_password_and_otp_consumption(): void
     {
         $user = $this->user();

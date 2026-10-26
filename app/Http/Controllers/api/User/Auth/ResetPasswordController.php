@@ -10,6 +10,7 @@ use App\Traits\HelperTrait;
 use App\Traits\ResponseTrait;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class ResetPasswordController extends Controller
 {
@@ -27,6 +28,13 @@ class ResetPasswordController extends Controller
 
             if (! $user->expire_at || Carbon::now()->greaterThanOrEqualTo($user->expire_at)) {
                 return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
+            }
+
+            if (Hash::check($request->password, $user->password)) {
+                return $this->failed_response(
+                    TranslationHelper::translate('new_password_must_differ_from_current_password'),
+                    422
+                );
             }
 
             $user->password = bcrypt($request->password);
