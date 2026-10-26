@@ -137,6 +137,14 @@ class Permissions {
 //            ]
 //        ],
         [
+            'name' => 'user subscriptions',
+            'permissions' => [
+                'view user subscriptions' => 'view',
+                'approve user subscription' => 'Approve',
+                'reject user subscription' => 'Reject',
+            ]
+        ],
+        [
             'name' => 'packages',
             'permissions' => [
                 'view packages' => 'view',
