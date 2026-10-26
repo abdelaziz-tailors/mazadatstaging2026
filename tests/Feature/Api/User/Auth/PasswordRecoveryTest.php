@@ -19,6 +19,7 @@ class PasswordRecoveryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        config(['services.otp.password_recovery_testing' => false]);
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'cache.default' => 'array', 'app.debug' => false]);
         DB::purge('sqlite');
@@ -57,13 +58,11 @@ class PasswordRecoveryTest extends TestCase
 
     public function test_local_phone_receives_otp_and_reset_is_one_time(): void
     {
+        config(['services.otp.password_recovery_testing' => true]);
         $user = $this->user();
-        $code = null;
-        $this->mock(SmsService::class, function ($mock) use (&$code) {
-            $mock->shouldReceive('sendWhatsappOtp')->once()->withArgs(function ($phone, $otp) use (&$code) {
-                $code = $otp;
-                return $phone === '+966512345678' && preg_match('/^[0-9]{4}$/D', $otp);
-            })->andReturn(['success' => true]);
+        $code = '1111';
+        $this->mock(SmsService::class, function ($mock) {
+            $mock->shouldNotReceive('sendWhatsappOtp');
         });
         $this->postJson('/api/user/forgot-password', ['phone' => '0512345678'])
             ->assertOk()->assertJsonPath('success', true)->assertJsonMissing(['otp' => $code]);

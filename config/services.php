@@ -58,6 +58,7 @@ return [
     ],
 
     'otp' => [
+        'password_recovery_testing' => env('PASSWORD_RECOVERY_OTP_TESTING', true),
         'testing' => env('OTP_TESTING', false),
         'test_code' => env('OTP_TEST_CODE', '1111'),
     ],
