@@ -22,8 +22,10 @@ class Package extends Model
      */
     public function featuresList(?string $locale = null): array
     {
-        $decoded = json_decode($this->features ?? '', true);
+        $features = \App\Helpers\TranslationHelper::localizedValue($this->features, $locale);
 
-        return $decoded[$locale ?? app()->getLocale()] ?? [];
+        return array_values(array_filter(is_array($features) ? $features : [$features], function ($feature) {
+            return is_string($feature) && trim($feature) !== '';
+        }));
     }
 }

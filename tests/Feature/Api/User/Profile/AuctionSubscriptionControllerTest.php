@@ -51,6 +51,62 @@ class AuctionSubscriptionControllerTest extends TestCase
         ], $overrides));
     }
 
+    public static function localizedSubscriptions(): array
+    {
+        $cases = [];
+        foreach (['ar', 'en'] as $locale) {
+            foreach (['pending', 'approved', 'rejected'] as $status) {
+                foreach (['json', 'map', 'legacy'] as $shape) {
+                    $cases["$locale-$status-$shape"] = [$locale, $status, $shape];
+                }
+            }
+        }
+        return $cases;
+    }
+
+    /** @dataProvider localizedSubscriptions */
+    public function test_subscription_display_uses_snapshot_or_legacy_package(string $locale, string $status, string $shape)
+    {
+        $user = $this->createUser();
+        $package = $this->createPackage();
+        $snapshot = [
+            'name' => ['ar' => 'الباقة المحفوظة', 'en' => 'Saved package'],
+            'description' => ['ar' => 'الوصف المحفوظ', 'en' => 'Saved description'],
+            'features' => ['ar' => ['ميزة محفوظة'], 'en' => ['Saved feature']],
+        ];
+        if ($shape === 'json') {
+            $snapshot = array_map('json_encode', $snapshot);
+        }
+        $subscription = UserSubscription::create([
+            'user_id' => $user->id, 'package_id' => $package->id,
+            'subscription_type' => 'monthly', 'status' => $status,
+            'price' => 300, 'auctions_limit' => 20, 'remaining_auctions' => 15,
+            'expires_at' => now()->addMonth(),
+            'package_snapshot' => $shape === 'legacy' ? null : $snapshot,
+        ]);
+        $stored = $subscription->fresh()->getRawOriginal('package_snapshot');
+        $source = $shape === 'legacy' ? $package->getAttributes() : $snapshot;
+        $expected = [];
+        foreach (['name', 'description', 'features'] as $field) {
+            $value = is_string($source[$field]) ? json_decode($source[$field], true) : $source[$field];
+            $expected[$field] = $value[$locale];
+        }
+        Passport::actingAs($user, [], 'api');
+        $headers = array_merge($this->headers(), ['Accept-Language' => $locale]);
+        foreach (['subscription-status' => 'data.subscription', 'subscription-history' => 'data.0'] as $endpoint => $path) {
+            $response = $this->withHeaders($headers)->getJson('/api/user/'.$endpoint);
+            $response->assertOk()
+                ->assertJsonPath($path.'.package_display_name', $expected['name'])
+                ->assertJsonPath($path.'.package_display_description', $expected['description'])
+                ->assertJsonPath($path.'.package_display_features', $expected['features']);
+            $this->assertEquals($shape === 'legacy' ? null : $snapshot, $response->json($path.'.package_snapshot'));
+            if ($endpoint === 'subscription-status' && $status === 'pending') {
+                $response->assertJsonPath('data.pending_request.package_display_name', $expected['name']);
+            }
+        }
+        $this->assertSame($stored, $subscription->fresh()->getRawOriginal('package_snapshot'));
+    }
+
     public function test_get_plans_returns_active_packages_with_localized_features()
     {
         $this->createPackage();

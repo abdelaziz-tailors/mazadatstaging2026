@@ -5,6 +5,23 @@ namespace App\Helpers;
 use Mcamara\LaravelLocalization\Facades\LaravelLocalization;
 
 class TranslationHelper {
+    /** Decode stored multilingual values without changing the saved data. */
+    public static function localizedValue($value, ?string $locale = null)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        if (is_array($value) && (array_key_exists('ar', $value) || array_key_exists('en', $value))) {
+            return self::localizedValue($value[$locale ?? app()->getLocale()] ?? $value['ar'] ?? $value['en'] ?? null, $locale);
+        }
+
+        return $value;
+    }
+
     public static function translate($key, $localeCode = NULL)
     {
         if ($localeCode == NULL) {

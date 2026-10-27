@@ -150,8 +150,9 @@ class AuctionSubscriptionController extends Controller
 
         $response = [
             'has_subscription' => true,
-            'pending_request' => UserSubscription::where('user_id', auth('api')->id())->pending()->first(),
-            'subscription' => [
+            'pending_request' => ($pending = UserSubscription::where('user_id', auth('api')->id())->pending()->first())
+                ? array_merge($pending->toArray(), $this->packageDisplay($pending)) : null,
+            'subscription' => array_merge([
                 'id' => $latestSubscription->id,
                 'status' => $latestSubscription->status,
                 'subscription_type' => $latestSubscription->subscription_type,
@@ -166,7 +167,7 @@ class AuctionSubscriptionController extends Controller
                 'expires_at' => $latestSubscription->expires_at ? $latestSubscription->expires_at->format('Y-m-d H:i:s') : null,
                 'package' => $package,
                 'rejection_reason' => $latestSubscription->rejection_reason,
-            ]
+            ], $this->packageDisplay($latestSubscription))
         ];
 
         if ($latestSubscription->status === 'pending') {
@@ -200,6 +201,22 @@ class AuctionSubscriptionController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return $this->success_response(TranslationHelper::translate('Successfully'), $subscriptions);
+        return $this->success_response(TranslationHelper::translate('Successfully'), $subscriptions->map(function (UserSubscription $subscription) {
+            return array_merge($subscription->toArray(), $this->packageDisplay($subscription));
+        }));
+    }
+
+    private function packageDisplay(UserSubscription $subscription): array
+    {
+        $source = $subscription->package_snapshot ?: ($subscription->package ? $subscription->package->getAttributes() : []);
+        $package = new Package($source);
+        $name = TranslationHelper::localizedValue($package->name);
+        $description = TranslationHelper::localizedValue($package->description);
+
+        return [
+            'package_display_name' => is_string($name) ? $name : '',
+            'package_display_description' => is_string($description) ? $description : '',
+            'package_display_features' => $package->featuresList(),
+        ];
     }
 }
