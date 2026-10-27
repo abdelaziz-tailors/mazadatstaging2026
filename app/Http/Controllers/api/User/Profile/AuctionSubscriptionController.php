@@ -61,7 +61,7 @@ class AuctionSubscriptionController extends Controller
 
         return $this->success_response(
             TranslationHelper::translate('Subscription created successfully. Waiting for admin approval.'),
-            $subscription
+            $this->serializeSubscription($subscription)
         );
     }
 
@@ -104,7 +104,7 @@ class AuctionSubscriptionController extends Controller
 
         return $this->success_response(
             TranslationHelper::translate('Subscription renewal requested successfully. Waiting for admin approval.'),
-            $subscription
+            $this->serializeSubscription($subscription)
         );
     }
 
@@ -144,15 +144,12 @@ class AuctionSubscriptionController extends Controller
 
         $latestSubscription = UserSubscription::currentSubscription(auth('api')->id()) ?? $latestSubscription;
         $package = $latestSubscription->package;
-        if ($package) {
-            $package->features = $package->featuresList();
-        }
 
         $response = [
             'has_subscription' => true,
             'pending_request' => ($pending = UserSubscription::where('user_id', auth('api')->id())->pending()->first())
-                ? array_merge($pending->toArray(), $this->packageDisplay($pending)) : null,
-            'subscription' => array_merge([
+                ? $this->serializeSubscription($pending) : null,
+            'subscription' => [
                 'id' => $latestSubscription->id,
                 'status' => $latestSubscription->status,
                 'subscription_type' => $latestSubscription->subscription_type,
@@ -160,14 +157,14 @@ class AuctionSubscriptionController extends Controller
                 'auctions_limit' => $latestSubscription->auctions_limit,
                 'remaining_auctions' => $latestSubscription->remaining_auctions,
                 'used_auctions' => $latestSubscription->used_auctions,
-                'package_snapshot' => $latestSubscription->package_snapshot,
+                'package_snapshot' => $this->serializeSubscription($latestSubscription)['package_snapshot'],
                 'started_at' => optional($latestSubscription->started_at ?? ($latestSubscription->status === 'approved' ? $latestSubscription->created_at : null))->format('Y-m-d'),
                 'is_active' => $latestSubscription->isActive(),
                 'replaced_at' => $latestSubscription->replaced_at,
                 'expires_at' => $latestSubscription->expires_at ? $latestSubscription->expires_at->format('Y-m-d H:i:s') : null,
-                'package' => $package,
+                'package' => $package ? $this->localizePackage($package->toArray()) : null,
                 'rejection_reason' => $latestSubscription->rejection_reason,
-            ], $this->packageDisplay($latestSubscription))
+            ]
         ];
 
         if ($latestSubscription->status === 'pending') {
@@ -202,21 +199,34 @@ class AuctionSubscriptionController extends Controller
             ->get();
 
         return $this->success_response(TranslationHelper::translate('Successfully'), $subscriptions->map(function (UserSubscription $subscription) {
-            return array_merge($subscription->toArray(), $this->packageDisplay($subscription));
+            return $this->serializeSubscription($subscription);
         }));
     }
 
-    private function packageDisplay(UserSubscription $subscription): array
+    /** Localize response copies only; never assign display values to saved models. */
+    private function serializeSubscription(UserSubscription $subscription): array
     {
-        $source = $subscription->package_snapshot ?: ($subscription->package ? $subscription->package->getAttributes() : []);
-        $package = new Package($source);
-        $name = TranslationHelper::localizedValue($package->name);
-        $description = TranslationHelper::localizedValue($package->description);
+        $data = $subscription->toArray();
+        if (is_array($data['package_snapshot'] ?? null)) {
+            $data['package_snapshot'] = $this->localizePackage($data['package_snapshot']);
+        }
+        // Legacy records retain a null snapshot and display the related package.
+        if ($subscription->package_snapshot === null || array_key_exists('package', $data)) {
+            $data['package'] = $subscription->package
+                ? $this->localizePackage($subscription->package->toArray()) : null;
+        }
 
-        return [
-            'package_display_name' => is_string($name) ? $name : '',
-            'package_display_description' => is_string($description) ? $description : '',
-            'package_display_features' => $package->featuresList(),
-        ];
+        return $data;
+    }
+
+    private function localizePackage(array $data): array
+    {
+        foreach (['name', 'description'] as $field) {
+            $value = TranslationHelper::localizedValue($data[$field] ?? null);
+            $data[$field] = is_string($value) ? $value : '';
+        }
+        $data['features'] = (new Package($data))->featuresList();
+
+        return $data;
     }
 }
