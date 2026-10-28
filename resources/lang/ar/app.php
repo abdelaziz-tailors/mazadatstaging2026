@@ -1648,7 +1648,7 @@
   'cancel' => 'إلغاء',
   'your_subscription_is_not_active' => 'Your subscription is not active',
   'added_successfully' => 'Added Successfully',
-  'subscription_rejected_successfully' => 'Subscription Rejected Successfully',
+  'subscription_rejected_successfully' => 'تم رفض الاشتراك بنجاح',
   'test_mazad' => 'Test mazad',
   'please_enter_item_service_name' => 'يرجى إدخال اسم الخدمة',
   'bshsh' => 'Bshsh',

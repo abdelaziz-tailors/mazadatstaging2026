@@ -53,6 +53,7 @@ class SubscriptionManagementTest extends TestCase
         Schema::create('users', function (Blueprint $t) {
             $t->id(); $t->string('name'); $t->string('user_name'); $t->string('phone'); $t->string('email'); $t->string('gender');
             $t->string('user_type')->nullable(); $t->boolean('is_verified')->default(false); $t->timestamps(); $t->softDeletes();
+            $t->string('app_lang')->default('en');
         });
         Schema::create('packages', function (Blueprint $t) {
             $t->id(); $t->text('name'); $t->text('description')->nullable(); $t->text('features')->nullable();
@@ -70,6 +71,7 @@ class SubscriptionManagementTest extends TestCase
         (new \AddSubscriptionRequestSnapshots())->up();
         Schema::create('notifications', function (Blueprint $t) {
             $t->id(); $t->unsignedBigInteger('user_id'); $t->string('type'); $t->string('title'); $t->text('description'); $t->json('data'); $t->timestamps();
+            $t->timestamp('read_at')->nullable();
         });
         Schema::create('live_videos', function (Blueprint $t) {
             $t->id(); $t->unsignedBigInteger('user_id'); $t->string('title'); $t->timestamps();
@@ -281,6 +283,58 @@ class SubscriptionManagementTest extends TestCase
         }
         $this->assertSame('pending', $pending->fresh()->status);
         $this->assertSame(0, Notification::count());
+    }
+
+    /** @dataProvider subscriptionNotificationLanguages */
+    public function test_decision_notification_uses_subscriber_language_in_storage_and_mobile_api(
+        string $subscriberLocale, string $adminLocale, bool $approve, string $expected
+    ) {
+        $this->user->update(['app_lang' => $subscriberLocale]);
+        $pending = $this->request();
+        app()->setLocale($adminLocale);
+
+        $this->assertTrue($this->service->decide($pending->id, $approve));
+        $this->assertSame($adminLocale, app()->getLocale());
+        $status = $approve ? 'approved' : 'rejected';
+        $notification = Notification::sole();
+        $this->assertSame($this->user->id, $notification->user_id);
+        $this->assertSame('subscription', $notification->type);
+        $this->assertSame($expected, $notification->title);
+        $this->assertSame($expected, $notification->description);
+        $this->assertSame(['user_subscription_id' => $pending->id, 'status' => $status], $notification->data);
+        $this->assertSame($status, $pending->fresh()->status);
+        $this->assertFalse($this->service->decide($pending->id, $approve));
+        $this->assertSame(1, Notification::count());
+
+        \Laravel\Passport\Passport::actingAs($this->user->fresh(), [], 'api');
+        // Exercise the real route/controller/resource; the shared API key is unrelated to localization.
+        $this->withoutMiddleware('APISettings')->getJson('/api/user/notifications')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.type', 'subscription')
+            ->assertJsonPath('data.0.title', $expected)
+            ->assertJsonPath('data.0.description', $expected)
+            ->assertJsonPath('data.0.data.user_subscription_id', $pending->id)
+            ->assertJsonPath('data.0.data.status', $status)
+            ->assertJsonPath('data.0.is_read', false)
+            ->assertJsonPath('unread_count', 1);
+    }
+
+    public static function subscriptionNotificationLanguages(): array
+    {
+        $cases = [];
+        foreach (['ar', 'en'] as $subscriberLocale) {
+            foreach (['ar', 'en'] as $adminLocale) {
+                foreach ([true, false] as $approve) {
+                    $expected = $subscriberLocale === 'ar'
+                        ? ($approve ? 'تمت الموافقة على الاشتراك بنجاح' : 'تم رفض الاشتراك بنجاح')
+                        : ($approve ? 'Subscription Approved Successfully' : 'Subscription Rejected Successfully');
+                    $cases[$subscriberLocale.' subscriber, '.$adminLocale.' admin, '.($approve ? 'approve' : 'reject')]
+                        = [$subscriberLocale, $adminLocale, $approve, $expected];
+                }
+            }
+        }
+        return $cases;
     }
 
     public function test_notification_failure_rolls_back_the_entire_decision()

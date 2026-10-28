@@ -77,8 +77,9 @@ class SubscriptionService
             }
             $request->update($changes);
             $message = $approve ? 'Subscription Approved Successfully' : 'Subscription Rejected Successfully';
-            NotificationService::notify($user->id, 'subscription', TranslationHelper::translate($message),
-                TranslationHelper::translate($message), ['user_subscription_id' => $request->id, 'status' => $request->status]);
+            $locale = $user->app_lang ?: config('app.fallback_locale');
+            NotificationService::notify($user->id, 'subscription', TranslationHelper::translate($message, $locale),
+                TranslationHelper::translate($message, $locale), ['user_subscription_id' => $request->id, 'status' => $request->status]);
             return true;
         }, 3);
     }
