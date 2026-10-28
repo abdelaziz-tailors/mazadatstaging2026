@@ -30,6 +30,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('recordedvideostart:check')->everyMinute();
         $schedule->command('notifications:upcoming-auction-reminders')->everyFiveMinutes();
         $schedule->command('notifications:subscription-expiry-reminders')->hourly();
+        $schedule->command('notifications:retry-pushes')->everyMinute()->withoutOverlapping();
     }
 
     /**

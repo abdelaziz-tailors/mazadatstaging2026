@@ -326,7 +326,10 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::with('currentVideoItems')->find($id);
+        $data = LiveVideo::with('currentVideoItems')->where('user_id', auth('api')->id())->find($id);
+        if (! $data) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+        }
         $data->update([
             'status' => 'start',
         ]);
@@ -338,42 +341,6 @@ class LiveVideoController extends Controller
         }
 
 
-        $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
-        $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
-        $notification_record = [
-            'title_en' => 'Auction Started: ' . $data->title,
-            'title_ar' => 'بدأ المزاد: ' . $data->title_ar,
-            'body_en' => 'Auction "' . $data->title . '" has started on ' . $data->date_start_at . ' at ' . $data->time_start_at,
-            'body_ar' => 'بدأ المزاد "' . $data->title . '" بتاريخ ' . $data->date_start_at . ' في ' . $data->time_start_at,
-        ];
-
-        // Send FCM notifications directly
-        try {
-            $fcmService = new FCMService();
-
-            if (!empty($tokens_en)) {
-                $result_en = $fcmService->sendToMultipleDevices(
-                    $tokens_en,
-                    $notification_record['title_en'],
-                    $notification_record['body_en']
-                );
-                Log::info('Auction Start - EN notification result', $result_en);
-            }
-
-            if (!empty($tokens_ar)) {
-                $result_ar = $fcmService->sendToMultipleDevices(
-                    $tokens_ar,
-                    $notification_record['title_ar'],
-                    $notification_record['body_ar']
-                );
-                Log::info('Auction Start - AR notification result', $result_ar);
-            }
-        } catch (\Exception $e) {
-            Log::error('Auction Start - FCM error: ' . $e->getMessage());
-        }
-
-
-
         $data = new MyLiveVideoResource($data);
         return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
     }
@@ -382,7 +349,10 @@ class LiveVideoController extends Controller
         if (!auth('api')->user()) {
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
-        $data = LiveVideo::with('currentVideoItems')->find($id);
+        $data = LiveVideo::with('currentVideoItems')->where('user_id', auth('api')->id())->find($id);
+        if (! $data) {
+            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+        }
 
         $hight_pirce = VideoComment::where('video_id', $id)->orderByDesc('comment')->first();
 
@@ -397,42 +367,6 @@ class LiveVideoController extends Controller
             $firebase->removeLive($id);
         } catch (\Exception $t) {
         }
-
-
-        $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
-        $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
-        $notification_record = [
-            'title_en' => 'Auction Ended: ' . $data->title,
-            'title_ar' => 'انتهى المزاد: ' . $data->title_ar,
-            'body_en' => 'Auction "' . $data->title . '" has ended on ' . $data->date_end_at . ' at ' . $data->time_end_at,
-            'body_ar' => 'انتهى المزاد "' . $data->title . '" بتاريخ ' . $data->date_end_at . ' في ' . $data->time_end_at,
-        ];
-
-        // Send FCM notifications directly
-        try {
-            $fcmService = new FCMService();
-
-            if (!empty($tokens_en)) {
-                $result_en = $fcmService->sendToMultipleDevices(
-                    $tokens_en,
-                    $notification_record['title_en'],
-                    $notification_record['body_en']
-                );
-                Log::info('Auction End - EN notification result', $result_en);
-            }
-
-            if (!empty($tokens_ar)) {
-                $result_ar = $fcmService->sendToMultipleDevices(
-                    $tokens_ar,
-                    $notification_record['title_ar'],
-                    $notification_record['body_ar']
-                );
-                Log::info('Auction End - AR notification result', $result_ar);
-            }
-        } catch (\Exception $e) {
-            Log::error('Auction End - FCM error: ' . $e->getMessage());
-        }
-
 
 
         $data = new MyLiveVideoResource($data);

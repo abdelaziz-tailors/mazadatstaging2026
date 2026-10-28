@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SellerSubmission extends Model
 {
+    use \App\Models\Concerns\NotifiesLifecycleTransitions;
     use HasFactory, SoftDeletes;
 
     protected $guarded = ['id'];

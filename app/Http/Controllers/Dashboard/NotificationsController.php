@@ -41,7 +41,8 @@ class NotificationsController extends Controller
 
     // get index data by ajax
     public function get_data (Request $request) {
-        $country = Notification::select('id','title', 'description', 'created_at')->get();
+        $this->authorizable('view notifications');
+        $country = Notification::whereNull('user_id')->select('id','title', 'description', 'created_at')->get();
         return Datatables::of($country)
             ->editColumn('description', function(Notification $item) {
                 $description = $item->description ?? '';
@@ -221,7 +222,7 @@ class NotificationsController extends Controller
     public function view($id)
     {
         $this->authorizable('edit notification');
-        $notification = Notification::findorfail($id);
+        $notification = Notification::whereNull('user_id')->findorfail($id);
         return view('dashboard.pages.notifications.edit', compact(['notification']));
     }
 
@@ -246,7 +247,7 @@ class NotificationsController extends Controller
     public function destroy($id)
     {
         $this->authorizable('delete notification');
-        $notification = Notification::findorfail($id);
+        $notification = Notification::whereNull('user_id')->findorfail($id);
         $notification->delete();
         Toastr::success(TranslationHelper::translate('Notification Deleted Successfully'));
         return redirect()->route('admin.notifications.index');

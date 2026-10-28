@@ -1656,4 +1656,6 @@
   'not_found' => 'not found',
   'new_password_must_differ_from_current_password' => 'يجب أن تكون كلمة المرور الجديدة مختلفة عن كلمة المرور الحالية.',
   'subscription_details' => 'تفاصيل الاشتراك',
+  'already_approved' => 'تمت الموافقة بالفعل',
+  'updated_successfully' => 'تم التحديث بنجاح',
 );

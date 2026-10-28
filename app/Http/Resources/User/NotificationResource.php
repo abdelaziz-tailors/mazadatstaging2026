@@ -17,6 +17,12 @@ class NotificationResource extends JsonResource
         'payment_reminder' => ['icon' => 'dollar', 'color' => 'warning'],
         'auction_won' => ['icon' => 'trophy', 'color' => 'success'],
         'outbid' => ['icon' => 'close', 'color' => 'danger'],
+        'auction_started' => ['icon' => 'gavel', 'color' => 'success'],
+        'auction_ended' => ['icon' => 'gavel', 'color' => 'info'],
+        'auction_status_changed' => ['icon' => 'gavel', 'color' => 'info'],
+        'seller_request_status_changed' => ['icon' => 'bell', 'color' => 'info'],
+        'order_status_changed' => ['icon' => 'bell', 'color' => 'info'],
+        'order_payment_status_changed' => ['icon' => 'dollar', 'color' => 'info'],
     ];
 
     /**

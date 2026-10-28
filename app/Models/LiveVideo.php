@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 
 class LiveVideo extends Model
 {
+    use \App\Models\Concerns\NotifiesLifecycleTransitions;
     use HasFactory;
     protected $guarded = ['id'];
     public function user_Video()

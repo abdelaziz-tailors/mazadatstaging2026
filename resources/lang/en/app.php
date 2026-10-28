@@ -1641,4 +1641,6 @@
   'not_found' => 'not found',
   'new_password_must_differ_from_current_password' => 'The new password must be different from your current password.',
   'subscription_details' => 'Subscription Details',
+  'already_approved' => 'Already approved',
+  'updated_successfully' => 'Updated successfully',
 );

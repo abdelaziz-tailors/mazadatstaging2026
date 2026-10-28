@@ -3,9 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\FirebaseController;
-use App\Jobs\SendFCMNotification;
 use App\Models\LiveVideo;
-use App\Models\User\User;
 use Illuminate\Console\Command;
 
 class CheckRecordedVideoStart extends Command
@@ -71,62 +69,28 @@ class CheckRecordedVideoStart extends Command
 
 
         foreach ($videos as $video) {
-
-
-
-
-
-            try {
-                $tokens_en = User::whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
-                $tokens_ar = User::whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
-                $notification_record = [
-                    'title_en' => 'Auction Started: ' . $video->title,
-                    'title_ar' => 'بدأ المزاد: ' . $video->title_ar,
-                    'body_en'  => 'Auction "' . $video->title . '" has started on ' . $video->date_start_at . ' at ' . $video->time_start_at,
-                    'body_ar'  => 'بدأ المزاد "' . $video->title . '" بتاريخ ' . $video->date_start_at . ' في ' . $video->time_start_at,
-                ];
-                dispatch(new SendFCMNotification(
-                    $tokens_en,
-                    $notification_record['title_en'],
-                    $notification_record['body_en'],
-                ));
-                dispatch(new SendFCMNotification(
-                    $tokens_ar,
-                    $notification_record['title_ar'],
-                    $notification_record['body_ar'],
-                ));
-            } catch (\Exception $t) {
-            }
-
-            $video->update([
-                    'status'=>'start',
-                    'start_at'=>date('Y-m-d H:i:s'),
-                ]);
-
-
-                try {
-                    $firebase = new FirebaseController();
-                    $firebase->ChangeLiveStatus($video->id,'start');
+            \Illuminate\Support\Facades\DB::transaction(function () use ($video) {
+                // Keep the item -> auction lock order used by bidding and closure.
+                $items = \App\Models\LiveVideoItem::without('pieces')
+                    ->where('live_video_id', $video->id)->orderBy('id')->lockForUpdate()->get();
+                $video = LiveVideo::whereKey($video->id)->lockForUpdate()->first();
+                if (! $video || $video->status !== 'pending') { return; }
+                $video->update(['status' => 'start', 'start_at' => now()]);
+                foreach ($items as $item) {
+                    $item->update(['status' => 'working']);
+                    \Illuminate\Support\Facades\DB::afterCommit(function () use ($item) {
+                        try {
+                            app(FirebaseController::class)->ChangeLiveItemStatus($item->live_video_id, $item->id, 'working');
+                        } catch (\Exception $e) {}
+                    });
                 }
-                catch(\Exception $t){}
-
-
-
-
-                foreach ($video->video_items as $item) {
-                    $item->update([
-                        'status'=>'working',
-                    ]);
-
+                \Illuminate\Support\Facades\DB::afterCommit(function () use ($video) {
                     try {
-                        $firebase = new FirebaseController();
-                        $firebase->ChangeLiveItemStatus($item->live_video_id,$item->id,'working');
-                    }
-                    catch(\Exception $t){}
-                }
-
-            }
-
+                        app(FirebaseController::class)->ChangeLiveStatus($video->id, 'start');
+                    } catch (\Exception $e) {}
+                });
+            }, 3);
+        }
         $this->info('Live video status check completed.');
     }
 }

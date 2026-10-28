@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Yajra\DataTables\DataTables;
 
 class SellerSubmissionController extends Controller
@@ -173,12 +174,18 @@ class SellerSubmissionController extends Controller
         $submission = SellerSubmission::findOrFail($id);
         PartnerDashboardScope::ensureOwnSellerSubmission($submission);
 
-        $submission->update([
+        $decision = [
             'status' => 'rejected',
             'review_note' => $request->review_note,
-            'reviewed_by' => Auth::guard('admin')->id(),
-            'reviewed_at' => now(),
-        ]);
+        ];
+        // Some installations have these audit columns; repository migrations do not.
+        if (Schema::hasColumn('seller_submissions', 'reviewed_by')) {
+            $decision['reviewed_by'] = Auth::guard('admin')->id();
+        }
+        if (Schema::hasColumn('seller_submissions', 'reviewed_at')) {
+            $decision['reviewed_at'] = now();
+        }
+        $submission->update($decision);
 
         Toastr::success(TranslationHelper::translate('Rejected Successfully'));
         return redirect()->back();

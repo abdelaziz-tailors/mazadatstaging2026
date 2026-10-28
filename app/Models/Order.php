@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
+    use \App\Models\Concerns\NotifiesLifecycleTransitions;
     use SoftDeletes;
 
     protected $guarded = ['id'];

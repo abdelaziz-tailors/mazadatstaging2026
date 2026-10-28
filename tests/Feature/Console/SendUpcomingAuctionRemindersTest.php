@@ -6,12 +6,10 @@ use App\Models\LiveVideo;
 use App\Models\LiveVideoItem;
 use App\Models\Notification;
 use App\Models\User\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Tests\TestCase;
+use Tests\Support\NotificationTestCase;
 
-class SendUpcomingAuctionRemindersTest extends TestCase
+class SendUpcomingAuctionRemindersTest extends NotificationTestCase
 {
-    use DatabaseTransactions;
 
     private function createUser(array $overrides = []): User
     {
@@ -174,10 +172,11 @@ class SendUpcomingAuctionRemindersTest extends TestCase
         );
     }
 
-    public function test_notifies_active_buyers_as_a_broadcast()
+    public function test_notifies_eligible_followers_instead_of_unrelated_buyers()
     {
         $seller = $this->createUser();
         $activeBuyer = $this->createUser(['user_type' => 'buyer', 'is_active' => 1]);
+        $unrelatedBuyer = $this->createUser(['user_type' => 'buyer', 'is_active' => 1]);
         $inactiveBuyer = $this->createUser(['user_type' => 'buyer', 'is_active' => 0]);
         $vendor = $this->createUser(['user_type' => 'vendor', 'is_active' => 1]);
         $startsAt = now()->addMinutes(30);
@@ -194,6 +193,9 @@ class SendUpcomingAuctionRemindersTest extends TestCase
             'finished_price' => 100,
         ]);
 
+        $liveVideo->update(['user_id' => $seller->id]);
+        \App\Models\FollowUser::create(['user_id' => $activeBuyer->id, 'follow_id' => $seller->id]);
+        \App\Models\FollowUser::create(['user_id' => $inactiveBuyer->id, 'follow_id' => $seller->id]);
         $this->artisan('notifications:upcoming-auction-reminders');
 
         $this->assertDatabaseHas('notifications', [
@@ -208,5 +210,6 @@ class SendUpcomingAuctionRemindersTest extends TestCase
             'user_id' => $vendor->id,
             'type' => 'upcoming_auction',
         ]);
+        $this->assertDatabaseMissing('notifications', ['user_id' => $unrelatedBuyer->id]);
     }
 }

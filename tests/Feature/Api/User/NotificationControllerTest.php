@@ -4,13 +4,11 @@ namespace Tests\Feature\Api\User;
 
 use App\Models\Notification;
 use App\Models\User\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Laravel\Passport\Passport;
-use Tests\TestCase;
+use Tests\Support\NotificationTestCase;
 
-class NotificationControllerTest extends TestCase
+class NotificationControllerTest extends NotificationTestCase
 {
-    use DatabaseTransactions;
 
     private const API_KEY = 'SIv5q09xLI689LNoALEh2D4Af/TsFkoypEMd/2XdtvGPfKHmU6HENZuuBgaBQKXM';
 
