@@ -4,6 +4,7 @@ namespace App\Http\Controllers\api\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\User\PartnerResource;
+use App\Models\SellerSubmission;
 use App\Models\User\User;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,11 @@ class SellerUserController extends Controller
         $sellers = User::query()
             ->where('user_type', 'seller')
             ->where('is_active', 1)
+            ->whereIn('id', SellerSubmission::query()
+                ->select('user_id')
+                ->whereNotNull('partner_id')
+                ->where('partner_id', auth('api')->id())
+                ->where('status', 'approved'))
             ->orderByDesc('id')
             ->paginate(10);
 
