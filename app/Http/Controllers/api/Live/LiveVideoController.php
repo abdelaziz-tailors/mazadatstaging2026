@@ -147,6 +147,12 @@ class LiveVideoController extends Controller
                 $agoraAppId = $agoraService->getAppId();
             }
 
+            $utcSchedule = \App\Support\AuctionScheduleUtc::fromFields(
+                $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
+                $request->input('timezone') ?: (
+                    $videoType === 'live' ? 'Africa/Cairo' : null
+                )
+            );
             $data = app(\App\Services\SubscriptionService::class)->createAuction([
                 'user_id' => auth('api')->user()->id,
                 'admin_id' => $admin_id,
@@ -157,6 +163,9 @@ class LiveVideoController extends Controller
                 'date_end_at' => $request->date_end_at,
                 'time_start_at' => $request->time_start_at,
                 'time_end_at' => $request->time_end_at,
+                'schedule_start_utc' => $utcSchedule['schedule_start_utc'],
+                'schedule_end_utc' => $utcSchedule['schedule_end_utc'],
+                'schedule_timezone' => $utcSchedule['schedule_timezone'],
                 'status' => 'pending',
                 'image' => json_encode($file),
                 'information_ar' => $request->information_ar,
@@ -244,6 +253,19 @@ class LiveVideoController extends Controller
 
         $requestData['admin_id'] = auth('api')->user()->admin->id;
         $requestData['user_id'] = auth('api')->user()->id;
+        // Only recompute when a schedule field changes; preserve partial-update semantics.
+        if ($request->hasAny(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at'])) {
+            $combined = [
+                'date_start_at' => $request->input('date_start_at', $live_video->date_start_at),
+                'time_start_at' => $request->input('time_start_at', $live_video->time_start_at),
+                'date_end_at' => $request->input('date_end_at', $live_video->date_end_at),
+                'time_end_at' => $request->input('time_end_at', $live_video->time_end_at),
+            ];
+            $requestData = array_merge($requestData, \App\Support\AuctionScheduleUtc::fromFields(
+                $combined, $request->input('timezone', $live_video->schedule_timezone)
+            ));
+        }
+        unset($requestData['timezone']);
         $live_video->update($requestData);
 
         // $live_video->update([
@@ -324,11 +346,92 @@ class LiveVideoController extends Controller
     {
 
         if (!auth('api')->user()) {
-            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+            return $this->failed_response('يجب تسجيل الدخول أولاً');
         }
+        // VIEWER_START_COMPAT_20261102
+        // Legacy clients may call start when joining an already live auction.
+        // Non-owners receive viewer data only; they cannot change its status.
+        $viewerAuction = LiveVideo::with('currentVideoItems')->find($id);
+
+        // LIVE_VIEWER_SCHEDULE_JOIN_20261103
+        // Joining is not the same as starting the broadcast or auction.
+        if (!$viewerAuction) {
+            return $this->failed_response('المزاد غير موجود');
+        }
+
+        $isViewer = (int) $viewerAuction->user_id !== (int) auth('api')->id();
+
+        if ($isViewer && $viewerAuction->status === 'pending') {
+            if ($viewerAuction->type !== 'live') {
+                return $this->failed_response('لم يبدأ المزاد بعد');
+            }
+
+            $startValue = $viewerAuction->schedule_start_utc;
+            $endValue = $viewerAuction->schedule_end_utc;
+
+            // Legacy fallback only when the original timezone is known.
+            if ((!$startValue || !$endValue)
+                && $viewerAuction->schedule_timezone
+                && $viewerAuction->date_start_at
+                && $viewerAuction->time_start_at
+                && $viewerAuction->date_end_at
+                && $viewerAuction->time_end_at) {
+                $zone = $viewerAuction->schedule_timezone;
+                $startValue = \Carbon\CarbonImmutable::parse(
+                    $viewerAuction->date_start_at . ' ' . $viewerAuction->time_start_at,
+                    $zone
+                )->utc()->toDateTimeString();
+                $endValue = \Carbon\CarbonImmutable::parse(
+                    $viewerAuction->date_end_at . ' ' . $viewerAuction->time_end_at,
+                    $zone
+                )->utc()->toDateTimeString();
+            }
+
+            if (!$startValue || !$endValue) {
+                // Viewer can enter Live waiting screen without starting bidding.
+                return $this->success_response(
+                    'يمكنك دخول المزاد، في انتظار بدء البث',
+                    new SingleLiveVideoResource($viewerAuction)
+                );
+            }
+
+            $startUtc = \Carbon\CarbonImmutable::parse($startValue, 'UTC');
+            $endUtc = \Carbon\CarbonImmutable::parse($endValue, 'UTC');
+            $nowUtc = now('UTC');
+
+            if ($nowUtc->lt($startUtc)) {
+                return $this->failed_response('لم يبدأ موعد المزاد بعد');
+            }
+
+            if ($nowUtc->gte($endUtc)) {
+                return $this->failed_response('انتهى موعد المزاد');
+            }
+
+            // Read-only access: no status update, no bidding permission.
+            return $this->success_response(
+                'يمكنك دخول المزاد الآن',
+                new SingleLiveVideoResource($viewerAuction)
+            );
+        }
+
+        if ($isViewer && $viewerAuction->status === 'end') {
+            return $this->failed_response('انتهى المزاد');
+        }
+
+
+
+        if ($viewerAuction
+            && (int) $viewerAuction->user_id !== (int) auth('api')->id()
+            && $viewerAuction->status === 'start') {
+            return $this->success_response(
+                'تم فتح المزاد بنجاح',
+                new SingleLiveVideoResource($viewerAuction)
+            );
+        }
+
         $data = LiveVideo::with('currentVideoItems')->where('user_id', auth('api')->id())->find($id);
         if (! $data) {
-            return $this->failed_response(TranslationHelper::translate('Live Video Not Found'));
+            return $this->failed_response('المزاد غير موجود');
         }
         $data->update([
             'status' => 'start',
@@ -342,7 +445,7 @@ class LiveVideoController extends Controller
 
 
         $data = new MyLiveVideoResource($data);
-        return $this->success_response(TranslationHelper::translate(' Added Successfully '), $data);
+        return $this->success_response('تم فتح المزاد بنجاح', $data);
     }
     public function end($id): JsonResponse
     {

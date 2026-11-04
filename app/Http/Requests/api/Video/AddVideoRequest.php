@@ -39,6 +39,7 @@ class AddVideoRequest extends FormRequest
             'date_end_at' => 'required|date_format:Y-m-d',
             'time_start_at' => 'required|date_format:H:i',
             'time_end_at' => 'required|date_format:H:i',
+            'timezone' => 'nullable|timezone',
             'city_id' => 'nullable|exists:cities,id',
             'type' => 'nullable',
             'image' => 'nullable|array',

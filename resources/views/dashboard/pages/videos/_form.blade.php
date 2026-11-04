@@ -64,7 +64,36 @@
                 </div>
 
                 <div class="col-lg-6 form-group mb-3 auction-schedule-field">
-                    {!! Form::label('date_start_at', TranslationHelper::translate('date_start') . ' *', ['class'=>'form-label']) !!}
+        
+
+{{-- The browser timezone is submitted with the schedule; UTC is never guessed from IP. --}}
+<input type="hidden" name="timezone" id="auction_timezone" value="">
+@if(isset($data) && !empty($data->schedule_start_utc) && !empty($data->schedule_end_utc) && !$errors->any())
+<input type="hidden" id="auction_existing_start_utc" value="{{ \App\Support\AuctionScheduleUtc::isoUtc($data->schedule_start_utc) }}">
+<input type="hidden" id="auction_existing_end_utc" value="{{ \App\Support\AuctionScheduleUtc::isoUtc($data->schedule_end_utc) }}">
+@endif
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const zoneField = document.getElementById('auction_timezone');
+    if (!zone || !zoneField) { return; }
+    zoneField.value = zone;
+    // Editing a UTC-backed auction: show local wall-clock inputs in this browser.
+    for (const part of ['start', 'end']) {
+        const el = document.getElementById('auction_existing_' + part + '_utc');
+        if (!el || !el.value) { continue; }
+        const date = new Date(el.value);
+        if (isNaN(date.getTime())) { continue; }
+        const pad = n => String(n).padStart(2, '0');
+        const dateInput = document.querySelector('[name="date_' + part + '_at"]');
+        const timeInput = document.querySelector('[name="time_' + part + '_at"]');
+        if (dateInput) dateInput.value = [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join('-');
+        if (timeInput) timeInput.value = pad(date.getHours()) + ':' + pad(date.getMinutes());
+    }
+});
+</script>
+
+            {!! Form::label('date_start_at', TranslationHelper::translate('date_start') . ' *', ['class'=>'form-label']) !!}
                     {!! Form::date('date_start_at', old('date_start_at', isset($data) ? \Carbon\Carbon::parse($data->date_start_at)->format('Y-m-d') : null), ['class' => 'form-control'.($errors->has('date_start_at') ? ' is-invalid' : ''), 'required']) !!}
                     @error('date_start_at')
                         <span class="text-danger small d-block mt-1">{{ $message }}</span>
@@ -282,6 +311,35 @@
     @endif
 </div>
 
+
+<style id="mazadat-validation-layout-fix">
+/* Fix narrow dashboard validation error banners */
+.alert.alert-danger {
+    position: fixed !important;
+    top: 110px !important;
+    right: 20px !important;
+    left: auto !important;
+    width: min(600px, calc(100vw - 40px)) !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 40px) !important;
+    height: auto !important;
+    max-height: 65vh !important;
+    overflow: auto !important;
+    box-sizing: border-box !important;
+    padding: 15px 20px !important;
+    direction: rtl !important;
+    text-align: right !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    z-index: 1100 !important;
+}
+.alert.alert-danger ul {
+    margin: 0 !important;
+    padding-right: 20px !important;
+    width: auto !important;
+}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
 

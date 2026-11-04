@@ -37,6 +37,7 @@ class UpdateVideoRequest extends FormRequest
             'date_end_at' => 'nullable|date_format:Y-m-d',
             'time_start_at' => 'nullable|date_format:H:i',
             'time_end_at' => 'nullable|date_format:H:i',
+            'timezone' => 'nullable|timezone',
             'terms_conditions' => 'nullable|string|max:255',
             'terms_conditions_ar' => 'nullable|string|max:255',
             'partner_id' => 'nullable|nullable|required_if:partners_type,single|exists:users,id',

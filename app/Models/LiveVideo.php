@@ -10,6 +10,22 @@ use Illuminate\Support\Collection;
 
 class LiveVideo extends Model
 {
+
+    // Allow UTC fields without changing existing mass-assignment rules.
+    public function isFillable($key)
+    {
+        if (in_array($key, [
+            'schedule_start_utc',
+            'schedule_end_utc',
+            'schedule_timezone',
+        ], true)) {
+            return true;
+        }
+
+        return parent::isFillable($key);
+    }
+
+
     use \App\Models\Concerns\NotifiesLifecycleTransitions;
     use HasFactory;
     protected $guarded = ['id'];

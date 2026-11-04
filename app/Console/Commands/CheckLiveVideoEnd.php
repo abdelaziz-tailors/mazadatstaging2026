@@ -50,7 +50,11 @@ class CheckLiveVideoEnd extends Command
         // Normal: past TIMESTAMP(date_end_at, time_end_at). Overnight: past last day or in the
         // daytime gap after time_end_at before time_start_at on date_end_at.
         $videos = LiveVideo::query()
+            ->where(function ($q) {
+                $q->where('type', '!=', 'recorded')->orWhereNull('type');
+            })
             ->where('status', '!=', 'end')
+            ->whereNull('schedule_end_utc')
             ->whereNotNull('date_end_at')
             ->whereNotNull('time_end_at')
             ->where(function ($q) use ($now) {
@@ -71,6 +75,42 @@ class CheckLiveVideoEnd extends Command
             })
             ->get();
 
+        $nowSaudi = now('Africa/Cairo');
+
+        $recordedVideos = LiveVideo::query()
+            ->where('type', 'recorded')
+            ->where('status', '!=', 'end')
+            ->whereNull('schedule_end_utc')
+            ->whereNotNull('date_end_at')
+            ->whereNotNull('time_end_at')
+            ->where(function ($q) use ($nowSaudi) {
+                $q->where(function ($q2) use ($nowSaudi) {
+                    $q2->whereRaw('time_start_at <= time_end_at')
+                        ->whereRaw('TIMESTAMP(date_end_at, time_end_at) < ?', [$nowSaudi]);
+                })
+                    ->orWhere(function ($q2) use ($nowSaudi) {
+                        $q2->whereRaw('time_start_at > time_end_at')
+                            ->where(function ($q3) use ($nowSaudi) {
+                                $q3->whereDate('date_end_at', '<', $nowSaudi)
+                                    ->orWhere(function ($q4) use ($nowSaudi) {
+                                        $q4->whereDate('date_end_at', '=', $nowSaudi)
+                                            ->whereRaw('TIME(?) > time_end_at AND TIME(?) < time_start_at', [$nowSaudi, $nowSaudi]);
+                                    });
+                            });
+                    });
+            })
+            ->get();
+
+        $videos = $videos->concat($recordedVideos);
+
+
+        // UTC-backed auctions use one universal end instant; legacy stay on old path.
+        $utcVideos = LiveVideo::query()
+            ->where('status', '!=', 'end')
+            ->whereNotNull('schedule_end_utc')
+            ->where('schedule_end_utc', '<=', now('UTC')->format('Y-m-d H:i:s'))
+            ->get();
+        $videos = $videos->concat($utcVideos);
 
         foreach ($videos as $video) {
             \Illuminate\Support\Facades\DB::transaction(function () use ($video) {
@@ -79,6 +119,11 @@ class CheckLiveVideoEnd extends Command
                     ->where('live_video_id', $video->id)->orderBy('id')->lockForUpdate()->get();
                 $video = LiveVideo::whereKey($video->id)->lockForUpdate()->first();
                 if (! $video || $video->status === 'end') { return; }
+                if ($video->schedule_end_utc !== null &&
+                    now('UTC')->lt(\Carbon\CarbonImmutable::parse((string) $video->schedule_end_utc, 'UTC'))) {
+                    return;
+                }
+
                 $video->update([
                     'status'=>'end',
                     'end_at'=>date('Y-m-d H:i:s'),

@@ -41,7 +41,13 @@ trait ValidatesAuctionSchedule
                 $values[$field] = $format === 'H:i' ? $value.':00' : $value;
             }
             // Offset-free API fields represent wall-clock time in the application timezone.
-            $timezone = config('app.timezone');
+            $timezone = $this->input('timezone') ?: (
+            $auction->schedule_timezone ?? (
+                ($this->input('video_type') ?: ($auction->type ?? 'live')) === 'live'
+                    ? 'Africa/Cairo'
+                    : config('app.timezone')
+            )
+        );
             $start = CarbonImmutable::createFromFormat('!Y-m-d H:i:s', $values['date_start_at'].' '.$values['time_start_at'], $timezone);
             $end = CarbonImmutable::createFromFormat('!Y-m-d H:i:s', $values['date_end_at'].' '.$values['time_end_at'], $timezone);
             if ($start->lessThan(CarbonImmutable::now($timezone))) {

@@ -1658,4 +1658,6 @@
   'subscription_details' => 'تفاصيل الاشتراك',
   'already_approved' => 'تمت الموافقة بالفعل',
   'updated_successfully' => 'تم التحديث بنجاح',
+  'back' => 'Back',
+  'subscription_information' => 'Subscription Information',
 );

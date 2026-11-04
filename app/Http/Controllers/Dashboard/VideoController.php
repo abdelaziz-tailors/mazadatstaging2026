@@ -149,6 +149,7 @@ class VideoController extends Controller
             'date_end_at'         => 'required|date|after_or_equal:date_start_at',
             'time_start_at'       => 'required',
             'time_end_at'         => 'required',
+            'timezone'            => 'required|timezone',
             'type'                => 'required|in:live,recorded,photo',
             'city_id'             => 'nullable|exists:cities,id',
             'information'         => 'nullable|string',
@@ -169,6 +170,19 @@ class VideoController extends Controller
         }
 
         $request->validate($rules);
+        $utcSchedule = \App\Support\AuctionScheduleUtc::fromFields(
+            $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
+            $request->input('timezone')
+        );
+        if ($request->input('type') === 'recorded' &&
+            \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
+            ]);
+        }
+
+
+
 
         $partnersType = $isPartner ? 'single' : $request->partners_type;
         $partnerId = $isPartner
@@ -200,6 +214,9 @@ class VideoController extends Controller
             'date_end_at' => $request->date_end_at,
             'time_start_at' => $request->time_start_at,
             'time_end_at' => $request->time_end_at,
+            'schedule_start_utc' => $utcSchedule['schedule_start_utc'],
+            'schedule_end_utc' => $utcSchedule['schedule_end_utc'],
+            'schedule_timezone' => $utcSchedule['schedule_timezone'],
             'terms_conditions' => $request->terms_conditions,
             'terms_conditions_ar' => $request->terms_conditions_ar,
             'city_id' => $request->city_id,
@@ -314,6 +331,7 @@ class VideoController extends Controller
             'date_end_at'         => 'required|date|after_or_equal:date_start_at',
             'time_start_at'       => 'required',
             'time_end_at'         => 'required',
+            'timezone'            => 'required|timezone',
             'type'                => 'required|in:live,recorded,photo',
             'city_id'             => 'nullable|exists:cities,id',
             'information'         => 'nullable|string',
@@ -334,6 +352,19 @@ class VideoController extends Controller
         }
 
         $request->validate($rules);
+        $utcSchedule = \App\Support\AuctionScheduleUtc::fromFields(
+            $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
+            $request->input('timezone')
+        );
+        if ($request->input('type') === 'recorded' &&
+            \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
+            ]);
+        }
+
+
+
         PartnerDashboardScope::ensureOwnLiveVideo($live_video);
 
         $partnersType = $isPartner ? 'single' : $request->partners_type;
@@ -357,6 +388,9 @@ class VideoController extends Controller
             'date_end_at' => $request->date_end_at,
             'time_start_at' => $request->time_start_at,
             'time_end_at' => $request->time_end_at,
+            'schedule_start_utc' => $utcSchedule['schedule_start_utc'],
+            'schedule_end_utc' => $utcSchedule['schedule_end_utc'],
+            'schedule_timezone' => $utcSchedule['schedule_timezone'],
             'terms_conditions' => $request->terms_conditions,
             'terms_conditions_ar' => $request->terms_conditions_ar,
             'city_id' => $request->city_id,

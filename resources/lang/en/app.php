@@ -1643,4 +1643,6 @@
   'subscription_details' => 'Subscription Details',
   'already_approved' => 'Already approved',
   'updated_successfully' => 'Updated successfully',
+  'back' => 'Back',
+  'subscription_information' => 'Subscription Information',
 );
