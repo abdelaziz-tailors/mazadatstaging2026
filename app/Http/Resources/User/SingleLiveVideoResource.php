@@ -83,11 +83,7 @@ class SingleLiveVideoResource extends JsonResource
                 // Note: For subscribers (viewers), UID should be 0
                 // The controller generates appropriate tokens based on user role
             ],
-            'auction_fees' => [
-                'commission_amount' => isset($this->commission_amount) && $this->commission_amount !== null ? $this->commission_amount : null,
-                'commission_payer' => $this->commission_payer,
-                'service_fee' => isset($this->service_fee) && $this->service_fee !== null ? $this->service_fee : null,
-            ],
+            'auction_fees' => new AuctionFeesResource($this->resource),
         ];
 
         return $data;
