@@ -14,6 +14,7 @@ return [
     'animal_image_file' => 'Each animal image must be a valid uploaded JPEG, JPG or PNG image.',
     'animal_image_max' => 'Each animal image must not exceed 20MB.',
     'animal_image_uploaded' => 'An animal image failed to upload. Please upload it again.',
+    'head_gender_string' => 'Head gender must be a string.',
     'head_weight_required' => 'Head weight is required.',
     'head_weight_numeric' => 'Head weight must be a number.',
     'head_weight_positive' => 'Head weight must be greater than zero.',

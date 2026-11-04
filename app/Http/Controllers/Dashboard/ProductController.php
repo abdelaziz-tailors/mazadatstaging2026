@@ -311,7 +311,7 @@ class ProductController extends Controller
             'video'                  => 'nullable|file|mimes:mp4,avi,wmv,flv|max:204800',
             'pieces'                 => 'nullable|array|size:'.$quantity,
             'pieces.*.age'           => 'nullable|string|max:255',
-            'pieces.*.weight'        => 'nullable|numeric',
+            'pieces.*.gender'        => 'nullable|string|max:255',
             'pieces.*.identifier'    => 'nullable|string|max:100',
             'pieces.*.baham_count'   => 'nullable|integer|min:0',
         ];
@@ -465,7 +465,7 @@ class ProductController extends Controller
             'piece_multiplier_number' => 'nullable|string|max:100',
             'pieces' => 'nullable|array|size:'.$quantity,
             'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.weight' => 'nullable|numeric',
+            'pieces.*.gender' => 'nullable|string|max:255',
             'pieces.*.identifier' => 'nullable|string|max:100',
             'pieces.*.baham_count' => 'nullable|integer|min:0',
         ]);

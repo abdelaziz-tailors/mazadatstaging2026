@@ -118,7 +118,7 @@ class LiveVideoItemController extends Controller
             } else {
                 LiveVideoItemPieceService::syncPieces($add_iteam, LiveVideoItemPieceService::buildSinglePiecePayload([
                     'age' => $request->age[$index] ?? null,
-                    'weight' => $request->weight[$index] ?? null,
+                    'gender' => $request->gender[$index] ?? null,
                     'identifier' => $request->identifier[$index] ?? null,
                     // 'piece_multiplier_number' => $request->piece_multiplier_number[$index] ?? null,
                     'baham_count' => $request->baham_count[$index] ?? null,
@@ -263,11 +263,11 @@ class LiveVideoItemController extends Controller
 
         if ($request->filled('pieces')) {
             LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
-        } elseif ($request->hasAny(['age', 'weight', 'identifier', 'age_type'])) {
+        } elseif ($request->hasAny(['age', 'gender', 'identifier', 'age_type'])) {
             LiveVideoItemPieceService::syncPieces($live_video, LiveVideoItemPieceService::buildSinglePiecePayload([
                 'age' => $request->input('age'),
                 'age_type' => $request->input('age_type'),
-                'weight' => $request->input('weight'),
+                'gender' => $request->input('gender'),
                 'identifier' => $request->input('identifier'),
                 'piece_multiplier_number' => $request->input('piece_multiplier_number', $live_video->piece_multiplier_number),
                 'baham_count' => $request->input('baham_count', $live_video->baham_count),
@@ -385,7 +385,7 @@ class LiveVideoItemController extends Controller
             return response()->json(['success' => false, 'code' => 403, 'message' => TranslationHelper::translate('Un-Authorized Access')], 403);
         }
 
-        LiveVideoItemPieceService::addPiece($item, $request->only(['age', 'weight', 'identifier', 'baham_count']));
+        LiveVideoItemPieceService::addPiece($item, $request->only(['age', 'gender', 'identifier', 'baham_count']));
 
         $item->load('pieces');
 
@@ -410,7 +410,7 @@ class LiveVideoItemController extends Controller
         }
 
         $attributes = [];
-        foreach (['age', 'weight', 'identifier', 'baham_count'] as $field) {
+        foreach (['age', 'gender', 'identifier', 'baham_count'] as $field) {
             if ($request->has($field)) {
                 $attributes[$field] = $request->input($field);
             }

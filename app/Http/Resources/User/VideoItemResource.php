@@ -62,7 +62,7 @@ class VideoItemResource extends JsonResource
             // 'age'=>$this->primaryPiece()?->age,
             // 'age_type'=>$this->primaryPiece()?->age_type,
             // 'type'=>$this['type'],
-            // 'weight'=>$this->primaryPiece()?->weight,
+            // 'gender'=>$this->primaryPiece()?->gender,
             // 'start_price'=>$this->videoLive->start_price ?? $this['start_price'],
             'bidding'=>$this['bidding'],
             'finished_price'=>$this['finished_price'],

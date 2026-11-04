@@ -53,7 +53,7 @@ class MobileExistingAuctionTransferTest extends TestCase
         $item->pieces()->create([
             'piece_number' => 1,
             'age' => 'adult',
-            'weight' => 80,
+            'gender' => 'male',
             'identifier' => 'piece-1',
             'baham_count' => 1,
         ]);

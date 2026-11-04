@@ -37,8 +37,8 @@ class StoreItemRequest extends FormRequest
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'seller_id.*' => 'nullable|integer|exists:users,id',
-            'weight' => 'nullable|array',
-            'weight.*' => 'nullable|numeric|gt:0',
+            'gender' => 'nullable|array',
+            'gender.*' => 'nullable|string|max:255',
             'age' => 'nullable',
             'age.*' => 'nullable|string',
             // 'start_price' => 'required', // Assuming price is a number
@@ -56,7 +56,7 @@ class StoreItemRequest extends FormRequest
             'pieces.*' => 'required|array',
             'pieces.*.*' => 'required|array',
             'pieces.*.*.age' => 'nullable|string|max:255',
-            'pieces.*.*.weight' => 'nullable|numeric|gt:0',
+            'pieces.*.*.gender' => 'nullable|string|max:255',
             'pieces.*.*.piece_multiplier_number' => 'nullable|string|max:255',
             'pieces.*.*.identifier' => 'nullable|string|max:255',
             'pieces.*.*.baham_count' => 'nullable|string|max:255',
@@ -106,10 +106,8 @@ class StoreItemRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.*.numeric' => trans('validation.head_weight_numeric'),
-            'weight.*.gt' => trans('validation.head_weight_positive'),
-            'pieces.*.*.weight.numeric' => trans('validation.head_weight_numeric'),
-            'pieces.*.*.weight.gt' => trans('validation.head_weight_positive'),
+            'gender.*.string' => trans('validation.head_gender_string'),
+            'pieces.*.*.gender.string' => trans('validation.head_gender_string'),
             'image.required' => trans('validation.animal_images_required'),
             'image.min' => trans('validation.animal_images_required'),
             'image.array' => trans('validation.animal_images_array'),

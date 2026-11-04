@@ -28,7 +28,7 @@ class AddPieceRequest extends FormRequest
     {
         return [
             'age' => 'nullable|string|max:255',
-            'weight' => 'nullable|numeric|gt:0',
+            'gender' => 'nullable|string|max:255',
             'identifier' => 'nullable|string|max:255',
             'baham_count' => 'nullable|string|max:255',
         ];
@@ -37,8 +37,7 @@ class AddPieceRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.numeric' => trans('validation.head_weight_numeric'),
-            'weight.gt' => trans('validation.head_weight_positive'),
+            'gender.string' => trans('validation.head_gender_string'),
         ];
     }
 

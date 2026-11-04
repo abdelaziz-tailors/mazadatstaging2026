@@ -252,7 +252,7 @@ class OrderService
                                 'id' => $piece->id,
                                 'piece_number' => $piece->piece_number,
                                 'age' => $piece->age,
-                                'weight' => $piece->weight,
+                                'gender' => $piece->gender,
                                 'identifier' => $piece->identifier ?? '',
                                 'baham_count' => $piece->baham_count ?? '',
                             ])->values()->all()
@@ -383,7 +383,7 @@ class OrderService
                                 'id' => $piece->id,
                                 'piece_number' => $piece->piece_number,
                                 'age' => $piece->age,
-                                'weight' => $piece->weight,
+                                'gender' => $piece->gender,
                                 'identifier' => $piece->identifier ?? '',
                                 'baham_count' => $piece->baham_count ?? '',
                             ])->values()->all()

@@ -62,7 +62,7 @@ class LiveVideoItemPiecesTest extends TestCase
         return $item->pieces()->create(array_merge([
             'piece_number' => ($item->pieces()->max('piece_number') ?? 0) + 1,
             'age' => 'تام',
-            'weight' => 80,
+            'gender' => 'male',
             'identifier' => 'ضاني 1',
             'baham_count' => 3,
         ], $overrides));
@@ -81,7 +81,7 @@ class LiveVideoItemPiecesTest extends TestCase
 
         $response = $this->withHeaders($this->headers())->postJson('/api/live/items/pieces/add/' . $item->id, [
             'age' => 'سديس',
-            'weight' => 90,
+            'gender' => 'male',
             'identifier' => 'ضاني 2',
             'baham_count' => '1',
         ]);
@@ -95,7 +95,7 @@ class LiveVideoItemPiecesTest extends TestCase
         $newPiece = collect($pieces)->firstWhere('identifier', 'ضاني 2');
         $this->assertNotNull($newPiece);
         $this->assertEquals('سديس', $newPiece['age']);
-        $this->assertEquals(90, $newPiece['weight']);
+        $this->assertEquals('male', $newPiece['gender']);
         $this->assertEquals(1, $newPiece['baham_count']);
     }
 
@@ -169,7 +169,7 @@ class LiveVideoItemPiecesTest extends TestCase
         $this->assertEquals(0, $item->pieces()->count());
     }
 
-    public function test_add_piece_rejects_a_non_numeric_weight()
+    public function test_add_piece_rejects_a_non_string_gender()
     {
         $organizer = $this->createOrganizer();
         $liveVideo = LiveVideo::create(['title' => 'Auction', 'user_id' => $organizer->id]);
@@ -178,7 +178,7 @@ class LiveVideoItemPiecesTest extends TestCase
         Passport::actingAs($organizer, [], 'api');
 
         $response = $this->withHeaders($this->headers())->postJson('/api/live/items/pieces/add/' . $item->id, [
-            'weight' => 'not-a-number',
+            'gender' => 123,
         ]);
 
         $response->assertStatus(422)->assertJson(['success' => false]);
@@ -191,17 +191,17 @@ class LiveVideoItemPiecesTest extends TestCase
         $organizer = $this->createOrganizer();
         $liveVideo = LiveVideo::create(['title' => 'Auction', 'user_id' => $organizer->id]);
         $item = $this->createItem($liveVideo, ['quantity' => 1]);
-        $piece = $this->createPiece($item, ['age' => 'تام', 'weight' => 80, 'identifier' => 'Original']);
+        $piece = $this->createPiece($item, ['age' => 'تام', 'gender' => 'male', 'identifier' => 'Original']);
 
         Passport::actingAs($organizer, [], 'api');
 
         $response = $this->withHeaders($this->headers())->postJson('/api/live/items/pieces/update/' . $piece->id, [
-            'weight' => 95,
+            'gender' => 'male',
         ]);
 
         $response->assertStatus(200)->assertJson(['success' => true]);
         $piece->refresh();
-        $this->assertEquals(95, $piece->weight);
+        $this->assertEquals('male', $piece->gender);
         // Untouched fields keep their original values.
         $this->assertEquals('تام', $piece->age);
         $this->assertEquals('Original', $piece->identifier);
@@ -253,7 +253,7 @@ class LiveVideoItemPiecesTest extends TestCase
         $this->assertEquals('Original', $piece->fresh()->identifier);
     }
 
-    public function test_update_piece_rejects_a_non_numeric_weight()
+    public function test_update_piece_rejects_a_non_string_gender()
     {
         $organizer = $this->createOrganizer();
         $liveVideo = LiveVideo::create(['title' => 'Auction', 'user_id' => $organizer->id]);
@@ -263,7 +263,7 @@ class LiveVideoItemPiecesTest extends TestCase
         Passport::actingAs($organizer, [], 'api');
 
         $response = $this->withHeaders($this->headers())->postJson('/api/live/items/pieces/update/' . $piece->id, [
-            'weight' => 'not-a-number',
+            'gender' => 123,
         ]);
 
         $response->assertStatus(422)->assertJson(['success' => false]);

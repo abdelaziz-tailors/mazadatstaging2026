@@ -137,7 +137,7 @@ class AuctionItemTransferService
                     $clone->pieces()->create($piece->only([
                         'piece_number',
                         'age',
-                        'weight',
+                        'gender',
                         'identifier',
                         'baham_count',
                     ]));

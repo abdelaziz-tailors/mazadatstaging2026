@@ -14,6 +14,7 @@ return [
     'animal_image_file' => 'يجب أن يكون كل ملف صورة صالحة بصيغة JPEG أو JPG أو PNG.',
     'animal_image_max' => 'يجب ألا يتجاوز حجم كل صورة 20 ميجابايت.',
     'animal_image_uploaded' => 'تعذر رفع صورة الحيوان. يرجى المحاولة مرة أخرى.',
+    'head_gender_string' => 'يجب أن يكون جنس الرأس نصًا.',
     'head_weight_required' => 'وزن الرأس مطلوب.',
     'head_weight_numeric' => 'يجب أن يكون وزن الرأس رقمًا.',
     'head_weight_positive' => 'يجب أن يكون وزن الرأس أكبر من صفر.',

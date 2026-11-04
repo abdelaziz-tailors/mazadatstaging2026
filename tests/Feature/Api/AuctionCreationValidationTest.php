@@ -167,7 +167,7 @@ class AuctionCreationValidationTest extends TestCase
 
     public function test_images_are_required_for_every_animal_before_any_write(): void
     {
-        $data = ['lineage_title_ar' => ['Animal'], 'weight' => [12.5]];
+        $data = ['lineage_title_ar' => ['Animal'], 'gender' => ['male']];
         foreach ([[], ['image' => []], ['image' => 'bad'], ['image' => [[]]],
             ['image' => [[UploadedFile::fake()->create('bad.pdf', 10, 'application/pdf')]]],
             ['image' => [[UploadedFile::fake()->image('big.jpg')->size(20001)]]],
@@ -175,7 +175,7 @@ class AuctionCreationValidationTest extends TestCase
             $this->post('/api/live/items/add/1', array_merge($data, $invalid))
                 ->assertStatus(422)->assertJsonPath('success', false);
         }
-        $this->post('/validation/animal', ['lineage_title_ar' => ['One', 'Two'], 'weight' => [10, 20],
+        $this->post('/validation/animal', ['lineage_title_ar' => ['One', 'Two'], 'gender' => ['male', 'female'],
             'image' => [[UploadedFile::fake()->image('one.jpg')]]])->assertStatus(422);
         $this->assertDatabaseCount('validation_writes', 0);
         $this->post('/validation/animal', $data + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
@@ -183,43 +183,43 @@ class AuctionCreationValidationTest extends TestCase
         $this->assertDatabaseCount('validation_writes', 1);
     }
 
-    public function test_all_head_creation_shapes_reject_invalid_weights(): void
+    public function test_all_head_creation_shapes_reject_invalid_genders(): void
     {
-        foreach ([0, -1, 'abc'] as $weight) {
-            $this->postJson('/api/live/items/pieces/add/1', ['weight' => $weight])->assertStatus(422);
-            $this->postJson('/validation/head', ['weight' => $weight])->assertStatus(422);
-            $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'weight' => [$weight],
+        foreach ([0, -1, []] as $gender) {
+            $this->postJson('/api/live/items/pieces/add/1', ['gender' => $gender])->assertStatus(422);
+            $this->postJson('/validation/head', ['gender' => $gender])->assertStatus(422);
+            $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'gender' => [$gender],
                 'image' => [[UploadedFile::fake()->image('ok.jpg')]]])->assertStatus(422);
             $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'quantity' => [2],
-                'pieces' => [[['weight' => 12], ['weight' => $weight]]],
+                'pieces' => [[['gender' => 'male'], ['gender' => $gender]]],
                 'image' => [[UploadedFile::fake()->image('ok.jpg')]]])->assertStatus(422);
-            $this->postJson('/validation/head-update', ['weight' => $weight])->assertStatus(422);
-            $this->postJson('/validation/animal-update', ['pieces' => [['weight' => $weight]]])->assertStatus(422);
+            $this->postJson('/validation/head-update', ['gender' => $gender])->assertStatus(422);
+            $this->postJson('/validation/animal-update', ['pieces' => [['gender' => $gender]]])->assertStatus(422);
         }
         $this->assertDatabaseCount('validation_writes', 0);
-        $this->postJson('/validation/head', ['weight' => 12.75])->assertOk()->assertJsonPath('success', true);
+        $this->postJson('/validation/head', ['gender' => 'male'])->assertOk()->assertJsonPath('success', true);
         $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'quantity' => [2],
-            'pieces' => [[['weight' => 12.5], ['weight' => 20]]],
+            'pieces' => [[['gender' => 'male'], ['gender' => 'male']]],
             'image' => [[UploadedFile::fake()->image('ok.png')]]])->assertOk()->assertJsonPath('success', true);
         $this->postJson('/validation/animal-update', ['information' => 'Updated'])->assertOk();
         $this->postJson('/validation/head-update', ['identifier' => 'Updated'])->assertOk();
         $this->assertDatabaseCount('validation_writes', 2);
     }
 
-    public function test_weight_is_optional_for_single_and_nested_heads(): void
+    public function test_gender_is_optional_for_single_and_nested_heads(): void
     {
-        $data = ['lineage_title_ar' => ['Animal'], 'quantity' => [2], 'weight' => [null],
-            'pieces' => [[['weight' => 12.5], ['weight' => 20]]]];
+        $data = ['lineage_title_ar' => ['Animal'], 'quantity' => [2], 'gender' => [null],
+            'pieces' => [[['gender' => 'male'], ['gender' => 'male']]]];
         $this->post('/validation/animal', $data + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
             ->assertOk()->assertJsonPath('success', true);
-        unset($data['pieces'][0][1]['weight']);
+        unset($data['pieces'][0][1]['gender']);
         $this->post('/validation/animal', $data + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
             ->assertOk()->assertJsonPath('success', true);
         $this->postJson('/validation/animal-update', ['age' => 2])->assertOk();
-        foreach (['', null] as $weight) {
-            $this->postJson('/validation/head', ['weight' => $weight])->assertOk()->assertJsonPath('success', true);
-            $this->postJson('/validation/head-update', ['weight' => $weight])->assertOk();
-            $this->postJson('/validation/animal-update', ['weight' => $weight])->assertOk();
+        foreach (['', null] as $gender) {
+            $this->postJson('/validation/head', ['gender' => $gender])->assertOk()->assertJsonPath('success', true);
+            $this->postJson('/validation/head-update', ['gender' => $gender])->assertOk();
+            $this->postJson('/validation/animal-update', ['gender' => $gender])->assertOk();
         }
         $this->postJson('/validation/head', [])->assertOk()->assertJsonPath('success', true);
         $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'],
@@ -230,8 +230,8 @@ class AuctionCreationValidationTest extends TestCase
     public function test_arabic_validation_messages_are_readable(): void
     {
         app()->setLocale('ar');
-        $this->postJson('/validation/head', ['weight' => 'invalid'])->assertStatus(422)
-            ->assertJsonPath('errors.weight.0', 'يجب أن يكون وزن الرأس رقمًا.');
+        $this->postJson('/validation/head', ['gender' => 123])->assertStatus(422)
+            ->assertJsonPath('errors.gender.0', 'يجب أن يكون جنس الرأس نصًا.');
         $this->post('/validation/animal', ['lineage_title_ar' => ['Animal']])->assertStatus(422)
             ->assertJsonPath('errors.image.0', 'يرجى رفع صورة واحدة على الأقل لكل حيوان.');
         $data = $this->auction();
@@ -301,7 +301,7 @@ class AuctionCreationValidationTest extends TestCase
         $this->postJson('/api/live/add', $invalid)->assertJsonPath('success', false);
         $this->assertDatabaseCount('live_videos', 1);
         $this->assertDatabaseHas('user_subscriptions', ['remaining_auctions' => 2]);
-        $animal = ['lineage_title_ar' => ['Animal'], 'weight' => [12.75],
+        $animal = ['lineage_title_ar' => ['Animal'], 'gender' => ['male'],
             'address' => ['Address'], 'information_ar' => ['Details']];
         $this->post('/api/live/items/add/1', $animal)->assertStatus(422);
         $this->assertDatabaseCount('live_video_items', 0);
@@ -309,7 +309,7 @@ class AuctionCreationValidationTest extends TestCase
         $this->post('/api/live/items/add/1', $animal + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
             ->assertOk()->assertJsonPath('success', true);
         $this->assertDatabaseCount('live_video_items', 1);
-        $this->assertDatabaseHas('live_video_item_pieces', ['weight' => 12.75]);
+        $this->assertDatabaseHas('live_video_item_pieces', ['gender' => 'male']);
         $savedImages = DB::table('live_video_items')->value('image');
         $paths = json_decode($savedImages, true);
         try {
@@ -321,12 +321,12 @@ class AuctionCreationValidationTest extends TestCase
             $this->post('/api/live/items/update/1', ['image' => [UploadedFile::fake()->create('bad.pdf', 10)]])
                 ->assertStatus(422);
             $this->assertSame($savedImages, DB::table('live_video_items')->value('image'));
-            $this->postJson('/api/live/items/pieces/add/1', ['weight' => 0])->assertStatus(422);
+            $this->postJson('/api/live/items/pieces/add/1', ['gender' => 123])->assertStatus(422);
             $this->assertDatabaseCount('live_video_item_pieces', 1);
-            $this->postJson('/api/live/items/pieces/add/1', ['weight' => 20.5])
+            $this->postJson('/api/live/items/pieces/add/1', ['gender' => 'male'])
                 ->assertOk()->assertJsonPath('success', true);
             $this->assertDatabaseCount('live_video_item_pieces', 2);
-            $this->post('/api/live/items/add/1', ['lineage_title_ar' => ['One', 'Two'], 'weight' => [10, 0],
+            $this->post('/api/live/items/add/1', ['lineage_title_ar' => ['One', 'Two'], 'gender' => ['male', 0],
                 'image' => [[UploadedFile::fake()->image('one.jpg')], [UploadedFile::fake()->image('two.jpg')]]])
                 ->assertStatus(422);
             $this->assertDatabaseCount('live_video_items', 1);
@@ -352,9 +352,9 @@ class AuctionCreationValidationTest extends TestCase
     public function test_arabic_validation_messages(): void
     {
         app()->setLocale('ar');
-        $this->postJson('/validation/head', ['weight' => 0])->assertStatus(422)
-            ->assertJsonPath('message', trans('validation.head_weight_positive'));
-        $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'weight' => [10]])
+        $this->postJson('/validation/head', ['gender' => 123])->assertStatus(422)
+            ->assertJsonPath('message', trans('validation.head_gender_string'));
+        $this->post('/validation/animal', ['lineage_title_ar' => ['Animal'], 'gender' => ['male']])
             ->assertStatus(422)->assertJsonPath('message', trans('validation.animal_images_required'));
     }
 }

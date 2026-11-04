@@ -39,7 +39,7 @@ class updateItemRequest extends FormRequest
             'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
             'seller_id' => 'nullable|integer|exists:users,id', //  seller
-            'weight' => 'nullable|numeric|gt:0',
+            'gender' => 'nullable|string|max:255',
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer
             // 'start_price' => 'sometimes|numeric', // Assuming price is a number
@@ -51,7 +51,7 @@ class updateItemRequest extends FormRequest
             'image' => 'sometimes|array|min:1',
             'image.*' => 'required|file|image|mimes:jpeg,jpg,png|max:20000',
             'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.weight' => 'nullable|numeric|gt:0',
+            'pieces.*.gender' => 'nullable|string|max:255',
             'pieces.*.piece_multiplier_number' => 'nullable|string|max:255',
             'pieces.*.identifier' => 'nullable|string|max:255',
             'pieces.*.baham_count' => 'nullable|string|max:255',
@@ -104,10 +104,8 @@ class updateItemRequest extends FormRequest
     public function messages()
     {
         return [
-            'weight.numeric' => trans('validation.head_weight_numeric'),
-            'weight.gt' => trans('validation.head_weight_positive'),
-            'pieces.*.weight.numeric' => trans('validation.head_weight_numeric'),
-            'pieces.*.weight.gt' => trans('validation.head_weight_positive'),
+            'gender.string' => trans('validation.head_gender_string'),
+            'pieces.*.gender.string' => trans('validation.head_gender_string'),
             'image.required' => trans('validation.animal_images_required'),
             'image.min' => trans('validation.animal_images_required'),
             'image.array' => trans('validation.animal_images_array'),

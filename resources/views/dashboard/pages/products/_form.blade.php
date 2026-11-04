@@ -9,7 +9,7 @@
         $existingPieces = $data->pieces->map(function ($piece) {
             return [
                 'age' => $piece->age,
-                'weight' => $piece->weight,
+                'gender' => $piece->gender,
                 'identifier' => $piece->identifier,
                 'baham_count' => $piece->baham_count,
             ];
@@ -149,7 +149,7 @@
                                     <tr>
                                         <th>#</th>
                                         <th>{{ TranslationHelper::translate('Age') }} <span class="text-danger">*</span></th>
-                                        <th>{{ TranslationHelper::translate('weight') }}</th>
+                                        <th>{{ TranslationHelper::translate('gender') }}</th>
                                         <th>{{ TranslationHelper::translate('identifier') }}</th>
                                         <th>{{ TranslationHelper::translate('baham_count') }}</th>
                                     </tr>
@@ -178,7 +178,7 @@
                             @endforeach
                         </select>
                     </td>
-                    <td><input type="number" step="0.01" class="form-control piece-weight" data-name="weight" placeholder="{{ TranslationHelper::translate('weight') }}"></td>
+                    <td><input type="text" maxlength="255" class="form-control piece-gender" data-name="gender" placeholder="{{ TranslationHelper::translate('gender') }}"></td>
                     <td><input type="text" class="form-control piece-identifier" data-name="identifier" placeholder="{{ TranslationHelper::translate('identifier') }}"></td>
                     <td><input type="number" min="0" class="form-control piece-baham" data-name="baham_count" placeholder="0" value="0"></td>
                 </tr>
@@ -284,7 +284,7 @@
                 row.querySelector('.piece-number').textContent = i + 1;
 
                 const piece = existingPieces[i] || {};
-                ['age', 'weight', 'identifier', 'baham_count'].forEach(function (field) {
+                ['age', 'gender', 'identifier', 'baham_count'].forEach(function (field) {
                     const input = row.querySelector('[data-name="' + field + '"]');
                     if (!input) return;
                     input.name = 'pieces[' + i + '][' + field + ']';
