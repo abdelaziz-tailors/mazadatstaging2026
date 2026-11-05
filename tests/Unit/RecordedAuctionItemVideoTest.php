@@ -98,6 +98,33 @@ class RecordedAuctionItemVideoTest extends TestCase
         self::assertTrue($validator->passes(), $validator->errors()->toJson());
     }
 
+    public function test_missing_images_produce_one_error_per_animal(): void
+    {
+        [$request] = $this->validateVideos([], [0 => 'Animal'], 'live');
+        foreach ([null, []] as $images) {
+            $data = $request->all();
+            unset($data['image']);
+            if ($images !== null) {
+                $data['image'] = $images;
+            }
+            $validator = $this->validator->make($data, $request->rules());
+            self::assertTrue($validator->fails());
+            self::assertSame(['image.0'], $validator->errors()->keys());
+            self::assertCount(1, $validator->errors()->all());
+        }
+    }
+
+    public function test_missing_image_does_not_hide_other_required_errors(): void
+    {
+        [$request] = $this->validateVideos([], [0 => 'Animal'], 'live');
+        $data = $request->all();
+        unset($data['image']);
+        $data['lineage_title_ar'][0] = '';
+        $validator = $this->validator->make($data, $request->rules());
+        self::assertTrue($validator->fails());
+        self::assertEqualsCanonicalizing(['lineage_title_ar.0', 'image.0'], $validator->errors()->keys());
+    }
+
     public function test_every_animal_requires_its_own_video_even_with_sparse_indices(): void
     {
         [, $validator] = $this->validateVideos([2 => UploadedFile::fake()->create('animal.mp4', 10, 'video/mp4')], [2 => 'First', 7 => 'Second']);

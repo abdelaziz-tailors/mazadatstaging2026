@@ -46,7 +46,9 @@ class StoreItemRequest extends FormRequest
 
             'bidding' => 'nullable',
             'bidding.*' => 'numeric',
-            'image' => 'required|array|min:1',
+            // Each animal below owns its required-image error. Requiring the
+            // parent as well produces two errors when all images are missing.
+            'image' => $this->input('lineage_title_ar') ? 'sometimes|array' : 'required|array|min:1',
             'image.*' => 'required|array|min:1', // Each image in a nested array
             'image.*.*' => 'required|file|image|mimes:jpeg,jpg,png|max:20000', // Each image in a nested array
             'video.*'=>'nullable|mimes:mp4,avi,wmv,flv|max:20000',
