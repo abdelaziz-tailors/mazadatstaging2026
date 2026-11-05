@@ -13,6 +13,7 @@ use App\Services\AuctionItemTransferService;
 use App\Traits\ResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -146,66 +147,69 @@ class LiveVideoItemTransferController extends Controller
                 return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
             }
 
-            if ($request->transfer_mode === 'existing') {
-                $target = $this->ownedAuction($request->target_auction_id);
-                if (! $target) {
-                    Log::info('MOBILE_TRANSFER_FAILED', [
-                        'error' => 'target auction not found or not owned by authenticated user',
+            // Keep destination verification and JSON construction atomic with the writes.
+            return DB::transaction(function () use ($request, $transferService, $source) {
+                if ($request->transfer_mode === 'existing') {
+                    $target = $this->ownedAuction($request->target_auction_id);
+                    if (! $target) {
+                        Log::info('MOBILE_TRANSFER_FAILED', [
+                            'error' => 'target auction not found or not owned by authenticated user',
+                        ]);
+                        return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
+                    }
+                    $createdItems = $transferService->transferItems($source, $target, $request->item_ids);
+
+                    $target = $target->fresh(['video_items']);
+                    $targetId = (int) $request->target_auction_id;
+                    $createdItemIds = $createdItems->pluck('id')->filter()->values();
+
+                    if ((int) $target->id !== $targetId || $createdItemIds->isEmpty() ||
+                        $createdItems->contains(function (LiveVideoItem $createdItem) use ($targetId) {
+                            return (int) $createdItem->live_video_id !== $targetId;
+                        }) ||
+                        $createdItemIds->diff($target->video_items->pluck('id'))->isNotEmpty()) {
+                        throw ValidationException::withMessages([
+                            'target_auction_id' => ['The transferred item was not returned by the selected destination auction.'],
+                        ]);
+                    }
+
+                    Log::info('MOBILE_TRANSFER_SUCCESS', [
+                        'target_auction_id' => $target->id,
+                        'created_item_ids' => $createdItemIds->all(),
+                        'created_item_live_video_ids' => $createdItems->pluck('live_video_id')->all(),
                     ]);
-                    return $this->failed_response(TranslationHelper::translate('Video Not found'), 404);
+                } else {
+                    $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
+                    if (! $activeSubscription) {
+                        return $this->failed_response(
+                            TranslationHelper::translate('You need to subscribe to create auctions. Please subscribe to continue.'),
+                            422
+                        );
+                    }
+
+                    $newAuction = $request->input('new_auction', []);
+                    [$target, $createdItems] = $transferService->createAuctionAndTransferItems($source, [
+                        'title' => $newAuction['title'] ?? ($newAuction['title_ar'] ?? null),
+                        'title_ar' => $newAuction['title_ar'] ?? null,
+                        'type' => $newAuction['type'] ?? 'live',
+                        'date_start_at' => $newAuction['date_start_at'] ?? null,
+                        'date_end_at' => $newAuction['date_end_at'] ?? null,
+                        'time_start_at' => $newAuction['time_start_at'] ?? null,
+                        'time_end_at' => $newAuction['time_end_at'] ?? null,
+                        'start_price' => $newAuction['start_price'] ?? null,
+                        'information' => $newAuction['information'] ?? null,
+                        'information_ar' => $newAuction['information_ar'] ?? null,
+                        'terms_conditions' => $newAuction['terms_conditions'] ?? null,
+                        'terms_conditions_ar' => $newAuction['terms_conditions_ar'] ?? null,
+                        'city_id' => $newAuction['city_id'] ?? null,
+                    ], $request->item_ids);
                 }
-                $createdItems = $transferService->transferItems($source, $target, $request->item_ids);
 
-                $target = $target->fresh(['video_items']);
-                $targetId = (int) $request->target_auction_id;
-                $createdItemIds = $createdItems->pluck('id')->filter()->values();
-
-                if ((int) $target->id !== $targetId || $createdItemIds->isEmpty() ||
-                    $createdItems->contains(function (LiveVideoItem $createdItem) use ($targetId) {
-                        return (int) $createdItem->live_video_id !== $targetId;
-                    }) ||
-                    $createdItemIds->diff($target->video_items->pluck('id'))->isNotEmpty()) {
-                    throw ValidationException::withMessages([
-                        'target_auction_id' => ['The transferred item was not returned by the selected destination auction.'],
-                    ]);
-                }
-
-                Log::info('MOBILE_TRANSFER_SUCCESS', [
-                    'target_auction_id' => $target->id,
-                    'created_item_ids' => $createdItemIds->all(),
-                    'created_item_live_video_ids' => $createdItems->pluck('live_video_id')->all(),
+                return $this->success_response(TranslationHelper::translate('items_transferred_successfully'), [
+                    'target_auction' => new MyLiveVideoResource($target->fresh('video_items')),
+                    'transferred_items' => VideoItemResource::collection($createdItems),
                 ]);
-            } else {
-                $activeSubscription = UserSubscription::getActiveSubscription(auth('api')->user()->id);
-                if (! $activeSubscription) {
-                    return $this->failed_response(
-                        TranslationHelper::translate('You need to subscribe to create auctions. Please subscribe to continue.'),
-                        422
-                    );
-                }
-
-                $newAuction = $request->input('new_auction', []);
-                [$target, $createdItems] = $transferService->createAuctionAndTransferItems($source, [
-                    'title' => $newAuction['title'] ?? ($newAuction['title_ar'] ?? null),
-                    'title_ar' => $newAuction['title_ar'] ?? null,
-                    'type' => $newAuction['type'] ?? 'live',
-                    'date_start_at' => $newAuction['date_start_at'] ?? null,
-                    'date_end_at' => $newAuction['date_end_at'] ?? null,
-                    'time_start_at' => $newAuction['time_start_at'] ?? null,
-                    'time_end_at' => $newAuction['time_end_at'] ?? null,
-                    'start_price' => $newAuction['start_price'] ?? null,
-                    'information' => $newAuction['information'] ?? null,
-                    'information_ar' => $newAuction['information_ar'] ?? null,
-                    'terms_conditions' => $newAuction['terms_conditions'] ?? null,
-                    'terms_conditions_ar' => $newAuction['terms_conditions_ar'] ?? null,
-                    'city_id' => $newAuction['city_id'] ?? null,
-                ], $request->item_ids);
-            }
-
-            return $this->success_response(TranslationHelper::translate('items_transferred_successfully'), [
-                'target_auction' => new MyLiveVideoResource($target->fresh('video_items')),
-                'transferred_items' => VideoItemResource::collection($createdItems),
-            ]);
+            });
         } catch (ValidationException $exception) {
             Log::info('MOBILE_TRANSFER_FAILED', [
                 'error' => $exception->validator->errors()->first(),
