@@ -12,7 +12,7 @@
         ])
 --}}
 @php $cards = $cards ?? []; @endphp
-<div class="row mb-4">
+<div class="row g-3 mb-4 md-stat-row">
     @foreach ($cards as $card)
         <div class="col-md-3 col-sm-6">
             @include('dashboard.partials.stat-card', $card)

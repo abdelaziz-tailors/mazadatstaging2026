@@ -1,9 +1,10 @@
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-inner slimscroll">
-        <div id="sidebar-menu" class="sidebar-menu">
+    <div class="sidebar-inner">
+        @include('dashboard.partials.navigation-brand')
+        <nav id="sidebar-menu" class="sidebar-menu" aria-label="{{ __('dashboard-ui.navigation') }}">
             <ul>
                 <li class="menu-title">
-                    <span>القائمة الرئيسية</span>
+                    <span>{{ __('dashboard-ui.navigation') }}</span>
                 </li>
 
                 <li class="{{ Request::is(app()->getLocale() . '/admin') ? 'active' : '' }}">
@@ -53,7 +54,7 @@
                         <a class="{{ Request::is(app()->getLocale() . '/admin/users*') && request('user_type') === 'buyer' ? 'active' : '' }}"
                             href="{{ route('admin.users.index', ['user_type' => 'buyer']) }}">
                             <i class="fa-solid fa-user-check"></i>
-                            <span>المشترين</span>
+                            <span>{{ __('dashboard-ui.nav_buyers') }}</span>
                         </a>
                     </li>
                 @endif
@@ -62,7 +63,7 @@
                     <a class="{{ Request::is(app()->getLocale() . '/admin/vendors*') ? 'active' : '' }}"
                         href="{{ route('admin.vendors.index') }}">
                         <i class="fa-solid fa-store"></i>
-                        <span>البائعين</span>
+                        <span>{{ __('dashboard-ui.nav_vendors') }}</span>
                     </a>
                 </li>
 
@@ -70,7 +71,7 @@
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-user-tie"></i>
-                            <span>المشتركين</span>
+                            <span>{{ __('dashboard-ui.nav_partners') }}</span>
                             <span class="menu-arrow"></span>
                         </a>
                         <ul>
@@ -79,7 +80,7 @@
                                     <a class="{{ Request::is(app()->getLocale() . '/admin/partners*') ? 'active' : '' }}"
                                         href="{{ route('admin.partners.index') }}">
                                         <i class="fa-solid fa-users"></i>
-                                        <span>عرض المشتركين</span>
+                                        <span>{{ __('dashboard-ui.nav_all_partners') }}</span>
                                     </a>
                                 </li>
                             @endif
@@ -89,7 +90,7 @@
                                     <a class="{{ Request::is(app()->getLocale() . '/admin/partners/create*') ? 'active' : '' }}"
                                         href="{{ route('admin.partners.create') }}">
                                         <i class="fa-solid fa-user-plus"></i>
-                                        <span>اضافة مشترك</span>
+                                        <span>{{ __('dashboard-ui.nav_add_partner') }}</span>
                                     </a>
                                 </li>
                             @endif
@@ -101,7 +102,7 @@
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-gavel"></i>
-                            <span>المزادات</span>
+                            <span>{{ __('dashboard-ui.nav_auctions') }}</span>
                             <span class="menu-arrow"></span>
                         </a>
                         <ul>
@@ -109,15 +110,15 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/auctions*') ? 'active' : '' }}"
                                     href="{{ route('admin.auctions.index') }}">
                                     <i class="fa-solid fa-list-ul"></i>
-                                    <span>المزادات</span>
+                                    <span>{{ __('dashboard-ui.nav_auctions') }}</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/seller-submissions*') ? 'active' : '' }}"
                                     href="{{ route('admin.seller-submissions.index') }}"
-                                    title="طلبات عرض قطعة للبيع">
+                                    title="{{ __('dashboard-ui.nav_submission_hint') }}">
                                     <i class="fa-solid fa-file-signature"></i>
-                                    <span>طلبات عرض للبيع</span>
+                                    <span>{{ __('dashboard-ui.nav_submissions') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -128,7 +129,7 @@
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-cart-shopping"></i>
-                            <span>الطلبات</span>
+                            <span>{{ __('dashboard-ui.nav_orders') }}</span>
                             <span class="menu-arrow"></span>
                         </a>
                         <ul>
@@ -136,7 +137,7 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/orders*') ? 'active' : '' }}"
                                     href="{{ route('admin.orders.index') }}">
                                     <i class="fa-solid fa-clipboard-list"></i>
-                                    <span>الطلبات</span>
+                                    <span>{{ __('dashboard-ui.nav_orders') }}</span>
                                 </a>
                             </li>
 
@@ -144,7 +145,7 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/partner-finance/invoices*') ? 'active' : '' }}"
                                     href="{{ route('admin.partner-finance.invoices') }}">
                                     <i class="fa-solid fa-file-invoice"></i>
-                                    <span>الفواتير</span>
+                                    <span>{{ __('dashboard-ui.nav_invoices') }}</span>
                                 </a>
                             </li>
 
@@ -152,7 +153,7 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/partner-finance/wallet*') ? 'active' : '' }}"
                                     href="{{ route('admin.partner-finance.wallet') }}">
                                     <i class="fa-solid fa-wallet"></i>
-                                    <span>المحفظة</span>
+                                    <span>{{ __('dashboard-ui.nav_wallet') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -163,7 +164,7 @@
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-box"></i>
-                            <span>الاشتراكات</span>
+                            <span>{{ __('dashboard-ui.nav_subscriptions') }}</span>
                             <span class="menu-arrow"></span>
                         </a>
                         <ul>
@@ -172,7 +173,7 @@
                                     <a class="{{ Request::is(app()->getLocale() . '/admin/packages*') ? 'active' : '' }}"
                                         href="{{ route('admin.packages.index') }}">
                                         <i class="fa-solid fa-box-open"></i>
-                                        <span>الباقات</span>
+                                        <span>{{ __('dashboard-ui.nav_packages') }}</span>
                                     </a>
                                 </li>
                             @endif
@@ -181,7 +182,7 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/user-subscriptions*') ? 'active' : '' }}"
                                     href="{{ route('admin.user-subscriptions.index') }}">
                                     <i class="fa-solid fa-crown"></i>
-                                    <span>اشتراكات المستخدمين</span>
+                                    <span>{{ __('dashboard-ui.nav_user_subscriptions') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -205,7 +206,7 @@
                         <a class="{{ Request::is(app()->getLocale() . '/admin/notifications*') ? 'active' : '' }}"
                             href="{{ route('admin.notifications.index') }}">
                             <i class="fa-solid fa-bell"></i>
-                            <span>الإشعارات</span>
+                            <span>{{ __('dashboard-ui.nav_notifications') }}</span>
                         </a>
                     </li>
                 @endif
@@ -214,7 +215,7 @@
                     <a class="{{ Request::is(app()->getLocale() . '/admin/sliders*') ? 'active' : '' }}"
                         href="{{ route('admin.sliders.index') }}">
                         <i class="fa-solid fa-images"></i>
-                        <span>السلايدر</span>
+                        <span>{{ __('dashboard-ui.nav_sliders') }}</span>
                     </a>
                 </li>
 
@@ -230,7 +231,7 @@
                     <li class="submenu">
                         <a href="#">
                             <i class="fa-solid fa-file-lines"></i>
-                            <span>الصفحات</span>
+                            <span>{{ __('dashboard-ui.nav_pages') }}</span>
                             <span class="menu-arrow"></span>
                         </a>
                         <ul>
@@ -238,22 +239,22 @@
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/pages/1/edit*') ? 'active' : '' }}"
                                     href="{{ route('admin.pages.edit', [1]) }}">
                                     <i class="fa-solid fa-circle-info"></i>
-                                    <span>معلومات عنا</span>
+                                    <span>{{ __('dashboard-ui.nav_about') }}</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/pages/2/edit*') ? 'active' : '' }}"
                                     href="{{ route('admin.pages.edit', [2]) }}">
                                     <i class="fa-solid fa-file-contract"></i>
-                                    <span>الشروط</span>
+                                    <span>{{ __('dashboard-ui.nav_terms') }}</span>
                                 </a>
                             </li>
                             <li>
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/pages/3/edit*') ? 'active' : '' }}"
                                     href="{{ route('admin.pages.edit', [3]) }}"
-                                    title="سياسة الخصوصية">
+                                    title="{{ __('dashboard-ui.nav_privacy') }}">
                                     <i class="fa-solid fa-user-shield"></i>
-                                    <span>الخصوصية</span>
+                                    <span>{{ __('dashboard-ui.nav_privacy') }}</span>
                                 </a>
                             </li>
                         </ul>
@@ -265,11 +266,11 @@
                         <a class="{{ Request::is(app()->getLocale() . '/admin/settings*') ? 'active' : '' }}"
                             href="{{ route('admin.settings.edit') }}">
                             <i class="fa-solid fa-gear"></i>
-                            <span>الإعدادات</span>
+                            <span>{{ __('dashboard-ui.nav_settings') }}</span>
                         </a>
                     </li>
                 @endif
             </ul>
-        </div>
+        </nav>
     </div>
 </div>

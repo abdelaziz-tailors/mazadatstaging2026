@@ -1,17 +1,6 @@
 
 <div class="row auction-create-form">
 
-                @if ($errors->any())
-                    <div class="col-12">
-                        <div class="alert alert-danger">
-                            <ul class="mb-0">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                @endif
 
                 <div class="col-12 auction-section-heading-wrap">
                     <h5 class="mb-3 auction-section-heading"><i class="fa-solid fa-gavel"></i>{{ TranslationHelper::translate('auction_details') }}</h5>
@@ -312,35 +301,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 
-<style id="mazadat-validation-layout-fix">
-/* Fix narrow dashboard validation error banners */
-.alert.alert-danger {
-    position: fixed !important;
-    top: 110px !important;
-    right: 20px !important;
-    left: auto !important;
-    width: min(600px, calc(100vw - 40px)) !important;
-    min-width: 0 !important;
-    max-width: calc(100vw - 40px) !important;
-    height: auto !important;
-    max-height: 65vh !important;
-    overflow: auto !important;
-    box-sizing: border-box !important;
-    padding: 15px 20px !important;
-    direction: rtl !important;
-    text-align: right !important;
-    white-space: normal !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
-    z-index: 1100 !important;
-}
-.alert.alert-danger ul {
-    margin: 0 !important;
-    padding-right: 20px !important;
-    width: auto !important;
-}
-</style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+@push('scripts')
 
 
 @if (!($isPartnerDashboard ?? false))
@@ -362,11 +323,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 <script>
     $(document).ready(function () {
-        $("select").select2();
+        $('#kt_form_1 select').select2({ width: '100%', dir: document.documentElement.dir });
 
         const terms = document.getElementById('terms_conditions_ar');
         const termsCount = document.getElementById('terms_conditions_ar_count');
@@ -379,3 +338,4 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 </script>
+@endpush

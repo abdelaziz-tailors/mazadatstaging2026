@@ -14,10 +14,10 @@
 @php
     $color = $color ?? 'primary';
 @endphp
-<div class="card h-100">
+<div class="card h-100 md-kpi-card md-kpi-{{ $color }}">
     <div class="stat-card">
         <span class="stat-icon stat-icon-{{ $color }}">
-            <i class="{{ $icon }}"></i>
+            <i class="{{ $icon }}" aria-hidden="true"></i>
         </span>
         <div class="stat-value">{{ $value }}</div>
         <div class="stat-label">{{ $label }}</div>

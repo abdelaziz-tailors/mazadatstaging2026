@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        @include('dashboard.partials.theme-init')
         <title>{{ TranslationHelper::translate('site_name') }} | @yield('title')</title>
         <!-- CSRF Token -->
         <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -24,14 +25,22 @@
             <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;500;600;800&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="{{asset('dashboard/css/rtl.css')}}">
         @endif
+        @include('dashboard.partials.workspace-assets')
     </head>
-    <body>
+    <body class="md-auth">
+        <div class="md-auth-theme">@include('dashboard.partials.theme-control')</div>
         <div class="main-wrapper login-body">
             <div class="login-wrapper">
                 <div class="container">
                     <div class="loginbox">
                         <div class="login-left">
-                            <img class="img-fluid" src="{{ asset('dashboard/img/logo-white.png') }}" alt="Logo">
+                            <img class="img-fluid" src="{{ asset('dashboard/img/logo-white.png') }}" alt="{{ TranslationHelper::translate('site_name') }}">
+                            <div class="md-auth-story">
+                                <span class="md-auth-eyebrow">{{ __('dashboard-ui.login_eyebrow') }}</span>
+                                <h2>{{ str_replace('\\n', "\n", __('dashboard-ui.login_heading')) }}</h2>
+                                <p>{{ __('dashboard-ui.login_description') }}</p>
+                            </div>
+                            <div class="md-auth-secure"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>{{ __('dashboard-ui.secure_access') }}</div>
                         </div>
                         <!--begin::Main-->
                         @yield('content')
@@ -51,6 +60,7 @@
             @endforeach
         @endif
         {!! Toastr::message() !!}
+        <script src="{{ asset('dashboard/js/workspace.js') }}?v={{ filemtime(public_path('dashboard/js/workspace.js')) }}" defer></script>
 
     </body>
 <!--end::Body-->

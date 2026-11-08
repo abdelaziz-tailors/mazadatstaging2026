@@ -6,10 +6,10 @@
 <div class="page-header">
     <div class="row">
         <div class="col">
-            <h3 class="page-title">الملف الشخصي</h3>
+            <h1 class="page-title">{{ __('dashboard-ui.profile_title') }}</h1>
             <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">الرئيسية</a></li>
-                <li class="breadcrumb-item active">الملف الشخصي</li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">{{ TranslationHelper::translate('dashboard') }}</a></li>
+                <li class="breadcrumb-item active">{{ __('dashboard-ui.profile_title') }}</li>
             </ul>
         </div>
     </div>
@@ -17,7 +17,7 @@
 
 <div class="card subscriber-profile-card">
     <div class="card-body">
-        <h4 class="subscriber-profile-title">معلومات الحساب</h4>
+        <h4 class="subscriber-profile-title">{{ __('dashboard-ui.profile_account') }}</h4>
 
         {!! Form::model($admin, ['route' => ['admin.update_profile'], 'method' => 'POST', 'files' => true, 'id' => 'kt_form_1', 'data-toggle' => 'validator']) !!}
             @php
@@ -34,20 +34,20 @@
 
             <div class="row subscriber-profile-fields">
                 <div class="col-lg-6 form-group">
-                    {!! Form::label('name', 'الاسم الكامل', ['class' => 'form-label']) !!}
+                    {!! Form::label('name', __('dashboard-ui.profile_name'), ['class' => 'form-label']) !!}
                     {!! Form::text('name', null, ['class' => 'form-control']) !!}
                 </div>
                 <div class="col-lg-6 form-group">
-                    {!! Form::label('user_name', 'الاسم المستعار', ['class' => 'form-label']) !!}
+                    {!! Form::label('user_name', __('dashboard-ui.profile_username'), ['class' => 'form-label']) !!}
                     {!! Form::text('user_name', null, ['class' => 'form-control']) !!}
                 </div>
 
                 <div class="col-lg-6 form-group">
-                    {!! Form::label('email', 'البريد الإلكتروني', ['class' => 'form-label']) !!}
+                    {!! Form::label('email', __('dashboard-ui.profile_email'), ['class' => 'form-label']) !!}
                     {!! Form::email('email', null, ['class' => 'form-control']) !!}
                 </div>
                 <div class="col-lg-6 form-group">
-                    <label for="admin-phone-local" class="form-label">رقم الجوال</label>
+                    <label for="admin-phone-local" class="form-label">{{ __('dashboard-ui.profile_phone') }}</label>
                     <div class="saudi-phone-field" dir="ltr">
                         <div class="saudi-phone-prefix">
                             <span class="saudi-phone-flag" aria-hidden="true">🇸🇦</span>
@@ -61,24 +61,24 @@
                                dir="ltr" aria-describedby="admin-phone-help admin-phone-error" required>
                     </div>
                     <input type="hidden" name="phone" id="admin-phone" value="{{ old('phone', $admin->phone) }}">
-                    <small id="admin-phone-help" class="form-text saudi-phone-help">سيتم استخدام رقم الجوال لتسجيل الدخول واستقبال الإشعارات</small>
-                    <div id="admin-phone-error" class="invalid-feedback saudi-phone-error" role="alert">يرجى إدخال رقم جوال سعودي صحيح</div>
+                    <small id="admin-phone-help" class="form-text saudi-phone-help">{{ __('dashboard-ui.profile_phone_help') }}</small>
+                    <div id="admin-phone-error" class="invalid-feedback saudi-phone-error" role="alert">{{ __('dashboard-ui.profile_phone_error') }}</div>
                 </div>
 
                 <div class="col-12">
                     <div class="subscriber-image-section">
                         <div class="subscriber-image-details">
-                            <label class="form-label mb-3">الصورة الشخصية</label>
+                            <label class="form-label mb-3" for="image">{{ __('dashboard-ui.profile_image') }}</label>
                             <div class="subscriber-image-actions">
                                 <button type="button" class="subscriber-image-button subscriber-image-delete" id="clear-profile-image">
-                                    <i class="fa-regular fa-trash-can"></i> حذف الصورة
+                                    <i class="fa-regular fa-trash-can"></i> {{ __('dashboard-ui.profile_image_delete') }}
                                 </button>
                                 <label for="image" class="subscriber-image-button subscriber-image-change">
-                                    <i class="fa-solid fa-arrow-up-from-bracket"></i> تغيير الصورة
+                                    <i class="fa-solid fa-arrow-up-from-bracket"></i> {{ __('dashboard-ui.profile_image_change') }}
                                 </label>
                             </div>
-                            <div class="subscriber-image-note">الصيغ المسموحة: JPG, PNG. الحد الأقصى: 2MB</div>
-                            <input type="file" name="image" id="image" class="d-none" accept=".jpg,.jpeg,.png">
+                            <div class="subscriber-image-note">{{ __('dashboard-ui.profile_image_help') }}</div>
+                            <input type="file" name="image" id="image" class="md-file-input" accept=".jpg,.jpeg,.png">
                         </div>
                         <div class="subscriber-image-preview">
                             @include('dashboard.partials.avatar', ['path' => Auth::guard('admin')->user()->image, 'name' => Auth::guard('admin')->user()->name, 'size' => 88])
@@ -89,7 +89,7 @@
 
             <div class="subscriber-profile-submit">
                 <button type="submit" class="btn subscriber-save-button">
-                    حفظ التغييرات <i class="fa-regular fa-floppy-disk"></i>
+                    {{ __('dashboard-ui.profile_save') }} <i class="fa-regular fa-floppy-disk"></i>
                 </button>
             </div>
         {!! Form::close() !!}

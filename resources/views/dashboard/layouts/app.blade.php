@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{ app()->getLocale() }}">
+<html lang="{{ app()->getLocale() }}" dir="{{ LaravelLocalization::getCurrentLocaleDirection() }}">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        @include('dashboard.partials.theme-init')
         <title>{{ TranslationHelper::translate('site_name') }} | @yield('title')</title>
         <!-- CSRF Token -->
         <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -29,45 +30,50 @@
         <link rel="stylesheet" href="{{asset('dashboard/css/theme.css')}}?v={{ @filemtime(public_path('dashboard/css/theme.css')) }}">
         @livewireStyles
         @yield('css_lib')
+        @include('dashboard.partials.workspace-assets')
     </head>
 
 
-</head>
 <!--end::Head-->
 <!--begin::Body-->
-<body>
+<body class="md-workspace">
+    <a class="md-skip-link" href="#main-content">{{ __('dashboard-ui.skip_content') }}</a>
     <div class="main-wrapper">
         <div class="header">
             <div class="header-left">
                 <a href="{{ url('admin') }}" class="logo">
-                    <img src="{{ asset('dashboard/img/logo.png') }}" alt="Logo">
+                    <img src="{{ asset('dashboard/img/logo.png') }}" alt="{{ TranslationHelper::translate('site_name') }}">
                 </a>
                 <a href="{{ url('admin') }}" class="logo logo-small">
-                    <img src="{{ asset('dashboard/img/logo-small.png') }}" alt="Logo" width="30" height="30">
+                    <img src="{{ asset('dashboard/img/logo-small.png') }}" alt="{{ TranslationHelper::translate('site_name') }}" width="30" height="30">
                 </a>
             </div>
 
-            <a href="javascript:void(0);" id="toggle_btn" class="md-sidebar-toggle" title="إظهار / إخفاء القائمة">
+            <button type="button" id="toggle_btn" class="md-sidebar-toggle" aria-controls="sidebar" aria-expanded="true" aria-label="{{ __('dashboard-ui.toggle_navigation') }}" title="{{ __('dashboard-ui.toggle_navigation') }}">
                 <i class="fa-solid fa-angles-right md-sidebar-hide-icon"></i>
                 <i class="fa-solid fa-angles-left md-sidebar-show-icon"></i>
-            </a>
-            <a class="mobile_btn" id="mobile_btn">
+            </button>
+            <button type="button" class="mobile_btn" id="mobile_btn" aria-controls="sidebar" aria-expanded="false" aria-label="{{ __('dashboard-ui.open_navigation') }}">
                 <i class="fa-solid fa-bars-staggered"></i>
-            </a>
+            </button>
+            <a class="md-mobile-brand" href="{{ route('admin.dashboard.index') }}">{{ TranslationHelper::translate('site_name') }}</a>
 
-            <form action="{{ route('admin.search.index') }}" method="GET" class="md-header-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" name="q" class="form-control" value="{{ request('q') }}"
+            <form action="{{ route('admin.search.index') }}" method="GET" class="md-header-search" role="search" id="workspace-search">
+                <button type="submit" aria-label="{{ __('dashboard-ui.search') }}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+                <input type="search" name="q" class="form-control" value="{{ request('q') }}" aria-label="{{ __('dashboard-ui.search') }}"
                     placeholder="{{ TranslationHelper::translate('dashboard_search_placeholder') }}">
+                <kbd aria-hidden="true">Ctrl K</kbd>
             </form>
 
             <ul class="nav user-menu">
+                <li>@include('dashboard.partials.theme-control')</li>
+                <li class="md-mobile-search-item"><button type="button" class="md-mobile-search" aria-controls="workspace-search" aria-expanded="false" aria-label="{{ __('dashboard-ui.search') }}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></li>
                 {{-- No language switcher here: SetDashboardLocale middleware force-redirects
                      every /admin request back to config('app.dashboard_locale') ('ar') on
                      every request, so the dashboard has no real working multi-language
                      support to switch between — a switcher would just silently do nothing. --}}
                 <li class="nav-item dropdown has-arrow">
-                    <a href="#" class="dropdown-toggle nav-link md-notif-toggle" data-bs-toggle="dropdown">
+                    <a href="#" class="dropdown-toggle nav-link md-notif-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ TranslationHelper::translate('notifications') }}">
                         <span class="md-notif-icon-wrap">
                             <i class="fa-solid fa-bell"></i>
                             @if(($headerPendingReviewCount ?? 0) > 0)
@@ -96,10 +102,11 @@
                     </div>
                 </li>
                 <li class="nav-item dropdown has-arrow">
-                    <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
+                    <a href="#" class="dropdown-toggle nav-link" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ TranslationHelper::translate('my_profile') }}: {{ Auth::guard('admin')->user()->name }}">
                         @include('dashboard.partials.avatar', ['path' => Auth::guard('admin')->user()->image, 'name' => Auth::guard('admin')->user()->name, 'size' => 31])
-                        <span class="ms-2 d-none d-lg-inline fw-semibold">
-                            {{ Auth::guard('admin')->user()->name }}
+                        <span class="md-account-copy ms-2 d-none d-lg-inline">
+                            <span class="fw-semibold">{{ Auth::guard('admin')->user()->name }}</span>
+                            <small>{{ Auth::guard('admin')->user()->type === 'partner' ? __('dashboard-ui.partner_workspace') : __('dashboard-ui.admin_workspace') }}</small>
                         </span>
                     </a>
                     <div class="dropdown-menu">
@@ -128,12 +135,13 @@
         @endif
 
         <div class="page-wrapper">
-            <div class="content container-fluid">
+            <main class="content container-fluid" id="main-content" tabindex="-1">
+                @include('dashboard.partials.validation-summary')
                 @yield('content')
-            </div>
+            </main>
             <footer class="md-dashboard-footer">
-                <span>{{ TranslationHelper::translate('site_name') }}</span>
-                <span>{{ now()->year }}</span>
+                <span><span class="md-status-dot" aria-hidden="true"></span> {{ Auth::guard('admin')->user()->type === 'partner' ? __('dashboard-ui.partner_workspace') : __('dashboard-ui.admin_workspace') }}</span>
+                <span>{{ TranslationHelper::translate('site_name') }} &copy; {{ now()->year }}</span>
             </footer>
         </div>
 
@@ -143,9 +151,6 @@
     <script src="{{asset('dashboard/js/jquery-3.6.4.min.js') }}"></script>
     <script src="{{asset('dashboard/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{asset('dashboard/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
-    <script src="{{asset('dashboard/plugins/raphael/raphael.min.js') }}"></script>
-    <script src="{{asset('dashboard/plugins/morris/morris.min.js') }}"></script>
-    <script src="{{asset('dashboard/js/chart.morris.js') }}"></script>
     <script src="https://unpkg.com/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $.ajaxSetup({
@@ -167,6 +172,7 @@
     @endif
     {!! Toastr::message() !!}
     @stack('scripts')
+    <script src="{{ asset('dashboard/js/workspace.js') }}?v={{ filemtime(public_path('dashboard/js/workspace.js')) }}" defer></script>
 
 
     {{-- <script src="assets/plugins/morris/morris.min.js"></script>

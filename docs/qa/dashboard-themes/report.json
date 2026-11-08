@@ -1,0 +1,119 @@
+{
+  "mode": "isolated Blade fixtures; no authenticated accounts or database",
+  "screens": 160,
+  "assertions": 846,
+  "failures": [],
+  "screenshots": [
+    "light-home-1440.png",
+    "light-home-390.png",
+    "light-login-1440.png",
+    "light-login-390.png",
+    "light-users-1440.png",
+    "light-users-390.png",
+    "light-auction-form-1440.png",
+    "light-auction-form-390.png",
+    "light-partner-1440.png",
+    "light-partner-390.png",
+    "dark-home-1440.png",
+    "dark-home-390.png",
+    "dark-login-1440.png",
+    "dark-login-390.png",
+    "dark-users-1440.png",
+    "dark-users-390.png",
+    "dark-auction-form-1440.png",
+    "dark-auction-form-390.png",
+    "dark-partner-1440.png",
+    "dark-partner-390.png"
+  ],
+  "exceptions": [],
+  "contrast": [
+    {
+      "theme": "light",
+      "pairs": [
+        {
+          "foreground": "--md-text",
+          "background": "--md-surface",
+          "ratio": 11.973886238667076
+        },
+        {
+          "foreground": "--md-text-muted",
+          "background": "--md-bg",
+          "ratio": 4.702476979157896
+        },
+        {
+          "foreground": "--md-on-action",
+          "background": "--md-action",
+          "ratio": 6.628699895779037
+        },
+        {
+          "foreground": "--md-danger",
+          "background": "--md-danger-soft",
+          "ratio": 5.011481676349573
+        },
+        {
+          "foreground": "--md-warning",
+          "background": "--md-warning-soft",
+          "ratio": 5.022228795013549
+        },
+        {
+          "foreground": "--md-success",
+          "background": "--md-success-soft",
+          "ratio": 5.1166953985150965
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "pairs": [
+        {
+          "foreground": "--md-text",
+          "background": "--md-surface",
+          "ratio": 14.007360387979462
+        },
+        {
+          "foreground": "--md-text-muted",
+          "background": "--md-bg",
+          "ratio": 9.51453567832695
+        },
+        {
+          "foreground": "--md-on-action",
+          "background": "--md-action",
+          "ratio": 8.536645383481336
+        },
+        {
+          "foreground": "--md-danger",
+          "background": "--md-danger-soft",
+          "ratio": 7.138058083343108
+        },
+        {
+          "foreground": "--md-warning",
+          "background": "--md-warning-soft",
+          "ratio": 8.382440822520653
+        },
+        {
+          "foreground": "--md-success",
+          "background": "--md-success-soft",
+          "ratio": 7.544765884673712
+        }
+      ]
+    }
+  ],
+  "performance": {
+    "switchSynchronousMs": 0.2999999523162842,
+    "geometry": {
+      "before": {
+        "x": 16,
+        "y": 287.46875,
+        "width": 358,
+        "height": 708
+      },
+      "after": {
+        "x": 16,
+        "y": 287.46875,
+        "width": 358,
+        "height": 708
+      }
+    }
+  },
+  "status": "PASS"
+}

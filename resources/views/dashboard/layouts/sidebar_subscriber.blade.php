@@ -1,6 +1,7 @@
 <div class="sidebar" id="sidebar">
-    <div class="sidebar-inner slimscroll">
-        <div id="sidebar-menu" class="sidebar-menu">
+    <div class="sidebar-inner">
+        @include('dashboard.partials.navigation-brand')
+        <nav id="sidebar-menu" class="sidebar-menu" aria-label="{{ __('dashboard-ui.navigation') }}">
             <ul>
                 <li class="menu-title">
                     <span>{{ TranslationHelper::translate('subscriber_main_menu') }}</span>
@@ -116,6 +117,6 @@
                     </a>
                 </li> --}}
             </ul>
-        </div>
+        </nav>
     </div>
 </div>

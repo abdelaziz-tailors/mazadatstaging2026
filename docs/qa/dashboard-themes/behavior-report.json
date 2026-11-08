@@ -1,0 +1,98 @@
+{
+  "mode": "isolated Blade fixtures; no authenticated accounts or database",
+  "screens": 0,
+  "assertions": 51,
+  "failures": [],
+  "screenshots": [],
+  "exceptions": [],
+  "contrast": [
+    {
+      "theme": "light",
+      "pairs": [
+        {
+          "foreground": "--md-text",
+          "background": "--md-surface",
+          "ratio": 11.973886238667076
+        },
+        {
+          "foreground": "--md-text-muted",
+          "background": "--md-bg",
+          "ratio": 4.702476979157896
+        },
+        {
+          "foreground": "--md-on-action",
+          "background": "--md-action",
+          "ratio": 6.628699895779037
+        },
+        {
+          "foreground": "--md-danger",
+          "background": "--md-danger-soft",
+          "ratio": 5.011481676349573
+        },
+        {
+          "foreground": "--md-warning",
+          "background": "--md-warning-soft",
+          "ratio": 5.022228795013549
+        },
+        {
+          "foreground": "--md-success",
+          "background": "--md-success-soft",
+          "ratio": 5.1166953985150965
+        }
+      ]
+    },
+    {
+      "theme": "dark",
+      "pairs": [
+        {
+          "foreground": "--md-text",
+          "background": "--md-surface",
+          "ratio": 14.007360387979462
+        },
+        {
+          "foreground": "--md-text-muted",
+          "background": "--md-bg",
+          "ratio": 9.51453567832695
+        },
+        {
+          "foreground": "--md-on-action",
+          "background": "--md-action",
+          "ratio": 8.536645383481336
+        },
+        {
+          "foreground": "--md-danger",
+          "background": "--md-danger-soft",
+          "ratio": 7.138058083343108
+        },
+        {
+          "foreground": "--md-warning",
+          "background": "--md-warning-soft",
+          "ratio": 8.382440822520653
+        },
+        {
+          "foreground": "--md-success",
+          "background": "--md-success-soft",
+          "ratio": 7.544765884673712
+        }
+      ]
+    }
+  ],
+  "performance": {
+    "switchSynchronousMs": 0.20000004768371582,
+    "geometry": {
+      "before": {
+        "x": 306.71875,
+        "y": 280.65625,
+        "width": 942.5625,
+        "height": 378.96875
+      },
+      "after": {
+        "x": 306.71875,
+        "y": 280.65625,
+        "width": 942.5625,
+        "height": 378.96875
+      }
+    }
+  },
+  "status": "PASS"
+}

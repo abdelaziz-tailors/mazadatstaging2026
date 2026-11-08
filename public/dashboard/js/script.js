@@ -6,6 +6,7 @@
 	var $wrapper = $('.main-wrapper');
 	var $pageWrapper = $('.page-wrapper');
 	var $slimScrolls = $('.slimscroll');
+	var menuDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180;
 	
 	// Sidebar
 	
@@ -20,13 +21,13 @@
 				e.preventDefault();
 			}
 			if(!$(this).hasClass('subdrop')) {
-				$('ul', $(this).parents('ul:first')).slideUp(350);
+				$('ul', $(this).parents('ul:first')).slideUp(menuDuration);
 				$('a', $(this).parents('ul:first')).removeClass('subdrop');
-				$(this).next('ul').slideDown(350);
+				$(this).next('ul').slideDown(menuDuration);
 				$(this).addClass('subdrop');
 			} else if($(this).hasClass('subdrop')) {
 				$(this).removeClass('subdrop');
-				$(this).next('ul').slideUp(350);
+				$(this).next('ul').slideUp(menuDuration);
 			}
 		});
 		$('#sidebar-menu ul li.submenu a.active').parents('li:last').children('a:first').addClass('active').trigger('click');
@@ -212,8 +213,9 @@
 			$('.subdrop + ul').slideUp();
 		}
 		setTimeout(function(){ 
-			mA.redraw();
-			mL.redraw();
+			if (window.mA && typeof window.mA.redraw === 'function') window.mA.redraw();
+			if (window.mL && typeof window.mL.redraw === 'function') window.mL.redraw();
+			window.dispatchEvent(new Event('resize'));
 		}, 300);
 		return false;
 	});

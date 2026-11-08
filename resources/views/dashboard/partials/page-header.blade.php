@@ -22,14 +22,14 @@
             <div class="d-flex align-items-center gap-3">
                 <span class="md-page-icon"><i class="{{ $icon }}"></i></span>
                 <div>
-                    <h3 class="page-title mb-1">{{ $title }}</h3>
-                    <ul class="breadcrumb mb-0">
+                    <h1 class="page-title mb-1">{{ $title }}</h1>
+                    <ul class="breadcrumb mb-0" aria-label="{{ __('dashboard-ui.navigation') }}">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">{{ TranslationHelper::translate('dashboard') }}</a></li>
                         @foreach ($breadcrumbs as $crumb)
                             @if (!empty($crumb['route']))
                                 <li class="breadcrumb-item"><a href="{{ $crumb['route'] }}">{{ $crumb['label'] }}</a></li>
                             @else
-                                <li class="breadcrumb-item active">{{ $crumb['label'] }}</li>
+                                <li class="breadcrumb-item active" aria-current="page">{{ $crumb['label'] }}</li>
                             @endif
                         @endforeach
                     </ul>

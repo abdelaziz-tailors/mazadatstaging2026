@@ -6,17 +6,23 @@
 
 @section('content')
 
+    <div class="md-overview">
+    <div>
     @include('dashboard.partials.page-header', [
         'title' => TranslationHelper::translate('welcome') . ' ' . Auth::guard('admin')->user()->name . '!',
         'icon' => 'fa-solid fa-gauge-high',
         'breadcrumbs' => [['label' => TranslationHelper::translate('dashboard')]],
     ])
+    <p class="md-overview-description">{{ __('dashboard-ui.overview_description') }}</p>
+    </div>
+    <div class="md-overview-date"><i class="fa-regular fa-calendar" aria-hidden="true"></i>{{ now()->locale(app()->getLocale())->translatedFormat('l، j F Y') }}</div>
+    </div>
 
     @php
         $mdDaysOptions = [7, 30, 90];
     @endphp
 
-    <div class="stat-grid">
+    <div class="stat-grid md-stat-count-{{ count($reports) }}">
         @foreach ($reports as $report)
             @include('dashboard.partials.stat-card', [
                 'icon' => $report['icon'],
@@ -65,7 +71,11 @@
                             
                         </div>
                     @endif
-                    <div id="salesChart" class="mt-auto"></div>
+                    @if (array_sum($salesChart['values']) > 0)
+                        <div id="salesChart" class="mt-auto"></div>
+                    @else
+                        @include('dashboard.partials.empty-state', ['message' => __('dashboard-ui.no_sales_period'), 'icon' => 'fa-solid fa-chart-line'])
+                    @endif
                     <div class="md-sales-trend-footer">
                         <a href="{{ route('admin.auctions.index') }}" class="md-sales-trend-link">
                             {{ TranslationHelper::translate('view_sales_reports') }}
@@ -107,7 +117,11 @@
                                 </div>
                             </div>
                         @endif
-                        <div id="registrationsChart" class="mt-auto"></div>
+                        @if (array_sum($registrationsChart['values']) > 0)
+                            <div id="registrationsChart" class="mt-auto"></div>
+                        @else
+                            @include('dashboard.partials.empty-state', ['message' => __('dashboard-ui.no_registrations_period'), 'icon' => 'fa-solid fa-users'])
+                        @endif
                         <div class="md-sales-trend-footer">
                             <a href="{{ route('admin.users.index') }}" class="md-sales-trend-link">
                                 {{ TranslationHelper::translate('view_all_users') }}
@@ -161,7 +175,7 @@
                             
                         </div>
                     @else
-                        <p class="text-muted text-center mb-0 py-5">{{ TranslationHelper::translate('no_results_found') }}</p>
+                        @include('dashboard.partials.empty-state', ['message' => TranslationHelper::translate('no_results_found'), 'icon' => 'fa-solid fa-chart-pie'])
                     @endif
                     <div class="md-sales-trend-footer mt-auto">
                         <a href="{{ route('admin.videos.index') }}" class="md-sales-trend-link">
@@ -270,7 +284,7 @@
                             </table>
                         </div>
                     @else
-                        <p class="text-muted mb-0 p-3">{{ TranslationHelper::translate('nothing_found') }}</p>
+                        @include('dashboard.partials.empty-state')
                     @endif
                 </div>
             </div>
@@ -312,9 +326,25 @@
 @section('scripts_lib')
     <script src="{{ asset('dashboard/plugins/apex/apexcharts.min.js') }}"></script>
     <script>
+        window.mdDashboardCharts = [];
+        function mdWorkspaceChart(target, options) {
+            const tokens = getComputedStyle(document.documentElement);
+            const text = tokens.getPropertyValue('--md-text-muted').trim();
+            options.theme = { mode: document.documentElement.dataset.theme || 'light' };
+            options.chart.foreColor = text;
+            options.chart.background = 'transparent';
+            if (options.grid) options.grid.borderColor = tokens.getPropertyValue('--md-border').trim();
+            if (options.xaxis) options.xaxis.labels.style.colors = text;
+            if (options.yaxis) options.yaxis.labels.style.colors = text;
+            if (options.chart.type === 'donut') options.stroke.colors = [tokens.getPropertyValue('--md-surface').trim()];
+            const chart = new ApexCharts(target, options);
+            window.mdDashboardCharts.push(chart);
+            return chart;
+        }
         const mdChartTheme = {
             fontFamily: 'inherit',
-            foreColor: '#9aa2b1',
+            foreColor: '#64786f',
+            animations: { enabled: !window.matchMedia('(prefers-reduced-motion: reduce)').matches, speed: 350 },
         };
         const mdIsSmallScreen = window.innerWidth < 576;
         // ApexCharts' "tickAmount" is meant to thin out labels on a category
@@ -324,14 +354,14 @@
         // returns text for every Nth category (blank string otherwise) is
         // deterministic regardless of that, and guarantees real spacing.
         const mdTrendGrid = {
-            borderColor: '#ffffff',
-            strokeDashArray: 0,
+            borderColor: '#e7eeea',
+            strokeDashArray: 4,
             xaxis: { lines: { show: false } },
             yaxis: { lines: { show: true } },
-            padding: { top: 0, right: 55, bottom: 0, left: 0 },
+            padding: { top: 0, right: 12, bottom: 0, left: 4 },
         };
         const mdTrendXaxis = (categories) => {
-            const desiredTicks = mdIsSmallScreen ? 4 : 8;
+            const desiredTicks = mdIsSmallScreen ? 3 : 6;
             const step = Math.max(1, Math.ceil(categories.length / desiredTicks));
             return {
                 categories,
@@ -339,7 +369,9 @@
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 labels: {
-                    style: { colors: '#9aab9e', fontSize: '11px' },
+                    rotate: 0,
+                    hideOverlappingLabels: true,
+                    style: { colors: '#64786f', fontSize: '11px' },
                     formatter: (value) => {
                         const idx = categories.indexOf(value);
                         return (idx % step === 0) ? value : '';
@@ -353,7 +385,7 @@
         // (division by zero), which rendered as a broken sliver instead of a
         // ring — the card only mounts the chart div at all when there's real
         // data for the selected date range (see the condition wrapping this block).
-        new ApexCharts(document.querySelector("#statusDonutChart"), {
+        mdWorkspaceChart(document.querySelector("#statusDonutChart"), {
             chart: { type: 'donut', height: 200, width: 200, ...mdChartTheme, animations: { enabled: false }, toolbar: { show: false } },
             series: [{{ $statusChart['active'] }}, {{ $statusChart['scheduled'] }}, {{ $statusChart['ended'] }}],
             labels: ["{{ TranslationHelper::translate('active') }}", "{{ TranslationHelper::translate('scheduled') }}", "{{ TranslationHelper::translate('ended') }}"],
@@ -366,7 +398,7 @@
         }).render();
         @endif
 
-        @if ($registrationsChart)
+        @if ($registrationsChart && array_sum($registrationsChart['values']) > 0)
         (function () {
             // A user count is always a whole number. ApexCharts'
             // "decimalsInFloat" only formats the digits it decides to draw —
@@ -381,13 +413,13 @@
             var tickAmount = Math.min(rawMax, 5);
             var niceMax = Math.ceil(rawMax / tickAmount) * tickAmount;
 
-            new ApexCharts(document.querySelector("#registrationsChart"), {
+            mdWorkspaceChart(document.querySelector("#registrationsChart"), {
                 chart: { type: 'area', height: 190, toolbar: { show: false }, ...mdChartTheme },
                 series: [{ name: "{{ TranslationHelper::translate('user_registrations') }}", data: data }],
                 xaxis: mdTrendXaxis(@json($registrationsChart['labels'])),
                 yaxis: {
                     opposite: true,
-                    labels: { style: { colors: '#9aab9e', fontSize: '11px' } },
+                    labels: { style: { colors: '#64786f', fontSize: '11px' } },
                     min: 0,
                     max: niceMax,
                     tickAmount: tickAmount,
@@ -395,7 +427,7 @@
                 colors: ['#2d8653'],
                 fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.5, gradientToColors: ['#c8e6c9'], opacityFrom: 0.55, opacityTo: 0.05, stops: [0, 100] } },
                 stroke: { curve: 'smooth', width: 2 },
-                markers: { size: 4, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
+                markers: { size: mdIsSmallScreen ? 0 : 2, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 5 } },
                 dataLabels: { enabled: false },
                 grid: mdTrendGrid,
                 tooltip: { y: { formatter: (val) => val + ' {{ TranslationHelper::translate("new_users") }}' } },
@@ -403,14 +435,15 @@
         })();
         @endif
 
-        new ApexCharts(document.querySelector("#salesChart"), {
+        @if (array_sum($salesChart['values']) > 0)
+        mdWorkspaceChart(document.querySelector("#salesChart"), {
             chart: { type: 'area', height: 190, toolbar: { show: false }, ...mdChartTheme },
             series: [{ name: "{{ TranslationHelper::translate('Sales') }}", data: @json($salesChart['values']) }],
             xaxis: mdTrendXaxis(@json($salesChart['labels'])),
             yaxis: {
                 opposite: true,
                 labels: {
-                    style: { colors: '#9aab9e', fontSize: '11px' },
+                    style: { colors: '#64786f', fontSize: '11px' },
                     formatter: function(val) {
                         if (val >= 1000000) return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
                         if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
@@ -423,10 +456,11 @@
             colors: ['#2d8653'],
             fill: { type: 'gradient', gradient: { shade: 'light', type: 'vertical', shadeIntensity: 0.5, gradientToColors: ['#c8e6c9'], opacityFrom: 0.55, opacityTo: 0.05, stops: [0, 100] } },
             stroke: { curve: 'smooth', width: 2 },
-            markers: { size: 4, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 6 } },
+            markers: { size: mdIsSmallScreen ? 0 : 2, colors: ['#2d8653'], strokeColors: '#fff', strokeWidth: 2, hover: { size: 5 } },
             dataLabels: { enabled: false },
             grid: mdTrendGrid,
-            tooltip: { y: { formatter: (val) => Number(val).toLocaleString('ar-SA') + ' {{ TranslationHelper::translate("sar") }}' } },
+            tooltip: { y: { formatter: (val) => Number(val).toLocaleString(document.documentElement.lang === 'ar' ? 'ar-SA' : 'en-US') + ' {{ TranslationHelper::translate("sar") }}' } },
         }).render();
+        @endif
     </script>
 @endsection
