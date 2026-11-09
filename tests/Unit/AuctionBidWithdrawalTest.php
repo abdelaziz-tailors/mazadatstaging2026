@@ -55,7 +55,7 @@ class AuctionBidWithdrawalTest extends TestCase
         require_once database_path('migrations/2026_11_09_000000_create_auction_bid_withdrawals_table.php');
         $this->app->instance('db.schema', $db->getSchemaBuilder());
         (new \CreateAuctionBidWithdrawalsTable())->up();
-        DB::table('live_videos')->insert(['id' => 10, 'status' => 'start', 'start_price' => '100']);
+        DB::table('live_videos')->insert(['id' => 10, 'user_id' => 9, 'status' => 'start', 'start_price' => '100']);
         DB::table('live_video_items')->insert(['id' => 20, 'live_video_id' => 10, 'status' => 'working', 'bidding' => '10']);
         VideoComment::forceCreate(['id' => 30, 'video_id' => 10, 'live_video_item_id' => 20, 'user_id' => 1, 'comment' => '110.00']);
         VideoComment::forceCreate(['id' => 31, 'video_id' => 10, 'live_video_item_id' => 20, 'user_id' => 2, 'comment' => '120.00']);
@@ -72,12 +72,12 @@ class AuctionBidWithdrawalTest extends TestCase
         parent::tearDown();
     }
 
-    private function withdraw(int $id = 30, int $user = 1): void
+    private function withdraw(int $id = 30, int $user = 9): void
     {
         (new AuctionBidWithdrawalService())->withdraw($id, $user);
     }
 
-    private function httpDelete(string $id, ?int $user = 1, string $method = 'DELETE', array $body = [])
+    private function httpDelete(string $id, ?int $user = 9, string $method = 'DELETE', array $body = [])
     {
         $this->app->register(\Illuminate\Events\EventServiceProvider::class);
         $this->app->register(\Illuminate\Routing\RoutingServiceProvider::class);
@@ -118,6 +118,56 @@ class AuctionBidWithdrawalTest extends TestCase
     {
         $this->expectException(\Illuminate\Auth\AuthenticationException::class);
         $this->httpDelete('30', null);
+    }
+
+    /** @dataProvider deletionActors */
+    public function test_delete_route_authorizes_only_the_related_auction_creator(string $actor, int $status): void
+    {
+        [$creator, $bidder, $otherBidder, $unrelated, $otherCreator] = $this->priceIntegrityUsers();
+        DB::table('live_videos')->where('id', 10)->update(['user_id' => $creator->id]);
+        DB::table('live_videos')->insert(['id' => 11, 'user_id' => $otherCreator->id, 'status' => 'start']);
+        // Item creator and bid author intentionally differ from the auction creator.
+        DB::table('live_video_items')->where('id', 20)->update(['user_id' => $bidder->id]);
+        VideoComment::whereKey(30)->update(['user_id' => $bidder->id]);
+        VideoComment::whereKey(31)->update(['user_id' => $otherBidder->id]);
+        $reply = VideoComment::create(['video_id' => 10, 'comment_id' => 30, 'comment' => 'reply']);
+        DB::table('video_comment_likes')->insert(['id' => 1, 'comment_id' => $reply->id]);
+        if ($status === 200) {
+            $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, 30);
+        } else {
+            $this->firebase->shouldNotReceive('removeAuctionBid');
+        }
+        $actors = compact('creator', 'bidder', 'otherBidder', 'unrelated', 'otherCreator');
+        $response = $this->httpDelete('30', $actors[$actor]->id);
+        self::assertSame($status, $response->getStatusCode());
+        self::assertSame($status === 200, $response->getData(true)['success']);
+        if ($status === 200) {
+            self::assertNull(VideoComment::find(30));
+            self::assertNull(VideoComment::find($reply->id));
+            self::assertTrue($reply->fresh()->trashed());
+            self::assertSame(0, VideoCommentLike::count());
+            self::assertNotNull(DB::table('auction_bid_withdrawals')->where('bid_id', 30)->value('synced_at'));
+        } else {
+            self::assertSame('Only the auction creator may delete this bid.', $response->getData(true)['message']);
+            self::assertNotNull(VideoComment::find(30));
+            self::assertNotNull($reply->fresh());
+            self::assertSame(1, VideoCommentLike::count());
+            self::assertSame(0, DB::table('auction_bid_withdrawals')->count());
+        }
+        self::assertNotNull(VideoComment::find(31));
+        self::assertSame(2, DB::table('live_videos')->count());
+        self::assertSame(1, DB::table('live_video_items')->count());
+    }
+
+    public function deletionActors(): array
+    {
+        return [
+            'auction creator' => ['creator', 200],
+            'bidder deleting own bid' => ['bidder', 403],
+            'bidder deleting another bid' => ['otherBidder', 403],
+            'unrelated authenticated user' => ['unrelated', 403],
+            'another auction creator' => ['otherCreator', 403],
+        ];
     }
 
     public function test_existing_post_route_still_places_a_bid(): void
@@ -174,13 +224,14 @@ class AuctionBidWithdrawalTest extends TestCase
     public function rejectedWithdrawals(): array
     {
         return [
-            'highest' => [31, 2, [], [], 409], 'other owner' => [30, 2, [], [], 403],
-            'missing' => [999, 1, [], [], 404], 'guest' => [30, 0, [], [], 401],
-            'closed auction' => [30, 1, [], ['status' => 'end'], 409],
-            'closed item' => [30, 1, ['status' => 'finished'], [], 409],
-            'awarded price' => [30, 1, ['finished_price' => '120'], [], 409],
-            'awarded user' => [30, 1, ['user_finished_id' => 2], [], 409],
-            'deleted item' => [30, 1, ['deleted_at' => '2026-01-01'], [], 409],
+            'highest' => [31, 9, [], [], 409], 'other bidder' => [30, 2, [], [], 403],
+            'own bidder' => [30, 1, [], [], 403],
+            'missing' => [999, 9, [], [], 404], 'guest' => [30, 0, [], [], 401],
+            'closed auction' => [30, 9, [], ['status' => 'end'], 409],
+            'closed item' => [30, 9, ['status' => 'finished'], [], 409],
+            'awarded price' => [30, 9, ['finished_price' => '120'], [], 409],
+            'awarded user' => [30, 9, ['user_finished_id' => 2], [], 409],
+            'deleted item' => [30, 9, ['deleted_at' => '2026-01-01'], [], 409],
         ];
     }
 
@@ -332,7 +383,7 @@ class AuctionBidWithdrawalTest extends TestCase
         $this->assertAuditPrice($d->id, '2000', '2000.00', '2100.00');
 
         $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, $bidB->id);
-        self::assertTrue($this->httpDelete((string) $bidB->id, $b->id)->getData(true)['success']);
+        self::assertTrue($this->httpDelete((string) $bidB->id, $organizer->id)->getData(true)['success']);
         foreach ([$bidB, $reply, $nested] as $deleted) {
             self::assertNull(VideoComment::find($deleted->id));
             self::assertNotNull(VideoComment::withTrashed()->find($deleted->id)->deleted_at);
@@ -348,14 +399,14 @@ class AuctionBidWithdrawalTest extends TestCase
 
         if ($withdrawA) {
             $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, $bidA->id);
-            self::assertTrue($this->httpDelete((string) $bidA->id, $a->id)->getData(true)['success']);
+            self::assertTrue($this->httpDelete((string) $bidA->id, $organizer->id)->getData(true)['success']);
             self::assertNull(VideoComment::find($bidA->id));
         }
         // Neither the withdrawn 1500 nor repeated withdrawals may lower this threshold.
         foreach (['1600', '2000', '2099.99'] as $attempt) {
             $this->assertAuditPrice($d->id, $attempt, '2000.00', '2100.00');
         }
-        self::assertSame(409, $this->httpDelete((string) $bidC->id, $c->id)->getStatusCode());
+        self::assertSame(409, $this->httpDelete((string) $bidC->id, $organizer->id)->getStatusCode());
         $bidD = $this->submitAuditBid($d->id, '2100');
         $this->assertAuditPrice($a->id, '2199.99', '2100.00', '2200.00');
         // The withdrawn bid must also be rejected as an explicit award candidate.
@@ -372,7 +423,7 @@ class AuctionBidWithdrawalTest extends TestCase
         // Award retry preserves the winner and does not duplicate order lines/publication.
         (new AuctionAwardService())->award(20, $bidD->id, $organizer->id);
         self::assertSame(1, DB::table('order_items')->count());
-        self::assertSame(409, $this->httpDelete((string) $bidC->id, $c->id)->getStatusCode());
+        self::assertSame(409, $this->httpDelete((string) $bidC->id, $organizer->id)->getStatusCode());
         $this->assertAuditPrice($a->id, '2200', '2100.00', '2200.00');
     }
 

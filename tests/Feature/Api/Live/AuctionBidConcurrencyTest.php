@@ -44,7 +44,9 @@ class AuctionBidConcurrencyTest extends TestCase
 
     public function test_concurrent_withdrawal_and_new_bid_preserve_price_and_winner_history(): void
     {
-        $bid = app(AuctionBidService::class)->place($this->item->id, $this->users[0]->id, '1100');
+        // Worker zero acts as the auction creator, independently of bid ownership.
+        $this->auction->update(['user_id' => $this->users[0]->id]);
+        $bid = app(AuctionBidService::class)->place($this->item->id, $this->users[1]->id, '1100');
         $highest = app(AuctionBidService::class)->place($this->item->id, $this->users[1]->id, '1200');
         $results = $this->race(['withdraw:'.$bid->id, '1300']);
         $this->assertTrue($results[0]['success']);

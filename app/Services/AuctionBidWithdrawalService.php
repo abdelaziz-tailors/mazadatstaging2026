@@ -22,10 +22,13 @@ class AuctionBidWithdrawalService
             if (! $bid || $bid->comment_id !== null || (int) $bid->live_video_item_id !== (int) $itemId) {
                 $this->reject('Bid not found.', 404);
             }
-            if ((int) $bid->user_id !== $userId) { $this->reject('Only the bidder may withdraw this bid.', 403); }
             if (! $item || ! $auction || $item->deleted_at || $auction->deleted_at
                 || (int) $bid->video_id !== (int) $auction->id) {
                 $this->reject('Auction integrity cannot be guaranteed.', 409);
+            }
+            // Ownership belongs to the item's auction, not the bid or item creator.
+            if ((int) $auction->user_id !== $userId) {
+                $this->reject('Only the auction creator may delete this bid.', 403);
             }
             if ($auction->status !== 'start' || $item->status !== 'working'
                 || $item->finished_price !== null || $item->user_finished_id !== null
