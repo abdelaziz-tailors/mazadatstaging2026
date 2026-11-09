@@ -128,6 +128,11 @@ $pages = [
     'subscriptions' => 'dashboard.pages.user-subscriptions.index',
     'profile' => 'dashboard.pages.admin-profile.profile',
     'role-form' => 'dashboard.pages.roles.create',
+    'vendors' => 'dashboard.pages.vendors.index',
+    'partners' => 'dashboard.pages.partners.index',
+    'products' => 'dashboard.pages.products.index',
+    'submission-detail' => 'dashboard.pages.seller-submissions.show',
+    'auction-detail' => 'dashboard.pages.auctions.show',
 ];
 $manifest = [];
 foreach (['en', 'ar'] as $locale) {
@@ -139,6 +144,7 @@ foreach (['en', 'ar'] as $locale) {
         foreach ($pages as $name => $view) {
             $paths = ['home' => '', 'form' => 'ages/create', 'password' => 'profile/change-password', 'auction-form' => 'videos/create', 'wallet' => 'partner-finance/wallet', 'invoices' => 'partner-finance/invoices'];
             $request = Illuminate\Http\Request::create('http://127.0.0.1/'.$locale.'/admin/'.($paths[$name] ?? $name));
+            if ($name === 'products') $request->query->set('id', 42);
             $request->setLaravelSession($app['session']->driver());
             $app->instance('request', $request);
             Illuminate\Support\Facades\Facade::clearResolvedInstance('request');
@@ -146,6 +152,26 @@ foreach (['en', 'ar'] as $locale) {
             $data = array_merge($base, ['isPartner' => $type === 'partner', 'isPartnerDashboard' => $type === 'partner']);
             $data['request'] = $request;
             $data['admin'] = $admin;
+            if ($name === 'submission-detail') $data['submission'] = (object) [
+                'id' => 42, 'user' => (object) ['name' => 'Preview seller', 'phone' => '0500000000'],
+                'partner' => (object) ['name' => 'Preview partner'], 'sheep_type' => 'Preview item',
+                'expected_price' => 2400, 'description' => 'Presentation fixture', 'notes' => '-',
+                'status' => 'pending', 'media' => collect(),
+            ];
+            if ($name === 'auction-detail') $data['video'] = new class {
+                public $title_ar = 'مزاد تجريبي';
+                public $title = 'Preview auction';
+                public $user_Video = null;
+                public $partner = null;
+                public $type = 'live';
+                public $status = 'start';
+                public $date_start_at = '2026-11-09';
+                public $time_start_at = '10:00';
+                public $date_end_at = '2026-11-10';
+                public $time_end_at = '18:00';
+                public $start_price = 2400;
+                public function video_items() { return collect([1, 2, 3]); }
+            };
             if ($name === 'role-form') $data['permissions'] = [
                 ['name' => 'Users', 'permissions' => ['view users' => 'view', 'edit user' => 'edit', 'delete user' => 'delete']],
                 ['name' => 'Auctions', 'permissions' => ['view videos' => 'view', 'add video' => 'add']],

@@ -25,8 +25,8 @@
     margin-bottom: 22px;
     direction: rtl;
 
-    background: #f9fbf9;
-    border: 1px solid #e4ece6;
+    background: var(--md-surface-2);
+    border: 1px solid var(--md-border);
     border-radius: 14px;
 }
 
@@ -41,7 +41,7 @@
 .md-inv-filters label {
     display: block;
     margin-bottom: 8px !important;
-    color: #627469;
+    color: var(--md-text-muted);
     font-size: 13px;
     font-weight: 600;
 }
@@ -54,15 +54,15 @@
     min-width: 0;
     min-height: 42px;
 
-    background-color: #fff;
-    border: 1px solid #dce6df;
+    background-color: var(--md-surface);
+    border: 1px solid var(--md-border);
     border-radius: 9px;
     box-sizing: border-box;
 }
 
 .md-inv-filters .form-control:focus,
 .md-inv-filters .form-select:focus {
-    border-color: #3d5f45;
+    border-color: var(--md-brand);
     box-shadow: 0 0 0 3px rgba(61, 95, 69, .10);
 }
 
@@ -112,7 +112,7 @@
     overscroll-behavior-x: contain;
 
     scrollbar-width: thin;
-    scrollbar-color: #b8c9bd #f0f4f1;
+    scrollbar-color: var(--md-control-border) var(--md-surface-2);
 }
 
 .md-inv-table-scroll table {
@@ -206,8 +206,8 @@
         margin-bottom: 12px;
         padding: 10px 12px;
 
-        color: #3d5f45;
-        background: #edf5ef;
+        color: var(--md-brand);
+        background: var(--md-brand-soft);
         border-radius: 8px;
         font-size: 12px;
     }

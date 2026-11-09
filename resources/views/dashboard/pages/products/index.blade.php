@@ -52,7 +52,7 @@
 .md-products-toolbar .dataTables_filter input {
     min-height: 40px;
     min-width: 0;
-    border: 1px solid #dde6df;
+    border: 1px solid var(--md-border);
     border-radius: 9px;
     margin: 0 !important;
 }
@@ -66,7 +66,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
-    scrollbar-color: #a9bfaf #eff3f0;
+    scrollbar-color: var(--md-control-border) var(--md-surface-2);
 }
 
 /* Prevent excessively wide shipping addresses. */
@@ -149,8 +149,8 @@
         direction: rtl;
         padding: 10px;
         margin-bottom: 12px;
-        background: #edf5ef;
-        color: #3d5f45;
+        background: var(--md-brand-soft);
+        color: var(--md-brand);
         border-radius: 8px;
         font-size: 12px;
     }

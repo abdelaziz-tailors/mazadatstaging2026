@@ -5,7 +5,7 @@
 @push('css')
 <style>
     .seller-submission-media-grid {
-        --ssm-radius: 0.5rem;
+        --ssm-radius: var(--md-radius-sm);
     }
     .seller-submission-media-card {
         border-radius: var(--ssm-radius);
@@ -13,13 +13,13 @@
         transition: box-shadow 0.2s ease;
     }
     .seller-submission-media-card:hover {
-        box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.1) !important;
+        box-shadow: var(--md-shadow-raised) !important;
     }
     .seller-submission-media-frame {
         position: relative;
         width: 100%;
         aspect-ratio: 4 / 3;
-        background: #f1f3f5;
+        background: var(--md-surface-2);
         overflow: hidden;
     }
     .seller-submission-media-frame--video {
@@ -42,8 +42,8 @@
     .seller-submission-media-meta {
         padding: 0.65rem 0.85rem;
         font-size: 0.8125rem;
-        border-top: 1px solid rgba(0, 0, 0, 0.06);
-        background: #fafbfc;
+        border-top: 1px solid var(--md-border-soft);
+        background: var(--md-surface-2);
     }
 </style>
 @endpush

@@ -21,7 +21,7 @@ module.exports = async function ({context, origin, preview, manifest, project}) 
   for (const theme of ['light','dark']) {
     await page.evaluate(theme=>window.MazadatTheme.set(theme),theme);
     for (const item of process.argv.includes('--theme-behavior-only') ? [] : focused ? manifest.filter(item=>['home','auction-form','login','actions','users','profile','submissions'].includes(item.page)) : manifest) {
-      const sizes = ['home','login','actions'].includes(item.page)?[1440,834,390,320]:[1440,390];
+      const sizes = ['home','login','actions'].includes(item.page)?[1440,834,390,320]:[1440,834,390];
       for (const width of sizes) {
         const key=`${theme}/${item.file}/${width}`;
         try {
@@ -34,6 +34,10 @@ module.exports = async function ({context, origin, preview, manifest, project}) 
           check(await page.evaluate(()=>!window.__paintTheme || window.__paintTheme===document.documentElement.dataset.theme),`${key}: first paint`);
           const clipped = await page.locator('.header button:visible,.header .nav-link:visible').evaluateAll(controls=>controls.some(el=>{const r=el.getBoundingClientRect();return r.left<0 || r.right>innerWidth+1;}));
           check(!clipped,`${key}: header controls fit`);
+          if (theme === 'dark') {
+            const lightSurfaces = await page.locator('.auction-status-button:visible,.auction-status-choice:visible,.auction-owner-card:visible,.auction-info-item:visible,.seller-submission-media-meta:visible,.subscriber-image-button:visible').evaluateAll(items => items.filter(el => getComputedStyle(el).backgroundColor === 'rgb(255, 255, 255)').length);
+            check(lightSurfaces === 0, `${key}: page-specific surfaces follow dark theme`);
+          }
           if (theme==='dark' && item.page==='users') {
             const buttons=await page.locator('.dt-buttons .btn').evaluateAll(items=>items.map(el=>({background:getComputedStyle(el).backgroundColor,color:getComputedStyle(el).color})));
             check(buttons.every(item=>item.background!=='rgb(255, 255, 255)' && item.background!==item.color),`${key}: export actions use dark semantic surfaces`);

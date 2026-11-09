@@ -436,9 +436,9 @@
     min-height: 82px;
     margin: 0 !important;
     padding: 14px !important;
-    border: 1px solid #dce6df;
+    border: 1px solid var(--md-border);
     border-radius: 12px;
-    background: #fff;
+    background: var(--md-surface);
     box-sizing: border-box;
     direction: rtl;
     text-align: right;
@@ -448,13 +448,13 @@
 }
 
 .md-auction-edit-page .auction-video-option:hover {
-    border-color: #3d5f45;
-    background: #f8fbf8;
+    border-color: var(--md-brand);
+    background: var(--md-surface-2);
 }
 
 .md-auction-edit-page .auction-video-option:has(input:checked) {
-    border: 2px solid #3d5f45;
-    background: #edf5ef;
+    border: 2px solid var(--md-brand);
+    background: var(--md-brand-soft);
 }
 
 .md-auction-edit-page .auction-video-option input[type="radio"] {
@@ -466,7 +466,7 @@
     height: 18px;
     min-width: 18px;
     margin: 3px 0 0 !important;
-    accent-color: #3d5f45;
+    accent-color: var(--md-brand);
 }
 
 .md-auction-edit-page .auction-video-option > span {
@@ -485,7 +485,7 @@
     font-size: 15px;
     font-weight: 700;
     line-height: 1.5;
-    color: #203c2c;
+    color: var(--md-text);
     white-space: normal !important;
 }
 
@@ -494,7 +494,7 @@
     font-size: 12px;
     font-weight: 400;
     line-height: 1.6;
-    color: #718078;
+    color: var(--md-text-muted);
     white-space: normal !important;
     overflow-wrap: break-word;
 }

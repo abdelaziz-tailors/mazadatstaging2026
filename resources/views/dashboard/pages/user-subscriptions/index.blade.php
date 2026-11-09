@@ -22,8 +22,8 @@
 .md-us-filters {
     padding: 20px;
     margin-bottom: 20px;
-    background: #f9fbf9;
-    border: 1px solid #e4ece6;
+    background: var(--md-surface-2);
+    border: 1px solid var(--md-border);
     border-radius: 14px;
 }
 
@@ -32,7 +32,7 @@
     align-items: center;
     gap: 9px;
     margin-bottom: 18px;
-    color: #3d5f45;
+    color: var(--md-brand);
     font-size: 16px;
     font-weight: 700;
 }
@@ -51,7 +51,7 @@
 .md-us-field label {
     display: block;
     margin-bottom: 8px;
-    color: #627469;
+    color: var(--md-text-muted);
     font-size: 13px;
     font-weight: 600;
 }
@@ -63,15 +63,15 @@
     max-width: 100%;
     min-width: 0;
     min-height: 42px;
-    border: 1px solid #dce6df;
+    border: 1px solid var(--md-border);
     border-radius: 9px;
-    background-color: #fff;
+    background-color: var(--md-surface);
     box-sizing: border-box;
 }
 
 .md-us-field .form-control:focus,
 .md-us-field .form-select:focus {
-    border-color: #3d5f45;
+    border-color: var(--md-brand);
     box-shadow: 0 0 0 3px rgba(61, 95, 69, .1);
 }
 
@@ -84,17 +84,17 @@
 .md-us-reset {
     width: 100%;
     min-height: 42px;
-    background: #eaf2ec;
-    color: #3d5f45;
-    border: 1px solid #cbded1;
+    background: var(--md-brand-soft);
+    color: var(--md-brand);
+    border: 1px solid var(--md-border);
     border-radius: 9px;
     font-weight: 600;
 }
 
 .md-us-reset:hover {
-    background: #3d5f45;
-    border-color: #3d5f45;
-    color: #fff;
+    background: var(--md-action);
+    border-color: var(--md-brand);
+    color: var(--md-on-action);
 }
 
 /* DataTables controls outside the scrolling table. */
@@ -141,7 +141,7 @@
     gap: 10px;
     width: 100%;
     margin: 0;
-    color: #627469;
+    color: var(--md-text-muted);
 }
 
 .md-us-search .dataTables_filter input {
@@ -150,7 +150,7 @@
     min-width: 0;
     min-height: 42px;
     margin: 0 !important;
-    border: 1px solid #dce6df;
+    border: 1px solid var(--md-border);
     border-radius: 9px;
 }
 
@@ -179,7 +179,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
-    scrollbar-color: #b8c9bd #f0f4f1;
+    scrollbar-color: var(--md-control-border) var(--md-surface-2);
 }
 
 .md-us-table-scroll #data-table {

@@ -1,19 +1,19 @@
 <div class="btn-group">
         @if (Auth::guard('admin')->user()->can('edit user'))
             <a class="dropdown-item" href="">
-                <i style="color: #4caf50" class="fas fa-eye"></i>
+                <i style="color: var(--md-success)" class="fas fa-eye"></i>
             </a>
         @endif
             @if (Auth::guard('admin')->user()->can('edit user'))
                 <a class="dropdown-item" href="">
-                    <i style="color: #2196f3" class="fas fa-video-camera"></i>
+                    <i style="color: var(--md-info)" class="fas fa-video-camera"></i>
                 </a>
             @endif
 
         @if (Auth::guard('admin')->user()->can('delete user'))
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="#deleteModal-{{ $item->id }}" data-bs-toggle="modal">
-                <i style="color: #e42f2f" class="fas fa-trash"></i>
+                <i style="color: var(--md-danger)" class="fas fa-trash"></i>
             </a>
         @endif
 </div>

@@ -80,3 +80,27 @@ The existing local Admin account was authenticated through a temporary QA sessio
 Remaining limits: no real Partner session, no credential login, no live populated-table pagination or row modals, and no create/update/delete/payment actions. No deployment or production operations were performed.
 
 The temporary QA HTTP server was stopped and its authentication state/session files were removed after verification. Reports and screenshots remain in the temporary output folders.
+
+## Theme completion and page-wide refinement — 2026-11-09
+
+The shared dashboard and login include Light, Dark and System choices with localized accessible controls. The early head initializer resolves the saved local preference before styles load, follows OS changes in System mode, synchronizes tabs and sets native `color-scheme`. Switching uses brief color/shadow transitions and icon motion; reduced motion disables transitions. No account preferences or database writes are involved.
+
+### Page-specific fixes
+
+Removed remaining light-only presentation colors from 19 page/partial files: Admin profile; auction list/detail; Orders; Packages; invoices; Partners; Products; seller submission list/detail; subscriptions; Users and Vendors lists/form sections; Providers form sections/actions; auction creation/editing. They now consume the shared surface, text, border, accent and status tokens. This fixes white mobile status menus, low-contrast detail/filter labels, upload panels, status badges, icon colors and button hover states. Submission media cards use the shared radius, border and elevation. Video canvases retain their intentional dark background.
+
+No routes, controllers, models, database, permission rules, APIs, auction/payment workflows, locale middleware or legacy tests were modified. No packages or build steps were added.
+
+### Verification scope
+
+The preview renderer now includes Vendors, Partners, Products, auction details and seller submission details: **88 previews from 22 actual templates**, across both workspace variants and both language directions. All **211 dashboard Blade templates compile**, and rendering rejects database queries. The Products preview supplies an auction identifier; detail records are in-memory fixtures.
+
+- **PASS:** focused existing presentation PHPUnit checks — **14 tests, 38 assertions** using isolated testing configuration.
+- **PASS:** full Light/Dark matrix — **552 page/viewport checks, 3,099 assertions**, with no layout failures or JavaScript exceptions. Covers Admin/Partner fixtures, Arabic/English, 1440/834/390px, plus 320px on overview/login/action previews. Checks persistence, System/OS changes, pre-stylesheet initialization, keyboard controls, reduced motion, forced colors, dialogs, Select2 and populated row menus.
+- **PASS:** six primary semantic contrast pairs meet 4.5:1 in both themes (minimum 4.70:1 light, 7.14:1 dark). The measured synchronous switch took approximately 0.4ms and the sampled KPI geometry was unchanged; this is not a full rendering-performance benchmark.
+- **PASS:** fixture interaction checks — **57 assertions**, covering navigation, dialogs, Select2, validation, populated table pagination/actions and loading states.
+- **PASS:** PHP/JavaScript syntax and whitespace checks.
+
+Light/Dark desktop and mobile screenshots are in the [screenshot gallery](qa/dashboard-themes/README.md). These are isolated template fixtures, not authenticated application screenshots. Theme behavior and viewport results are recorded in [the browser report](qa/dashboard-themes/report.json).
+
+Authenticated application testing was **not rerun in this pass**. The real-app results and permission restrictions documented above remain historical. Real Partner coverage remains unavailable because the documented local database has no Partner account; no account was created or permission bypassed. Live CRUD, payments, populated production responses, external font delivery and real notification delivery are outside this fixture run. Token contrast checks cover the primary semantic pairs, not a complete WCAG audit of every possible record/media combination.

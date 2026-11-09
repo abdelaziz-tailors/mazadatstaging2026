@@ -28,8 +28,8 @@
 .md-vendors-filters {
     padding: 20px;
     margin-bottom: 22px;
-    background: #f9fbf9;
-    border: 1px solid #e4ece6;
+    background: var(--md-surface-2);
+    border: 1px solid var(--md-border);
     border-radius: 14px;
 }
 
@@ -38,7 +38,7 @@
     align-items: center;
     gap: 9px;
     margin: 0 0 18px;
-    color: #3d5f45;
+    color: var(--md-brand);
     font-size: 16px;
     font-weight: 700;
 }
@@ -57,7 +57,7 @@
 .md-vendors-field label {
     display: block;
     margin-bottom: 8px;
-    color: #627469;
+    color: var(--md-text-muted);
     font-size: 13px;
     font-weight: 600;
 }
@@ -68,15 +68,15 @@
     max-width: 100%;
     min-width: 0;
     min-height: 42px;
-    border: 1px solid #dce6df;
+    border: 1px solid var(--md-border);
     border-radius: 9px;
-    background: #fff;
+    background: var(--md-surface);
     box-sizing: border-box;
 }
 
 .md-vendors-field .form-control:focus,
 .md-vendors-field .form-select:focus {
-    border-color: #3d5f45;
+    border-color: var(--md-brand);
     box-shadow: 0 0 0 3px rgba(61, 95, 69, .10);
 }
 
@@ -88,17 +88,17 @@
 .md-vendors-reset {
     width: 100%;
     min-height: 42px;
-    color: #3d5f45;
-    background: #eaf2ec;
-    border: 1px solid #cbded1;
+    color: var(--md-brand);
+    background: var(--md-brand-soft);
+    border: 1px solid var(--md-border);
     border-radius: 9px;
     font-weight: 600;
 }
 
 .md-vendors-reset:hover {
-    color: #fff;
-    background: #3d5f45;
-    border-color: #3d5f45;
+    color: var(--md-on-action);
+    background: var(--md-action);
+    border-color: var(--md-brand);
 }
 
 /* DataTables controls */
@@ -168,7 +168,7 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
-    scrollbar-color: #b8c9bd #f0f4f1;
+    scrollbar-color: var(--md-control-border) var(--md-surface-2);
 }
 
 .md-vendors-table-scroll #data-table {

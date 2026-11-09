@@ -1,7 +1,7 @@
 {
   "mode": "isolated Blade fixtures; no authenticated accounts or database",
-  "screens": 160,
-  "assertions": 846,
+  "screens": 552,
+  "assertions": 3099,
   "failures": [],
   "screenshots": [
     "light-home-1440.png",
@@ -99,7 +99,7 @@
     }
   ],
   "performance": {
-    "switchSynchronousMs": 0.2999999523162842,
+    "switchSynchronousMs": 0.3999999761581421,
     "geometry": {
       "before": {
         "x": 16,

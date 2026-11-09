@@ -101,33 +101,33 @@
 <style>
     .subscriber-profile-card { border: 0; border-radius: 16px; box-shadow: 0 10px 30px rgba(31, 52, 75, .07); }
     .subscriber-profile-card .card-body { padding: 32px 34px 28px; }
-    .subscriber-profile-title { margin: 0 0 26px; color: #172b4d; font-size: 18px; font-weight: 700; }
+    .subscriber-profile-title { margin: 0 0 26px; color: var(--md-text); font-size: 18px; font-weight: 700; }
     .subscriber-profile-fields .form-group { margin-bottom: 28px; }
-    .subscriber-profile-fields .form-label { display: block; margin-bottom: 10px; color: #344054; font-size: 14px; font-weight: 500; }
-    .subscriber-profile-fields .form-control { height: 48px; padding: 10px 16px; border: 1px solid #dfe5ec; border-radius: 8px; color: #344054; background: #fff; text-align: right; }
-    .subscriber-profile-fields .form-control:focus { border-color: #b8c8d5; box-shadow: none; }
-    .saudi-phone-field { display: flex; width: 100%; min-height: 48px; overflow: hidden; border: 1px solid #dfe5ec; border-radius: 8px; background: #fff; }
-    .saudi-phone-prefix { display: flex; align-items: center; gap: 13px; min-width: 150px; padding: 0 14px; border-right: 1px solid #dfe5ec; color: #344054; background: #fff; font-size: 18px; white-space: nowrap; }
+    .subscriber-profile-fields .form-label { display: block; margin-bottom: 10px; color: var(--md-text); font-size: 14px; font-weight: 500; }
+    .subscriber-profile-fields .form-control { height: 48px; padding: 10px 16px; border: 1px solid var(--md-border); border-radius: 8px; color: var(--md-text); background: var(--md-surface); text-align: right; }
+    .subscriber-profile-fields .form-control:focus { border-color: var(--md-brand); box-shadow: none; }
+    .saudi-phone-field { display: flex; width: 100%; min-height: 48px; overflow: hidden; border: 1px solid var(--md-border); border-radius: 8px; background: var(--md-surface); }
+    .saudi-phone-prefix { display: flex; align-items: center; gap: 13px; min-width: 150px; padding: 0 14px; border-right: 1px solid var(--md-border); color: var(--md-text); background: var(--md-surface); font-size: 18px; white-space: nowrap; }
     .saudi-phone-flag { display: inline-block; width: 38px; height: 28px; border-radius: 7px; background-image: url('{{ asset('assets/plugins/intltelinput/img/flags.png') }}'); background-size: 11304px 30px; background-position: -8678px 0; background-repeat: no-repeat; font-size: 0; line-height: 0; }
-    .saudi-phone-chevron { width: 10px; height: 10px; margin-left: auto; margin-right: 1px; border-right: 2px solid #344054; border-bottom: 2px solid #344054; transform: rotate(45deg) translateY(-2px); font-size: 0; line-height: 0; }
+    .saudi-phone-chevron { width: 10px; height: 10px; margin-left: auto; margin-right: 1px; border-right: 2px solid var(--md-text); border-bottom: 2px solid var(--md-text); transform: rotate(45deg) translateY(-2px); font-size: 0; line-height: 0; }
     .saudi-phone-input.form-control { min-width: 0; height: auto; border: 0; border-radius: 0; box-shadow: none; direction: ltr; text-align: right; letter-spacing: .04em; }
     .saudi-phone-input.form-control:focus { border: 0; box-shadow: none; }
-    .saudi-phone-help { display: block; margin-top: 8px; color: #8a94a6; font-size: 12px; line-height: 1.7; }
+    .saudi-phone-help { display: block; margin-top: 8px; color: var(--md-text-muted); font-size: 12px; line-height: 1.7; }
     .saudi-phone-error { display: none; margin-top: 6px; }
-    .saudi-phone-field.is-invalid { border-color: #f64e60; }
+    .saudi-phone-field.is-invalid { border-color: var(--md-danger); }
     .saudi-phone-field.is-invalid + input + .saudi-phone-help + .saudi-phone-error { display: block; }
     .subscriber-image-section { display: flex; align-items: center; justify-content: flex-end; gap: 28px; min-height: 150px; margin-top: 4px; direction: ltr; }
     .subscriber-image-details { text-align: right; }
     .subscriber-image-actions { display: flex; gap: 28px; align-items: center; }
-    .subscriber-image-button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 8px 16px; border: 1px solid #cbd5df; border-radius: 8px; color: #344054; background: #fff; font-size: 13px; cursor: pointer; }
-    .subscriber-image-change { border-color: #0f5132; color: #0f5132; font-weight: 600; }
-    .subscriber-image-delete { background: #fff; }
-    .subscriber-image-note { margin-top: 12px; color: #8a94a6; font-size: 12px; }
-    .subscriber-image-preview { display: flex; align-items: center; justify-content: center; width: 100px; height: 100px; border: 1px solid #e1e7ec; border-radius: 50%; background: #fff; }
+    .subscriber-image-button { display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 8px 16px; border: 1px solid var(--md-control-border); border-radius: 8px; color: var(--md-text); background: var(--md-surface); font-size: 13px; cursor: pointer; }
+    .subscriber-image-change { border-color: var(--md-brand); color: var(--md-brand); font-weight: 600; }
+    .subscriber-image-delete { background: var(--md-surface); }
+    .subscriber-image-note { margin-top: 12px; color: var(--md-text-muted); font-size: 12px; }
+    .subscriber-image-preview { display: flex; align-items: center; justify-content: center; width: 100px; height: 100px; border: 1px solid var(--md-border); border-radius: 50%; background: var(--md-surface); }
     .subscriber-image-preview .md-avatar, .subscriber-image-preview .md-avatar-placeholder { border-radius: 50%; }
     .subscriber-profile-submit { display: flex; justify-content: flex-start; margin-top: 18px; direction: ltr; }
-    .subscriber-save-button { min-width: 150px; padding: 11px 20px; border: 0; border-radius: 8px; color: #fff; background: #0f5132; font-size: 14px; font-weight: 600; }
-    .subscriber-save-button:hover { color: #fff; background: #0b4128; }
+    .subscriber-save-button { min-width: 150px; padding: 11px 20px; border: 0; border-radius: 8px; color: var(--md-on-action); background: var(--md-action); font-size: 14px; font-weight: 600; }
+    .subscriber-save-button:hover { color: var(--md-on-action); background: var(--md-action); }
     @media (max-width: 767.98px) {
         .subscriber-profile-card .card-body { padding: 22px 18px; }
         .subscriber-image-section { align-items: flex-start; justify-content: flex-start; }

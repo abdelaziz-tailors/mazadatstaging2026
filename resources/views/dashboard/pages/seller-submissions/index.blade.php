@@ -6,14 +6,14 @@
 <link href="{{asset('dashboard/plugins/datatables/datatables.min.css')}}" rel="stylesheet" type="text/css"/>
 <style>
     .seller-submissions-page {
-        --seller-green: #154734;
-        --seller-dark-green: #0b3d2e;
-        --seller-gold: #c99a35;
-        --seller-success: #22b573;
-        --seller-warning: #e7a834;
-        --seller-danger: #e75a5a;
-        --seller-border: #e4e8ec;
-        --seller-muted: #667085;
+        --seller-green: var(--md-brand);
+        --seller-dark-green: var(--md-brand-strong);
+        --seller-gold: var(--md-accent);
+        --seller-success: var(--md-success);
+        --seller-warning: var(--md-warning);
+        --seller-danger: var(--md-danger);
+        --seller-border: var(--md-border);
+        --seller-muted: var(--md-text-muted);
         direction: rtl;
         min-width: 0;
     }
@@ -125,8 +125,8 @@
         height: 42px;
         border: 1px solid var(--seller-border);
         border-radius: 10px;
-        background: #fff;
-        color: #1f2937;
+        background: var(--md-surface);
+        color: var(--md-text);
         outline: none;
     }
 
@@ -151,8 +151,8 @@
 
     .seller-submissions-page #data-table thead th {
         border: 0;
-        background: #f8fafb;
-        color: #667085;
+        background: var(--md-surface-2);
+        color: var(--md-text-muted);
         font-size: .78rem;
         font-weight: 700;
         padding: .9rem .75rem;
@@ -160,15 +160,15 @@
     }
 
     .seller-submissions-page #data-table tbody td {
-        border-bottom: 1px solid #edf0f2;
-        color: #344054;
+        border-bottom: 1px solid var(--md-border-soft);
+        color: var(--md-text);
         font-size: .88rem;
         padding: .85rem .75rem;
         vertical-align: middle;
     }
 
     .seller-submissions-page #data-table tbody tr:hover td {
-        background: #fafbfc;
+        background: var(--md-surface-2);
     }
 
     .seller-submissions-page #data-table tbody td:nth-child(3) {
@@ -185,23 +185,23 @@
     }
 
     .seller-submissions-page #data-table .badge.bg-secondary {
-        background: #fff6e5 !important;
-        color: #986b10 !important;
+        background: var(--md-warning-soft) !important;
+        color: var(--md-warning) !important;
     }
 
     .seller-submissions-page #data-table .badge.bg-success {
-        background: #e9f8f1 !important;
-        color: #168052 !important;
+        background: var(--md-success-soft) !important;
+        color: var(--md-success) !important;
     }
 
     .seller-submissions-page #data-table .badge.bg-danger {
-        background: #fdecec !important;
-        color: #c44242 !important;
+        background: var(--md-danger-soft) !important;
+        color: var(--md-danger) !important;
     }
 
     .seller-submissions-page #data-table .badge.bg-warning {
-        background: #fff6e5 !important;
-        color: #986b10 !important;
+        background: var(--md-warning-soft) !important;
+        color: var(--md-warning) !important;
     }
 
     .seller-submissions-page .seller-table-actions {
@@ -237,14 +237,15 @@
         padding: 0 .65rem !important;
         border: 1px solid var(--seller-border) !important;
         border-radius: 9px !important;
-        background: #fff !important;
+        background: var(--md-surface) !important;
         color: var(--seller-dark-green) !important;
     }
 
     .seller-submissions-page .dataTables_paginate .paginate_button.current {
         border-color: var(--seller-dark-green) !important;
-        background: var(--seller-dark-green) !important;
-        color: #fff !important;
+        background: var(--md-action) !important;
+        color: var(--md-on-action) !important;
+        color: var(--md-on-action) !important;
     }
 
     @media (max-width: 1199px) {
@@ -337,7 +338,7 @@
             padding: .95rem;
             border: 1px solid var(--seller-border);
             border-radius: 16px;
-            background: #fff;
+            background: var(--md-surface);
             box-shadow: 0 4px 14px rgba(16, 24, 40, .04);
         }
 
@@ -381,7 +382,7 @@
             align-items: center;
             margin-top: .3rem;
             padding-top: .8rem;
-            border-top: 1px solid #edf0f2;
+            border-top: 1px solid var(--md-border-soft);
         }
 
         .seller-submissions-page .seller-table-actions {

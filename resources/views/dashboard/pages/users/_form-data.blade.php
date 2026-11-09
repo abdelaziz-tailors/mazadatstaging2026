@@ -35,7 +35,7 @@
     <div class="col-lg-12 form-group" id="doctor_job">
         {!! Form::label('Jobs', TranslationHelper::translate('Jobs'), ['class'=>'form-label']) !!}
 
-        <div class="row form-control2" style="border: 1px solid #cccccc;padding: 10px 10px;">
+        <div class="row form-control2" style="border: 1px solid var(--md-border);padding: 10px 10px;">
 
             @forelse($job as $jobs)
 
@@ -55,7 +55,7 @@
     <div class="col-lg-12 form-group" id="doctor_pets" style="display: none">
         {!! Form::label('Jobs', TranslationHelper::translate('Jobs'), ['class'=>'form-label']) !!}
 
-        <div class="row form-control2" style="border: 1px solid #cccccc;padding: 10px 10px;">
+        <div class="row form-control2" style="border: 1px solid var(--md-border);padding: 10px 10px;">
 
             @forelse($job_bats as $jobs)
 

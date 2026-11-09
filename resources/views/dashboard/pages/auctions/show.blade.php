@@ -14,14 +14,14 @@
 .auction-show-page .auction-page-title {
     font-size: 25px;
     font-weight: 700;
-    color: #203c2c;
+    color: var(--md-text);
     margin-bottom: 8px;
 }
 
 .auction-show-page .auction-owner-card,
 .auction-show-page .auction-details-card {
-    background: #fff;
-    border: 1px solid #e7ece9;
+    background: var(--md-surface);
+    border: 1px solid var(--md-border);
     border-radius: 16px;
     box-shadow: 0 4px 22px rgba(0, 0, 0, .035);
 }
@@ -44,14 +44,14 @@
     min-width: 100px;
     border-radius: 14px;
     object-fit: cover;
-    border: 1px solid #e7ece9;
+    border: 1px solid var(--md-border);
     display: block;
 }
 
 .auction-show-page .auction-owner-name {
     font-size: 21px;
     font-weight: 700;
-    color: #243d2e;
+    color: var(--md-text);
     margin: 0 0 12px;
 }
 
@@ -59,12 +59,12 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px 25px;
-    color: #64746b;
+    color: var(--md-text-muted);
     overflow-wrap: anywhere;
 }
 
 .auction-show-page .auction-owner-info i {
-    color: #3d5f45;
+    color: var(--md-brand);
     margin-left: 7px;
 }
 
@@ -75,10 +75,10 @@
 .auction-show-page .auction-section-title {
     font-size: 19px;
     font-weight: 700;
-    color: #203c2c;
+    color: var(--md-text);
     padding-bottom: 16px;
     margin-bottom: 22px;
-    border-bottom: 1px solid #edf0ee;
+    border-bottom: 1px solid var(--md-border-soft);
 }
 
 .auction-show-page .auction-info-grid {
@@ -90,21 +90,21 @@
 .auction-show-page .auction-info-item {
     min-width: 0;
     padding: 18px;
-    border: 1px solid #edf0ee;
-    background: #fbfcfb;
+    border: 1px solid var(--md-border-soft);
+    background: var(--md-surface-2);
     border-radius: 12px;
 }
 
 .auction-show-page .auction-info-label {
     font-size: 13px;
-    color: #849087;
+    color: var(--md-text-muted);
     margin-bottom: 10px;
 }
 
 .auction-show-page .auction-info-value {
     font-size: 16px;
     font-weight: 600;
-    color: #263c2e;
+    color: var(--md-text);
     overflow-wrap: anywhere;
 }
 
@@ -116,18 +116,18 @@
 }
 
 .auction-show-page .auction-status-ended {
-    background: #f0f1f2;
-    color: #59616a;
+    background: var(--md-surface-2);
+    color: var(--md-text-muted);
 }
 
 .auction-show-page .auction-status-live {
-    background: #e5f5e9;
-    color: #267444;
+    background: var(--md-success-soft);
+    color: var(--md-success);
 }
 
 .auction-show-page .auction-status-other {
-    background: #fff4dc;
-    color: #94620b;
+    background: var(--md-warning-soft);
+    color: var(--md-warning);
 }
 
 @media (max-width: 767px) {
