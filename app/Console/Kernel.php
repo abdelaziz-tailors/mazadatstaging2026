@@ -23,6 +23,7 @@ class Kernel extends ConsoleKernel
 
     protected function schedule(Schedule $schedule)
     {
+        $schedule->command('auctions:sync-withdrawn-bids')->everyMinute()->withoutOverlapping();
 
         // $schedule->command('inspire')->hourly();
         $schedule->command('livevideo:check')->everyMinute();

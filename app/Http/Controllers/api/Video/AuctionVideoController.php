@@ -32,6 +32,14 @@ use App\Traits\ResponseTrait;
 class AuctionVideoController extends Controller
 {
     use ResponseTrait;
+    public function destroy(\App\Http\Requests\api\Video\DeleteAuctionBidRequest $request): JsonResponse
+    {
+        app(\App\Services\AuctionBidWithdrawalService::class)->withdraw(
+            (int) $request->route('bid_id'), (int) auth('api')->id()
+        );
+        return $this->success_response(TranslationHelper::translate('Deleted Successfully'), '');
+    }
+
     public function add(AddVideoCommentRequest $request): JsonResponse
     {
         if (!auth('api')->user()){
@@ -65,35 +73,39 @@ class AuctionVideoController extends Controller
 
     public function addReplay(AddVideoReplayCommentRequest $request): JsonResponse
     {
-        if (!auth('api')->user()){
-            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
-        }
-        $video=VideoComment::find($request->comment_id);
-        if (!$video){
-            return $this->failed_response(TranslationHelper::translate('Video not found'));
-        }
-        VideoComment::create([
-            'comment_id' => $request->comment_id,
-            'comment' => $request->comment,
-            'video_id' => $video->video_id,
-            'user_id' => auth('api')->user()->id
-        ]);
-        return $this->success_response(TranslationHelper::translate(' Added Successfully '), '');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            if (!auth('api')->user()){
+                return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+            }
+            $video=VideoComment::whereKey($request->comment_id)->lockForUpdate()->first();
+            if (!$video){
+                return $this->failed_response(TranslationHelper::translate('Video not found'));
+            }
+            VideoComment::create([
+                'comment_id' => $request->comment_id,
+                'comment' => $request->comment,
+                'video_id' => $video->video_id,
+                'user_id' => auth('api')->user()->id
+            ]);
+            return $this->success_response(TranslationHelper::translate(' Added Successfully '), '');
+        });
     }
     public function addLike($id): JsonResponse
     {
-        if (!auth('api')->user()){
-            return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
-        }
-        $video=VideoComment::find($id);
-        if (!$video){
-            return $this->failed_response(TranslationHelper::translate('Comment not found'));
-        }
-        VideoCommentLike::updateOrCreate([
-            'comment_id' => $id,
-            'user_id' => auth('api')->user()->id
-        ]);
-        return $this->success_response(TranslationHelper::translate(' Added Successfully '), '');
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            if (!auth('api')->user()){
+                return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
+            }
+            $video=VideoComment::whereKey($id)->lockForUpdate()->first();
+            if (!$video){
+                return $this->failed_response(TranslationHelper::translate('Comment not found'));
+            }
+            VideoCommentLike::updateOrCreate([
+                'comment_id' => $id,
+                'user_id' => auth('api')->user()->id
+            ]);
+            return $this->success_response(TranslationHelper::translate(' Added Successfully '), '');
+        });
 
     }
     public function dislike($id): JsonResponse

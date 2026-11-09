@@ -54,20 +54,29 @@ class FirebaseController extends Controller
 
     public function AddAuctions($item)
     {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($item) {
+            // Serialize publication with withdrawal, including delayed after-commit callbacks.
+            if (! \App\Models\VideoComment::whereKey($item->id)->lockForUpdate()->first()) {
+                return;
+            }
+            $this->database
+                ->getReference('live/'.$item->video_id.'/item/'.$item->live_video_item_id.'/auctions/'.$item->id)
+                ->set([
+                    'id' => $item->id ??'',
+                    'comment' => $item->comment ?? '-',
+                    'date' => $item->created_at ?? '-',
+                    'user'=> New UserMainDataResource($item->user_Video),
+                ]);
 
-
-        $this->database
-            ->getReference('live/'.$item->video_id.'/item/'.$item->live_video_item_id.'/auctions/'.$item->id)
-            ->set([
-                'id' => $item->id ??'',
-                'comment' => $item->comment ?? '-',
-                'date' => $item->created_at ?? '-',
-                'user'=> New UserMainDataResource($item->user_Video),
-            ]);
-
-        return response()->json('blog has been created');
+            return response()->json('blog has been created');
+        });
     }
 
+
+    public function removeAuctionBid($auctionId, $itemId, $bidId)
+    {
+        $this->database->getReference('live/'.$auctionId.'/item/'.$itemId.'/auctions/'.$bidId)->remove();
+    }
 
     public function UserAuctions($item)
     {

@@ -20,10 +20,10 @@ class AuctionBidConcurrencyTest extends TestCase
 
     protected function setUp(): void
     {
-        parent::setUp();
         if (getenv('BID_CONCURRENCY_TESTS') !== '1') {
             $this->markTestSkipped('Opt-in isolated MySQL concurrency suite.');
         }
+        parent::setUp();
         $this->assertGreaterThanOrEqual(80400, PHP_VERSION_ID);
         $this->assertSame('testing', app()->environment());
         $this->assertSame('mysql', DB::connection()->getDriverName());
@@ -40,6 +40,21 @@ class AuctionBidConcurrencyTest extends TestCase
         DB::table('videos')->insertOrIgnore(['id' => $this->auction->id, 'title' => 'Legacy FK fixture']);
         $this->item = LiveVideoItem::create(['live_video_id' => $this->auction->id, 'status' => 'working', 'bidding' => 100]);
         $this->app->instance(FirebaseController::class, \Mockery::mock(FirebaseController::class)->shouldIgnoreMissing());
+    }
+
+    public function test_concurrent_withdrawal_and_new_bid_preserve_price_and_winner_history(): void
+    {
+        $bid = app(AuctionBidService::class)->place($this->item->id, $this->users[0]->id, '1100');
+        $highest = app(AuctionBidService::class)->place($this->item->id, $this->users[1]->id, '1200');
+        $results = $this->race(['withdraw:'.$bid->id, '1300']);
+        $this->assertTrue($results[0]['success']);
+        $this->assertTrue($results[1]['success']);
+        $this->assertNull(VideoComment::find($bid->id));
+        $this->assertNotNull(VideoComment::withTrashed()->find($bid->id));
+        $this->assertNotNull($highest->fresh());
+        $this->rejectBid('1300', '1300.00');
+        $this->assertNull($this->item->fresh()->user_finished_id);
+        $this->assertNotNull(DB::table('auction_bid_withdrawals')->where('bid_id', $bid->id)->value('synced_at'));
     }
 
     private function race(array $amounts): array

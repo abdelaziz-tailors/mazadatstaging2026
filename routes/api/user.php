@@ -222,6 +222,7 @@ Route::group(['middleware' => ['auth:api']], function() {
             });
             Route::group(['prefix' => 'auctions'], function(){
                 Route::post('add', 'AuctionVideoController@add');
+                Route::delete('{bid_id}', 'AuctionVideoController@destroy');
                 Route::post('add-replay', 'AuctionVideoController@addReplay');
                 Route::group(['prefix' => 'like'], function(){
                     Route::post('add/{id}', 'AuctionVideoController@addLike');
