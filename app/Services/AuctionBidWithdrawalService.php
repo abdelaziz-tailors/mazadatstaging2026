@@ -35,16 +35,13 @@ class AuctionBidWithdrawalService
                 || $item->orderItem()->lockForUpdate()->first()) {
                 $this->reject('Withdrawals are closed for this item.', 409);
             }
-            $history = VideoComment::where('live_video_item_id', $itemId)->whereNull('comment_id')
-                ->whereRaw("comment REGEXP '^[0-9]+([.][0-9]+)?$'")
-                ->orderByRaw('CAST(comment AS DECIMAL(20, 2)) DESC')->orderByDesc('id');
-            $highest = (clone $history)->lockForUpdate()->first();
-            $awardHighest = (clone $history)->where('video_id', $auction->id)->lockForUpdate()->first();
+            $pricing = app(AuctionBidService::class);
+            $highest = $pricing->state($item, $auction)['highest'];
+            $awardHighest = $pricing->highest($itemId, $auction->id);
             if (! $highest || ! $awardHighest || $highest->id !== $awardHighest->id
                 || ! $highest->user_id || ! preg_match('/^[0-9]{1,12}(?:\.[0-9]{1,2})?$/D', (string) $bid->comment)
-                || ! preg_match('/^[0-9]{1,12}(?:\.[0-9]{1,2})?$/D', (string) $highest->comment)
-                || (float) $highest->comment <= (float) $bid->comment) {
-                $this->reject('Only strictly outbid bids with consistent price history may be withdrawn.', 409);
+                || ! preg_match('/^[0-9]{1,12}(?:\.[0-9]{1,2})?$/D', (string) $highest->comment)) {
+                $this->reject('Only bids with consistent price history may be withdrawn.', 409);
             }
 
             // Preserve audit history, including descendants of already-deleted replies.
@@ -65,6 +62,14 @@ class AuctionBidWithdrawalService
             }
             VideoCommentLike::whereIn('comment_id', $ids)->delete();
             VideoComment::whereIn('id', $ids)->delete();
+            // Validate the resulting price and winner state before committing any deletion.
+            $remaining = $pricing->state($item, $auction)['highest'];
+            $awardRemaining = $pricing->highest($itemId, $auction->id);
+            if (($remaining ? $remaining->id : null) !== ($awardRemaining ? $awardRemaining->id : null)
+                || ($remaining && ! $remaining->user_id)) {
+                $this->reject('Remaining bid integrity cannot be guaranteed.', 409);
+            }
+            LiveVideoItem::whereKey($itemId)->increment('bid_state_version');
             DB::table('auction_bid_withdrawals')->insert([
                 'bid_id' => $bid->id, 'auction_id' => $auction->id, 'item_id' => $item->id,
                 'created_at' => now(), 'synced_at' => null,

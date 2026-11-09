@@ -24,11 +24,7 @@ class AuctionAwardService
             if ($close) {
                 $item->update(['status' => 'finished', 'end_at' => now()]);
             }
-            $highest = VideoComment::where('live_video_item_id', $item->id)
-                ->where('video_id', $auction->id)->whereNull('comment_id')
-                ->whereRaw("comment REGEXP '^[0-9]+([.][0-9]+)?$'")
-                ->orderByRaw('CAST(comment AS DECIMAL(20, 2)) DESC')
-                ->orderByDesc('id')->lockForUpdate()->first();
+            $highest = app(AuctionBidService::class)->highest($item->id, $auction->id);
 
             // Preserve legacy already-awarded items during scheduled closure.
             if ($close && $item->user_finished_id !== null) {

@@ -42,7 +42,7 @@ class AuctionBidWithdrawalTest extends TestCase
         self::assertSame('', $db->selectOne('PRAGMA database_list')->file);
         $db->getPdo()->sqliteCreateFunction('regexp', fn ($pattern, $value) => preg_match('/'.$pattern.'/', $value ?? ''));
         $db->statement('CREATE TABLE live_videos (id INTEGER PRIMARY KEY, user_id INTEGER, status TEXT, start_price TEXT, deleted_at TEXT)');
-        $db->statement('CREATE TABLE live_video_items (id INTEGER PRIMARY KEY, live_video_id INTEGER, user_id INTEGER, seller_id INTEGER, status TEXT, bidding TEXT, finished_price TEXT, user_finished_id INTEGER, deleted_at TEXT, updated_at TEXT)');
+        $db->statement('CREATE TABLE live_video_items (id INTEGER PRIMARY KEY, live_video_id INTEGER, user_id INTEGER, seller_id INTEGER, status TEXT, bidding TEXT, start_price TEXT, finished_price TEXT, user_finished_id INTEGER, deleted_at TEXT, updated_at TEXT)');
         $db->statement('CREATE TABLE video_comments (id INTEGER PRIMARY KEY, video_id INTEGER, live_video_item_id INTEGER, comment_id INTEGER, user_id INTEGER, comment TEXT, deleted_at TEXT, created_at TEXT, updated_at TEXT)');
         $db->statement('CREATE TABLE video_comment_likes (id INTEGER PRIMARY KEY, comment_id INTEGER, user_id INTEGER, deleted_at TEXT, updated_at TEXT)');
         $db->statement('CREATE TABLE order_items (id INTEGER PRIMARY KEY, live_video_item_id INTEGER, order_id INTEGER, seller_id INTEGER, finished_price NUMERIC, created_at TEXT, updated_at TEXT)');
@@ -55,6 +55,8 @@ class AuctionBidWithdrawalTest extends TestCase
         require_once database_path('migrations/2026_11_09_000000_create_auction_bid_withdrawals_table.php');
         $this->app->instance('db.schema', $db->getSchemaBuilder());
         (new \CreateAuctionBidWithdrawalsTable())->up();
+        require_once database_path('migrations/2026_11_09_010000_add_bid_state_versions_to_live_video_items.php');
+        (new \AddBidStateVersionsToLiveVideoItems())->up();
         DB::table('live_videos')->insert(['id' => 10, 'user_id' => 9, 'status' => 'start', 'start_price' => '100']);
         DB::table('live_video_items')->insert(['id' => 20, 'live_video_id' => 10, 'status' => 'working', 'bidding' => '10']);
         VideoComment::forceCreate(['id' => 30, 'video_id' => 10, 'live_video_item_id' => 20, 'user_id' => 1, 'comment' => '110.00']);
@@ -224,7 +226,7 @@ class AuctionBidWithdrawalTest extends TestCase
     public function rejectedWithdrawals(): array
     {
         return [
-            'highest' => [31, 9, [], [], 409], 'other bidder' => [30, 2, [], [], 403],
+            'other bidder' => [30, 2, [], [], 403],
             'own bidder' => [30, 1, [], [], 403],
             'missing' => [999, 9, [], [], 404], 'guest' => [30, 0, [], [], 401],
             'closed auction' => [30, 9, [], ['status' => 'end'], 409],
@@ -257,15 +259,17 @@ class AuctionBidWithdrawalTest extends TestCase
         $this->withdraw();
     }
 
-    public function test_orders_and_equal_price_ties_are_rejected(): void
+    public function test_orders_are_rejected_and_equal_price_bids_can_be_deleted(): void
     {
         DB::table('order_items')->insert(['live_video_item_id' => 20]);
         try { $this->withdraw(); self::fail('Expected order rejection'); }
         catch (HttpResponseException $e) { self::assertSame(409, $e->getResponse()->getStatusCode()); }
         DB::table('order_items')->delete();
         VideoComment::whereKey(30)->update(['comment' => '120.00']);
-        $this->expectException(HttpResponseException::class);
+        $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, 30);
         $this->withdraw();
+        self::assertNull(VideoComment::find(30));
+        self::assertNotNull(VideoComment::find(31));
     }
 
     public function test_route_identifier_validation_cannot_be_overridden_by_body(): void
@@ -290,22 +294,40 @@ class AuctionBidWithdrawalTest extends TestCase
         self::assertSame(0, DB::table('auction_bid_withdrawals')->count());
     }
 
-    public function test_firebase_adapter_removes_only_the_bid_path_and_never_republishes_a_deleted_bid(): void
+    public function test_firebase_adapter_publishes_recalculated_state_and_delayed_callbacks_do_not_restore_deleted_bids(): void
     {
         $adapter = (new \ReflectionClass(FirebaseController::class))->newInstanceWithoutConstructor();
         $database = \Mockery::mock();
         $reference = \Mockery::mock();
-        $database->shouldReceive('getReference')->once()->with('live/10/item/20/auctions/30')->andReturn($reference);
-        $reference->shouldReceive('remove')->once();
+        $database->shouldReceive('getReference')->with('live/10/item/20')->andReturn($reference);
+        $remote = ['status' => 'working', 'auctions' => [30 => ['comment' => '110'], 31 => ['comment' => '120']]];
+        $database->shouldReceive('runTransaction')->andReturnUsing(function ($callback) use (&$remote, $reference) {
+            $transaction = \Mockery::mock();
+            $snapshot = \Mockery::mock();
+            $snapshot->shouldReceive('getValue')->andReturn($remote);
+            $transaction->shouldReceive('snapshot')->with($reference)->andReturn($snapshot);
+            $transaction->shouldReceive('set')->with($reference, \Mockery::type('array'))->andReturnUsing(function ($ref, $value) use (&$remote) { $remote = $value; });
+            $callback($transaction);
+        });
         $property = new \ReflectionProperty(FirebaseController::class, 'database');
         $property->setAccessible(true);
         $property->setValue($adapter, $database);
-        $adapter->removeAuctionBid(10, 20, 30);
         $record = VideoComment::find(30);
-        $record->delete();
+        $this->firebase->shouldReceive('removeAuctionBid')->once();
+        $this->withdraw();
+        $adapter->removeAuctionBid(10, 20, 30);
+        self::assertArrayNotHasKey(30, $remote['auctions']);
+        self::assertSame('120.00', $remote['bid_state']['current_price']);
+        self::assertSame(2, $remote['bid_state']['highest_bidder_id']);
         // A delayed placement callback must not resurrect the withdrawn entry.
         $adapter->AddAuctions($record);
         self::assertNull(VideoComment::find(30));
+        self::assertArrayNotHasKey(30, $remote['auctions']);
+        // A publication from an older DB revision cannot overwrite a newer Firebase revision.
+        $remote['bid_state_version'] = 999;
+        $remote['bid_state']['current_price'] = 'newer';
+        $adapter->AddAuctions(VideoComment::find(31));
+        self::assertSame('newer', $remote['bid_state']['current_price']);
     }
 
     public function test_failed_outbox_write_rolls_back_bid_replies_and_likes(): void
@@ -406,7 +428,7 @@ class AuctionBidWithdrawalTest extends TestCase
         foreach (['1600', '2000', '2099.99'] as $attempt) {
             $this->assertAuditPrice($d->id, $attempt, '2000.00', '2100.00');
         }
-        self::assertSame(409, $this->httpDelete((string) $bidC->id, $organizer->id)->getStatusCode());
+        self::assertNotNull(VideoComment::find($bidC->id));
         $bidD = $this->submitAuditBid($d->id, '2100');
         $this->assertAuditPrice($a->id, '2199.99', '2100.00', '2200.00');
         // The withdrawn bid must also be rejected as an explicit award candidate.
@@ -447,6 +469,179 @@ class AuctionBidWithdrawalTest extends TestCase
         $winner = (new AuctionAwardService())->award(20, null, $organizer->id);
         self::assertSame($d->id, (int) $winner->user_finished_id);
         self::assertSame('130.00', $winner->finished_price);
+    }
+
+    public function test_delete_highest_recalculates_price_minimum_and_real_award_winner(): void
+    {
+        [$a, $b, $c, $d, $creator] = $this->priceIntegrityUsers();
+        DB::table('video_comments')->delete();
+        DB::table('live_videos')->update(['user_id' => $creator->id, 'start_price' => '900']);
+        DB::table('live_video_items')->update(['bidding' => '100']);
+        $this->firebase->shouldReceive('AddAuctions')->times(4);
+        $bidA = $this->submitAuditBid($a->id, '1000');
+        $bidB = $this->submitAuditBid($b->id, '1500');
+        $bidC = $this->submitAuditBid($c->id, '2000');
+        $reply = VideoComment::create(['comment_id' => $bidC->id, 'video_id' => 10, 'comment' => 'reply']);
+        DB::table('video_comment_likes')->insert(['comment_id' => $reply->id]);
+        $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, $bidC->id);
+        $response = $this->httpDelete((string) $bidC->id, $creator->id);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertTrue($response->getData(true)['success']);
+        self::assertTrue($bidC->fresh()->trashed());
+        self::assertTrue($reply->fresh()->trashed());
+        self::assertSame(0, VideoCommentLike::count());
+        self::assertSame(4, (int) DB::table('live_video_items')->value('bid_state_version'));
+        $this->assertProvisionalWinner($bidB, $creator->id);
+        foreach (['1599.99', '1500', '-1', 'NaN', '1e4', '1600.001', '1000000000000'] as $invalid) {
+            $this->assertAuditPrice($d->id, $invalid, '1500.00', '1600.00');
+        }
+        $bidD = $this->submitAuditBid($d->id, '1600');
+        $this->firebase->shouldReceive('UserAuctions')->once()->with(\Mockery::on(fn ($bid) => $bid->id === $bidD->id));
+        $winner = (new AuctionAwardService())->award(20, null, $creator->id);
+        self::assertSame($d->id, (int) $winner->user_finished_id);
+        self::assertSame('1600.00', $winner->finished_price);
+        self::assertSame([$bidA->id, $bidB->id, $bidD->id], VideoComment::where('live_video_item_id', 20)->orderBy('id')->pluck('id')->all());
+    }
+
+    /** @dataProvider startingPrices */
+    public function test_delete_all_bids_restores_existing_starting_price_precedence($auctionStart, $itemStart, string $current, string $minimum): void
+    {
+        DB::table('live_videos')->update(['start_price' => $auctionStart]);
+        DB::table('live_video_items')->update(['start_price' => $itemStart]);
+        $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, 31);
+        $this->firebase->shouldReceive('removeAuctionBid')->once()->with(10, 20, 30);
+        self::assertTrue($this->httpDelete('31')->getData(true)['success']);
+        self::assertTrue($this->httpDelete('30')->getData(true)['success']);
+        self::assertSame(0, VideoComment::count());
+        self::assertSame(2, VideoComment::withTrashed()->count());
+        $item = LiveVideoItem::without('pieces')->find(20);
+        $auction = \App\Models\LiveVideo::find(10);
+        $state = (new AuctionBidService())->state($item, $auction);
+        self::assertNull($state['highest']);
+        self::assertSame(['current_price' => $current, 'next_minimum' => $minimum], $state['price']);
+        self::assertNull($item->user_finished_id);
+        self::assertNull($item->finished_price);
+        try { (new AuctionAwardService())->award(20, null, 9); self::fail('No bidder can win'); }
+        catch (HttpResponseException $e) { self::assertSame('No eligible bid exists for this item.', $e->getResponse()->getData(true)['message']); }
+        self::assertSame(0, DB::table('orders')->count());
+        $this->assertAuditPrice(1, $current, $current, $minimum);
+        $this->firebase->shouldReceive('AddAuctions')->once();
+        self::assertSame($minimum, $this->submitAuditBid(1, $minimum)->comment);
+    }
+
+    public function startingPrices(): array
+    {
+        return [
+            'auction before item' => ['100', '50', '100.00', '110.00'],
+            'item fallback' => [null, '50', '50.00', '60.00'],
+            'zero fallback' => [null, null, '0.00', '10.00'],
+            'explicit auction zero' => ['0', '50', '0.00', '10.00'],
+        ];
+    }
+
+    public function test_invalid_remaining_price_rolls_back_highest_deletion(): void
+    {
+        VideoComment::whereKey(30)->update(['comment' => '110.001']);
+        $this->firebase->shouldNotReceive('removeAuctionBid');
+        self::assertFalse($this->httpDelete('31')->getData(true)['success']);
+        self::assertNotNull(VideoComment::find(31));
+        self::assertSame(0, DB::table('auction_bid_withdrawals')->count());
+        self::assertSame(0, (int) DB::table('live_video_items')->value('bid_state_version'));
+    }
+
+    public function test_one_cent_increment_floor_remains_enforced_after_highest_deletion(): void
+    {
+        DB::table('live_video_items')->update(['bidding' => '0']);
+        $this->firebase->shouldReceive('removeAuctionBid')->once();
+        self::assertTrue($this->httpDelete('31')->getData(true)['success']);
+        $this->assertAuditPrice(1, '110', '110.00', '110.01');
+        $this->firebase->shouldReceive('AddAuctions')->once();
+        self::assertSame('110.01', $this->submitAuditBid(1, '110.01')->comment);
+    }
+
+    public function test_firebase_retry_recomputes_latest_state_and_old_revisions_cannot_restore_highest_or_last_bid(): void
+    {
+        $adapter = (new \ReflectionClass(FirebaseController::class))->newInstanceWithoutConstructor();
+        $database = \Mockery::mock();
+        $reference = \Mockery::mock();
+        $database->shouldReceive('getReference')->with('live/10/item/20')->andReturn($reference);
+        $remote = ['status' => 'working', 'unrelated' => 'preserved', 'auctions' => [30 => [], 31 => []]];
+        $events = [];
+        $fail = true;
+        $database->shouldReceive('runTransaction')->andReturnUsing(function ($callback) use (&$remote, &$events, &$fail, $reference) {
+            $run = function () use ($callback, &$remote, &$fail, $reference) {
+                $transaction = \Mockery::mock();
+                $snapshot = \Mockery::mock();
+                $snapshot->shouldReceive('getValue')->andReturn($remote);
+                $transaction->shouldReceive('snapshot')->with($reference)->andReturn($snapshot);
+                $transaction->shouldReceive('set')->with($reference, \Mockery::type('array'))
+                    ->andReturnUsing(function ($ref, $value) use (&$remote, &$fail) {
+                        if ($fail) { $fail = false; throw new \RuntimeException('Simulated conditional write failure'); }
+                        $remote = $value;
+                    });
+                $callback($transaction);
+            };
+            $events[] = $run;
+            $run();
+        });
+        $property = new \ReflectionProperty(FirebaseController::class, 'database');
+        $property->setAccessible(true);
+        $property->setValue($adapter, $database);
+        $this->app->instance(FirebaseController::class, $adapter);
+
+        self::assertTrue($this->httpDelete('31')->getData(true)['success']);
+        self::assertNull(VideoComment::find(31));
+        self::assertNull(DB::table('auction_bid_withdrawals')->where('bid_id', 31)->value('synced_at'));
+        self::assertSame(0, (int) DB::table('live_video_items')->value('bid_state_synced_version'));
+        $new = $this->submitAuditBid(1, '130');
+        self::assertSame('130.00', $remote['bid_state']['current_price']);
+        self::assertSame($new->id, $remote['bid_state']['highest_bid_id']);
+        self::assertArrayNotHasKey(31, $remote['auctions']);
+        self::assertSame(2, $remote['bid_state_version']);
+        (new AuctionBidWithdrawalSync())->sync(31);
+        self::assertNotNull(DB::table('auction_bid_withdrawals')->where('bid_id', 31)->value('synced_at'));
+        $events[0](); // Delayed version 1 write, after version 2 has already been published.
+        self::assertSame('130.00', $remote['bid_state']['current_price']);
+        self::assertSame(2, $remote['bid_state_version']);
+
+        self::assertTrue($this->httpDelete('30')->getData(true)['success']);
+        self::assertTrue($this->httpDelete((string) $new->id)->getData(true)['success']);
+        self::assertSame('100.00', $remote['bid_state']['current_price']);
+        self::assertSame('110.00', $remote['bid_state']['next_minimum']);
+        self::assertNull($remote['bid_state']['highest_bidder_id']);
+        self::assertNull($remote['bid_state']['highest_bid_id']);
+        self::assertNull($remote['auctions']);
+        self::assertSame(4, $remote['bid_state_version']);
+        $events[1](); // Delayed placement cannot recreate the now-withdrawn 130 bid.
+        self::assertNull($remote['auctions']);
+        self::assertNull($remote['bid_state']['highest_bidder_id']);
+        self::assertSame('preserved', $remote['unrelated']);
+        self::assertSame('working', $remote['status']);
+    }
+
+    public function test_numeric_upper_bound_is_preserved_after_recalculation(): void
+    {
+        $this->firebase->shouldReceive('removeAuctionBid')->once();
+        self::assertTrue($this->httpDelete('31')->getData(true)['success']);
+        $this->assertAuditPrice(1, '1000000000000.00', '110.00', '120.00');
+        $this->firebase->shouldReceive('AddAuctions')->once();
+        self::assertSame('999999999999.99', $this->submitAuditBid(1, '999999999999.99')->comment);
+        $this->assertAuditPrice(1, '999999999999.99', '999999999999.99', '1000000000009.99');
+    }
+
+    public function test_retry_command_retries_failed_placement_state_and_is_idempotent(): void
+    {
+        $this->firebase->shouldReceive('AddAuctions')->once()->andThrow(new \RuntimeException('offline'));
+        $this->submitAuditBid(1, '130');
+        self::assertSame(1, (int) DB::table('live_video_items')->value('bid_state_version'));
+        self::assertSame(0, (int) DB::table('live_video_items')->value('bid_state_synced_version'));
+        $this->firebase->shouldReceive('syncAuctionBidState')->once()->with(10, 20)->andReturnUsing(function () {
+            DB::table('live_video_items')->where('id', 20)->update(['bid_state_synced_version' => 1]);
+        });
+        $command = new \App\Console\Commands\SyncWithdrawnAuctionBids();
+        self::assertSame(0, $command->handle(new AuctionBidWithdrawalSync()));
+        self::assertSame(0, $command->handle(new AuctionBidWithdrawalSync()));
+        self::assertSame(1, (int) DB::table('live_video_items')->value('bid_state_synced_version'));
     }
 }
 

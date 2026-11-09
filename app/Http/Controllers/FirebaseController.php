@@ -44,7 +44,7 @@ class FirebaseController extends Controller
     {
         $this->database
             ->getReference('live/'.$item->live_video_id.'/item/'.$item->id)
-            ->set([
+            ->update([
                 'status' =>$item->status
             ]);
 
@@ -54,28 +54,52 @@ class FirebaseController extends Controller
 
     public function AddAuctions($item)
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($item) {
-            // Serialize publication with withdrawal, including delayed after-commit callbacks.
-            if (! \App\Models\VideoComment::whereKey($item->id)->lockForUpdate()->first()) {
-                return;
-            }
-            $this->database
-                ->getReference('live/'.$item->video_id.'/item/'.$item->live_video_item_id.'/auctions/'.$item->id)
-                ->set([
-                    'id' => $item->id ??'',
-                    'comment' => $item->comment ?? '-',
-                    'date' => $item->created_at ?? '-',
-                    'user'=> New UserMainDataResource($item->user_Video),
-                ]);
-
-            return response()->json('blog has been created');
-        });
+        // Re-read current state: never publish the callback's potentially stale record.
+        $this->syncAuctionBidState($item->video_id, $item->live_video_item_id);
     }
 
 
     public function removeAuctionBid($auctionId, $itemId, $bidId)
     {
-        $this->database->getReference('live/'.$auctionId.'/item/'.$itemId.'/auctions/'.$bidId)->remove();
+        $this->syncAuctionBidState($auctionId, $itemId);
+    }
+
+    public function syncAuctionBidState($auctionId, $itemId)
+    {
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($auctionId, $itemId) {
+            $item = LiveVideoItem::without('pieces')->whereKey($itemId)->lockForUpdate()->first();
+            $auction = $item ? LiveVideo::whereKey($item->live_video_id)->sharedLock()->first() : null;
+            if (! $item || ! $auction || $item->deleted_at || $auction->deleted_at
+                || (int) $auction->id !== (int) $auctionId) { return; }
+            $state = app(\App\Services\AuctionBidService::class)->state($item, $auction);
+            $bids = \App\Models\VideoComment::where('live_video_item_id', $itemId)->where('video_id', $auctionId)
+                ->whereNull('comment_id')->lockForUpdate()->get();
+            $history = [];
+            foreach ($bids as $bid) {
+                $history[$bid->id] = [
+                    'id' => $bid->id, 'comment' => $bid->comment, 'date' => $bid->created_at,
+                    'user' => new UserMainDataResource($bid->user_Video),
+                ];
+            }
+            $payload = $state['price'] + [
+                'highest_bid_id' => $state['highest'] ? $state['highest']->id : null,
+                'highest_bidder_id' => $state['highest'] ? $state['highest']->user_id : null,
+            ];
+            $reference = $this->database->getReference('live/'.$auctionId.'/item/'.$itemId);
+            $this->database->runTransaction(function ($transaction) use ($reference, $item, $auction, $history, $payload) {
+                $remote = $transaction->snapshot($reference)->getValue();
+                // Do not recreate a removed, closed auction/item node.
+                if ($remote === null && ($auction->status !== 'start' || $item->status !== 'working')) { return; }
+                $remote = is_array($remote) ? $remote : [];
+                if (isset($remote['bid_state_version']) && (int) $remote['bid_state_version'] >= (int) $item->bid_state_version) { return; }
+                $remote['auctions'] = $history ?: null;
+                $remote['bid_state'] = $payload;
+                $remote['bid_state_version'] = (int) $item->bid_state_version;
+                // ETag conditional set rejects a delayed request if anything changed meanwhile.
+                $transaction->set($reference, $remote);
+            });
+            LiveVideoItem::whereKey($itemId)->update(['bid_state_synced_version' => $item->bid_state_version]);
+        }, 3);
     }
 
     public function UserAuctions($item)

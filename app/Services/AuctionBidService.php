@@ -27,19 +27,10 @@ class AuctionBidService
 
             // A locking (current) read is essential under MySQL REPEATABLE READ.
             // Replies and nonnumeric legacy comments are not bid state.
-            $highest = VideoComment::where('live_video_item_id', $item->id)
-                ->whereNull('comment_id')
-                ->whereRaw("comment REGEXP '^[0-9]+([.][0-9]+)?$'")
-                ->orderByRaw('CAST(comment AS DECIMAL(20, 2)) DESC')
-                ->orderByDesc('id')->lockForUpdate()->first();
-            $current = $highest ? $this->minorUnits($highest->comment)
-                : $this->minorUnits($auction->start_price ?? $item->start_price ?? 0);
-            $increment = $this->minorUnits($item->bidding ?? 0);
-            if ($current === null || $increment === null) {
-                $this->reject('Invalid auction price configuration.');
-            }
-            $minimum = $current + max(1, $increment);
-            $price = ['current_price' => $this->decimal($current), 'next_minimum' => $this->decimal($minimum)];
+            $state = $this->state($item, $auction);
+            $price = $state['price'];
+            $current = $this->minorUnits($price['current_price']);
+            $minimum = $this->minorUnits($price['next_minimum']);
             if ($auction->status !== 'start' || $item->status !== 'working'
                 || $item->finished_price !== null || $item->user_finished_id !== null) {
                 $this->reject('Bidding is closed for this item.', $price);
@@ -49,7 +40,7 @@ class AuctionBidService
                 $this->reject('Un Authenticated', $price);
             }
             $bid = $this->minorUnits($amount);
-            if ($bid === null || $bid <= $current || $bid < $minimum) {
+            if ($bid === null || $minimum === null || $bid <= $current || $bid < $minimum) {
                 $this->reject('Bid rejected. Current price is '.$price['current_price']
                     .'; next minimum is '.$price['next_minimum'].'.', $price);
             }
@@ -61,6 +52,7 @@ class AuctionBidService
                 'comment' => $this->decimal($bid),
                 'user_id' => $userId,
             ]);
+            LiveVideoItem::whereKey($item->id)->increment('bid_state_version');
             DB::afterCommit(function () use ($record) {
                 try {
                     app(FirebaseController::class)->AddAuctions($record);
@@ -71,6 +63,31 @@ class AuctionBidService
 
             return $record;
         }, 3);
+    }
+
+    /** Caller holds the item lock; preserve the existing numeric/tie-break rules. */
+    public function highest(int $itemId, ?int $auctionId = null): ?VideoComment
+    {
+        return VideoComment::where('live_video_item_id', $itemId)->whereNull('comment_id')
+            ->when($auctionId !== null, fn ($query) => $query->where('video_id', $auctionId))
+            ->whereRaw("comment REGEXP '^[0-9]+([.][0-9]+)?$'")
+            ->orderByRaw('CAST(comment AS DECIMAL(20, 2)) DESC')->orderByDesc('id')
+            ->lockForUpdate()->first();
+    }
+
+    /** Single authoritative pricing calculation for placement, withdrawal and publication. */
+    public function state(LiveVideoItem $item, LiveVideo $auction): array
+    {
+        $highest = $this->highest($item->id);
+        $current = $this->minorUnits($highest ? $highest->comment : ($auction->start_price ?? $item->start_price ?? 0));
+        $increment = $this->minorUnits($item->bidding ?? 0);
+        if ($current === null || $increment === null) {
+            $this->reject('Invalid auction price configuration.');
+        }
+        return ['highest' => $highest, 'price' => [
+            'current_price' => $this->decimal($current),
+            'next_minimum' => $this->decimal($current + max(1, $increment)),
+        ]];
     }
 
     private function minorUnits($value): ?int

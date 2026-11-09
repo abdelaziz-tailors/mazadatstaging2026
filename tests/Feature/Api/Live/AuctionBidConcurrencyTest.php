@@ -113,6 +113,20 @@ class AuctionBidConcurrencyTest extends TestCase
         return $results;
     }
 
+    public function test_concurrent_highest_deletion_and_replacement_bid_use_serialized_current_price(): void
+    {
+        $this->auction->update(['user_id' => $this->users[0]->id]);
+        app(AuctionBidService::class)->place($this->item->id, $this->users[1]->id, '1100');
+        $highest = app(AuctionBidService::class)->place($this->item->id, $this->users[1]->id, '1200');
+        $results = $this->race(['withdraw:'.$highest->id, '1200']);
+        $this->assertTrue($results[0]['success']);
+        $this->assertNull(VideoComment::find($highest->id));
+        // Replacement is accepted only if withdrawal acquired the item lock first.
+        $current = $results[1]['success'] ? '1200.00' : '1100.00';
+        $this->rejectBid($current, $current);
+        $this->assertNull($this->item->fresh()->user_finished_id);
+    }
+
     public function test_equal_simultaneous_bids_accept_exactly_one_and_retry_is_stale(): void
     {
         $results = $this->race(['1100', '1100']);

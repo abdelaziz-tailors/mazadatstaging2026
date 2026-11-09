@@ -17,6 +17,17 @@ class SyncWithdrawnAuctionBids extends Command
             ->chunkById(100, function ($entries) use ($sync) {
                 foreach ($entries as $entry) { $sync->sync($entry->bid_id); }
             }, 'bid_id');
+        // Placement publication failures also retain a durable dirty version.
+        DB::table('live_video_items')->whereColumn('bid_state_version', '>', 'bid_state_synced_version')
+            ->whereNull('deleted_at')->orderBy('id')->chunkById(100, function ($items) {
+                foreach ($items as $item) {
+                    try {
+                        app(\App\Http\Controllers\FirebaseController::class)->syncAuctionBidState($item->live_video_id, $item->id);
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Auction bid state pending retry.', ['item_id' => $item->id]);
+                    }
+                }
+            });
         return 0;
     }
 }
