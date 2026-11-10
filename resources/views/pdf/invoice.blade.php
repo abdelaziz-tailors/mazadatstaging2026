@@ -149,10 +149,12 @@
             <td class="label">عمولة المشتري</td>
             <td class="value"><span class="num">{{ number_format($buyerCommission, 2) }}</span> ر.س</td>
         </tr>
-        <tr>
-            <td class="label">عمولة البائع</td>
-            <td class="value"><span class="num">{{ number_format($sellerCommission, 2) }}</span> ر.س</td>
-        </tr>
+        @isset($sellerCommission)
+            <tr>
+                <td class="label">عمولة البائع</td>
+                <td class="value"><span class="num">{{ number_format($sellerCommission, 2) }}</span> ر.س</td>
+            </tr>
+        @endisset
         <tr>
             <td class="label">حق الرعاية</td>
             <td class="value"><span class="num">{{ number_format($sponsorshipFee, 2) }}</span> ر.س</td>

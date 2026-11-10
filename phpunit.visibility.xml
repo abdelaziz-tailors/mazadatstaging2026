@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" colors="true" cacheResult="false">
+    <testsuites>
+        <testsuite name="Bidding percentage visibility">
+            <file>tests/Unit/AuctionFeesResourceTest.php</file>
+            <file>tests/Feature/Api/BiddingPercentageVisibilityTest.php</file>
+            <file>tests/Unit/DashboardServicePriceTest.php</file>
+            <file>tests/Unit/AuctionBidWithdrawalTest.php</file>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_CONFIG_CACHE" value="storage/framework/testing/visibility-config.php" force="true"/>
+        <env name="APP_ROUTES_CACHE" value="storage/framework/testing/visibility-routes.php" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="DATABASE_URL" value="" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="NOTIFICATIONS_MYSQL_CONFIG" value="" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="LOG_CHANNEL" value="null" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+    </php>
+</phpunit>

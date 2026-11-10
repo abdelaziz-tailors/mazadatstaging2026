@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Profile\UploadAuctionWinVideoRequest;
 use App\Http\Requests\api\User\Profile\UploadCartPaymentProofRequest;
 use App\Http\Resources\User\AuctionWinVideoResource;
+use App\Http\Resources\User\AuctionFeesResource;
 use App\Http\Resources\User\PaymentProofResource;
 use App\Http\Resources\User\UserCartAuctionResource;
 use App\Http\Resources\User\UserInvoiceItemResource;
@@ -75,10 +76,8 @@ class UserAuctionController extends Controller
     /**
      * Build the data set rendered by resources/views/pdf/invoice.blade.php.
      *
-     * "seller_commission" is computed fresh from the auction's own commission
-     * rate (not the Order's stored commission_value, which only reflects
-     * whichever party — buyer or seller — actually pays it) so both figures
-     * can be shown side by side for transparency.
+     * Only expose the derived seller commission when the viewer may see the
+     * auction's percentage. The buyer's saved charges and totals stay unchanged.
      */
     private function invoicePdfData(Order $order): array
     {
@@ -86,14 +85,13 @@ class UserAuctionController extends Controller
         $firstItem = $order->items->first()?->liveVideoItem;
         $commissionPct = (float) ($live?->commission_amount ?? 0);
 
-        return [
+        $data = [
             'invoiceNumber' => 'INV-'.$order->id,
             'orderNumber' => $order->order_number,
             'auctionTitle' => $live?->title_ar ?? $live?->title ?? '',
             'itemTitle' => $firstItem?->title_ar ?? $firstItem?->title ?? '',
             'bidValue' => (float) $order->subtotal,
             'buyerCommission' => (float) $order->commission_value,
-            'sellerCommission' => round($commissionPct * (float) $order->subtotal / 100, 2),
             'sponsorshipFee' => (float) $order->service_fee_total,
             'vat' => 0.0,
             'total' => (float) $order->subtotal,
@@ -104,6 +102,12 @@ class UserAuctionController extends Controller
             'regularLatinFontPath' => 'file://'.str_replace('\\', '/', resource_path('fonts/Cairo-Latin-Regular.ttf')),
             'boldLatinFontPath' => 'file://'.str_replace('\\', '/', resource_path('fonts/Cairo-Latin-Bold.ttf')),
         ];
+
+        if ((new AuctionFeesResource($live))->canViewCommission(request())) {
+            $data['sellerCommission'] = round($commissionPct * (float) $order->subtotal / 100, 2);
+        }
+
+        return $data;
     }
 
     /**
