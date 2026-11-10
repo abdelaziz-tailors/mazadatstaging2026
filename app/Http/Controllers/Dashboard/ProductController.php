@@ -36,10 +36,14 @@ use Yajra\DataTables\DataTables;
 use App\Traits\AuthorizeTrait;
 use App\Models\User\User;
 use App\Support\PartnerDashboardScope;
+use App\Support\AuctionSellerEligibility;
+use App\Support\AuctionItemFinancialGuard;
 use App\Services\LiveVideoItemPieceService;
 use App\Services\AuctionItemTransferService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -248,7 +252,7 @@ class ProductController extends Controller
     {
 
         //$this->authorizable('add video');
-        $live_video = LiveVideo::with('partnerData')->findOrFail($id);
+        $live_video = LiveVideo::with('user_Video')->findOrFail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live_video);
 
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
@@ -262,8 +266,7 @@ class ProductController extends Controller
             $providers->where('admin_id', Auth::guard('admin')->user()->id);
         }
         $providers = $providers->get();
-        $sellers = User::query()
-                    ->where('user_type', 'seller')
+        $sellers = AuctionSellerEligibility::forAuction($live_video)
                     ->orderBy('id','desc')
                     ->get();
 
@@ -278,9 +281,11 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $live_video = LiveVideo::find($request->video_id);
-        if ($live_video) {
-            PartnerDashboardScope::ensureOwnLiveVideo($live_video);
+        $request->validate(['video_id' => 'required|integer|exists:live_videos,id']);
+        $live_video = LiveVideo::findOrFail($request->video_id);
+        PartnerDashboardScope::ensureOwnLiveVideo($live_video);
+        if ($live_video->partners_type === 'single') {
+            $request->merge(['user_id' => $live_video->user_id]);
         }
 
         $quantity = max(1, (int) ($request->quantity ?? 1));
@@ -294,7 +299,8 @@ class ProductController extends Controller
 
         $rules = [
             'user_id'                => 'nullable|exists:users,id',
-            'seller_id'              => 'nullable|exists:users,id',
+            'seller_source'          => 'sometimes|in:owner,from_list',
+            'seller_id'              => ['required_if:seller_source,from_list', 'nullable', 'integer', AuctionSellerEligibility::rule($live_video)],
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
             'bidding'                => 'required|numeric|min:0',
@@ -387,18 +393,12 @@ class ProductController extends Controller
 
 
         try {
-            $firebase = new FirebaseController();
+            $firebase = app(FirebaseController::class);
             $firebase->create_item($add_iteam);
         }
         catch(\Exception $t){}
 
 
-
-        try {
-            $firebase = new FirebaseController();
-            $firebase->create_item($add_iteam);
-        }
-        catch(\Exception $t){}
 
         Toastr::success(TranslationHelper::translate(' Created Successfully'));
         if($request->action == 'add_product'){
@@ -419,14 +419,14 @@ class ProductController extends Controller
     {
         //$this->authorizable('edit video');
         $data = LiveVideoItem::with('pieces')->findorfail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($data->videoLive);
         $ages = Age::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $colors = Color::select('id','color', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $categories = Category::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $animal_pens = AnimalPen::select('id', 'name->'.app()->getLocale().' as name')->where('is_active', 1)->get();
         $providers = User::where('user_type','vendor')->get();
-        $live_video = LiveVideo::with('partnerData')->find($data->live_video_id);
-        $sellers = User::query()
-                    ->where('user_type', 'seller')
+        $live_video = LiveVideo::with('user_Video')->find($data->live_video_id);
+        $sellers = AuctionSellerEligibility::forAuction($live_video)
                     ->orderBy('id','desc')
                     ->get();
         return view('dashboard.pages.products.edit', compact(['providers', 'sellers', 'data','categories','colors','ages','animal_pens','live_video']));
@@ -444,6 +444,10 @@ class ProductController extends Controller
     {
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($live_video->videoLive);
+        // Existing lots can have a historical financial owner different from the
+        // organizer. Only creation normalizes this identity.
+        $request->merge(['user_id' => $live_video->user_id]);
 
         $quantity = max(1, (int) ($request->quantity ?? $live_video->quantity ?? 1));
 
@@ -455,8 +459,14 @@ class ProductController extends Controller
         ]);
 
         $request->validate([
-            'user_id' => 'sometimes|required|exists:users,id',
-            'seller_id' => 'nullable|exists:users,id',
+            'user_id' => 'nullable|exists:users,id',
+            'seller_source' => 'sometimes|in:owner,from_list',
+            'seller_id' => ['required_if:seller_source,from_list', 'nullable', 'integer', function ($attribute, $value, $fail) use ($live_video) {
+                // Keeping a historical assignment does not select a new seller.
+                if ((string) $value !== (string) $live_video->seller_id) {
+                    (AuctionSellerEligibility::rule($live_video->videoLive))($attribute, $value, $fail);
+                }
+            }],
             'title' => 'required|string|max:255',
             'title_ar' => 'required|string|max:255',
             // 'start_price' => 'required|numeric|min:0',
@@ -470,38 +480,55 @@ class ProductController extends Controller
             'pieces.*.baham_count' => 'nullable|integer|min:0',
         ]);
 
-        $sellerId = $request->input('seller_source', 'owner') === 'from_list' && $request->filled('seller_id')
-            ? (int) $request->seller_id
+        $sellerId = $request->input('seller_source', $live_video->seller_id ? 'from_list' : 'owner') === 'from_list'
+            && ($request->filled('seller_id') || ! $request->has('seller_source'))
+            ? (int) $request->input('seller_id', $live_video->seller_id)
             : null;
-        $showPartnerName = $request->input('seller_source', 'owner') === 'owner';
+        $showPartnerName = $request->input('seller_source', $live_video->seller_id ? 'from_list' : 'owner') === 'owner';
 
-        $live_video->update([
-            'title' => $request->title,
-            'title_ar' => $request->title_ar,
-            'user_id' =>$request->user_id,
-            'seller_id' => $sellerId,
-            'category_id' => $request->category_id ?? null,
-            'information' => $request->information ?? null,
-            'information_ar' => $request->information_ar ?? null,
-            'color_id'=>$request->color_id,
-            'type'=>$request->type,
-            'date_barth'=>$request->date_barth,
-            'animal_pen_id'=>$request->animal_pen_id,
-            'address'=>$request->address,
-            'terms'=>$request->terms,
-            'terms_ar'=>$request->terms_ar,
-            // 'start_price' => $request->start_price,
-            'bidding'=>$request->bidding,
-            'quantity'=>$quantity ?: 1,
-            'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
-            'show_partner_name' => $showPartnerName,
-        ]);
+        $live_video = DB::transaction(function () use ($id, $request, $quantity, $sellerId, $showPartnerName) {
+            $live_video = LiveVideoItem::without('pieces')->whereKey($id)->lockForUpdate()->firstOrFail();
+            $auction = LiveVideo::whereKey($live_video->live_video_id)->lockForUpdate()->firstOrFail();
+            PartnerDashboardScope::ensureOwnLiveVideo($auction);
+            if (! $request->has('seller_source') && ! $request->has('seller_id')) {
+                $sellerId = $live_video->seller_id;
+                $showPartnerName = $live_video->show_partner_name;
+            }
+            if (AuctionItemFinancialGuard::isCommitted($live_video)
+                && (string) $sellerId !== (string) $live_video->seller_id) {
+                throw ValidationException::withMessages(['seller_id' => 'The seller of an awarded or ordered item cannot be changed.']);
+            }
+            if ($sellerId !== null && (string) $sellerId !== (string) $live_video->seller_id) {
+                $request->validate(['seller_id' => [AuctionSellerEligibility::rule($auction)]]);
+            }
 
-        LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
+            $live_video->update([
+                'title' => $request->title,
+                'title_ar' => $request->title_ar,
+                'seller_id' => $sellerId,
+                'category_id' => $request->category_id ?? null,
+                'information' => $request->information ?? null,
+                'information_ar' => $request->information_ar ?? null,
+                'color_id'=>$request->color_id,
+                'type'=>$request->type,
+                'date_barth'=>$request->date_barth,
+                'animal_pen_id'=>$request->animal_pen_id,
+                'address'=>$request->address,
+                'terms'=>$request->terms,
+                'terms_ar'=>$request->terms_ar,
+                'bidding'=>$request->bidding,
+                'quantity'=>$quantity ?: 1,
+                'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
+                'show_partner_name' => $showPartnerName,
+            ]);
+
+            LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
+            return $live_video;
+        }, 3);
 
         $live_video->load('pieces');
         try {
-            $firebase = new FirebaseController();
+            $firebase = app(FirebaseController::class);
             $firebase->create_item($live_video);
         }
         catch(\Exception $t){}
@@ -550,9 +577,18 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        //$this->authorizable('delete video');
-        $admin = LiveVideoItem::findorfail($id);
-        $admin->delete();
+        if (! PartnerDashboardScope::isPartner() && ! Auth::guard('admin')->user()->hasRole('Super Admin')) {
+            $this->authorizable('delete video');
+        }
+        DB::transaction(function () use ($id) {
+            $item = LiveVideoItem::without('pieces')->whereKey($id)->lockForUpdate()->firstOrFail();
+            $auction = LiveVideo::whereKey($item->live_video_id)->lockForUpdate()->firstOrFail();
+            PartnerDashboardScope::ensureOwnLiveVideo($auction);
+            if (AuctionItemFinancialGuard::isCommitted($item)) {
+                throw ValidationException::withMessages(['item' => 'An awarded or ordered item cannot be deleted.']);
+            }
+            $item->delete();
+        }, 3);
         Toastr::success(TranslationHelper::translate('Deleted Successfully'));
         return redirect()->back();
     }

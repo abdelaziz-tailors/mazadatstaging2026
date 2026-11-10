@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\FirebaseController;
-use App\Jobs\SendFCMNotification;
 use App\Models\LiveVideo;
 use App\Models\User\User;
 use App\Models\VideoComment;
@@ -136,27 +135,22 @@ class CheckLiveVideoEnd extends Command
                         (int) $item->id, null, null, true
                     );
                     if (! $wasAwarded && $item->user_finished_id) {
-                            $tokens_en = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'en')->pluck('fcm_token')->toArray();
-                            $tokens_ar = User::where('id',$item->user_finished_id)->whereNotNull('fcm_token')->where('app_lang', 'ar')->pluck('fcm_token')->toArray();
+                            $winner = User::find($item->user_finished_id);
                                 $notification_record = [
                                     'title_en' => 'Auction Ended: ' . $video->title,
                                     'title_ar' => 'انتهى المزاد: ' . $video->title_ar,
                                     'body_en'  => 'Congratulations! You won the auction "' . $video->title . '" on ' . $video->date_end_at . ' at ' . $video->time_end_at,
                                     'body_ar'  => 'تهانينا! لقد فزت بالمزاد "' . $video->title . '" بتاريخ ' . $video->date_end_at . ' في ' . $video->time_end_at,
                                 ];
-                            \Illuminate\Support\Facades\DB::afterCommit(function () use ($tokens_en, $tokens_ar, $notification_record) {
-                            // Send using job queue
-                            dispatch(new SendFCMNotification(
-                                $tokens_en,
-                                $notification_record['title_en'],
-                                $notification_record['body_en'],
-                            ));
-                            dispatch(new SendFCMNotification(
-                                $tokens_ar,
-                                $notification_record['title_ar'],
-                                $notification_record['body_ar'],
-                            ));
-                            });
+                            if ($winner && $winner->is_active) {
+                                $language = $winner->app_lang === 'ar' ? 'ar' : 'en';
+                                // Resolve token ownership at delivery time, never queue a
+                                // private winner message addressed to a captured token.
+                                \App\Services\NotificationService::notifyOnce($winner->id,
+                                    'auction-item-won:'.$item->id, 'auction_won',
+                                    $notification_record['title_'.$language], $notification_record['body_'.$language],
+                                    ['live_video_id' => $video->id, 'live_video_item_id' => $item->id]);
+                            }
                     }
                     \Illuminate\Support\Facades\DB::afterCommit(function () use ($item) {
                         try {

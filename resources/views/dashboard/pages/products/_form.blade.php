@@ -1,6 +1,6 @@
 
 @php
-    $auctionOwner = $live_video->partnerData ?? \App\Models\User\User::find($live_video->partner_id);
+    $auctionOwner = $live_video->user_Video;
     $auctionOwnerName = $auctionOwner->name ?? '—';
     $sellerSource = old('seller_source', isset($data) && $data->seller_id ? 'from_list' : 'owner');
 
@@ -24,18 +24,6 @@
         <div class='card-body'>
 
         <div class="row">
-
-            @if ($errors->any())
-                <div class="col-12">
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            @endif
 
             <div class="col-12">
                 <h5 class="mb-3">{{ TranslationHelper::translate('item_details') }}</h5>
@@ -63,6 +51,12 @@
                 <div class="mt-2 @if($sellerSource !== 'from_list') d-none @endif" id="seller-from-list-field">
                     <select class="form-control select @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
                         <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
+                        @if(isset($data) && $data->seller_id && ! $sellers->contains('id', $data->seller_id))
+                            {{-- Preserve this lot's historical assignment; new selections remain scoped. --}}
+                            <option value="{{ $data->seller_id }}" {{ old('seller_id', $data->seller_id) == $data->seller_id ? 'selected' : '' }}>
+                                {{ $data->seller->name ?? $data->seller_id }}
+                            </option>
+                        @endif
                         @forelse($sellers as $sellerUser)
                             <option value="{{ $sellerUser->id }}" {{ old('seller_id', isset($data) ? $data->seller_id : '') == $sellerUser->id ? 'selected' : '' }}>
                                 {{ $sellerUser->name }}
@@ -77,7 +71,7 @@
             </div>
 
             @if ($live_video->partners_type == 'single')
-                <input type="hidden" name="user_id" value="{{ $live_video->partner_id }}">
+                <input type="hidden" name="user_id" value="{{ $live_video->user_id }}">
             @else
                 <div class="col-lg-6 form-group">
                     <label class="form-label">{{ TranslationHelper::translate('Vendor') }}</label>

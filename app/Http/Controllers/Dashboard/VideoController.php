@@ -160,7 +160,7 @@ class VideoController extends Controller
             'image.*'             => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'start_price' => 'required|numeric|min:0',
             'commission_amount' => 'nullable|min:0',
-            'commission_payer' => 'nullable|in:buyer,seller',
+            'commission_payer' => 'required|in:buyer,seller',
             'service_fee' => 'nullable|min:0',
         ];
         if (! $isPartner) {
@@ -174,7 +174,7 @@ class VideoController extends Controller
             $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
             $request->input('timezone')
         );
-        if ($request->input('type') === 'recorded' &&
+        if (in_array($request->input('type'), ['live', 'recorded'], true) &&
             \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
@@ -230,7 +230,7 @@ class VideoController extends Controller
             'service_fee' => $request->filled('service_fee') ?  $request->service_fee : null,
         ]);
         try {
-            $firebase = new FirebaseController();
+            $firebase = app(FirebaseController::class);
             $firebase->create($data);
         }
         catch(\Exception $t){}
@@ -265,12 +265,14 @@ class VideoController extends Controller
             $tokens_en,
             $notification_record['title_en'],
             $notification_record['body_en'],
+            [], true,
         ));
         // Send using job queue
         dispatch(new SendFCMNotification(
             $tokens_ar,
             $notification_record['title_ar'],
             $notification_record['body_ar'],
+            [], true,
         ));
     }catch(\Exception $t){}
 
@@ -356,7 +358,7 @@ class VideoController extends Controller
             $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
             $request->input('timezone')
         );
-        if ($request->input('type') === 'recorded' &&
+        if (in_array($request->input('type'), ['live', 'recorded'], true) &&
             \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'

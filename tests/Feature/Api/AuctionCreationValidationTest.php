@@ -27,7 +27,8 @@ class AuctionCreationValidationTest extends TestCase
         parent::setUp();
         Carbon::setTestNow(Carbon::parse('2026-10-20 12:30:30', 'Asia/Kuwait'));
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-10-20 12:30:30', 'Asia/Kuwait'));
-        config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:', 'app.debug' => false]);
+        config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
+            'app.timezone' => 'Asia/Kuwait', 'app.debug' => false]);
         DB::purge('sqlite');
         $this->withoutMiddleware('APISettings');
         app()->setLocale('en');
@@ -37,6 +38,25 @@ class AuctionCreationValidationTest extends TestCase
         Schema::create('validation_writes', function (Blueprint $table) {
             $table->id();
             $table->string('kind');
+        });
+        Schema::create('live_videos', function (Blueprint $table) {
+            $table->id();
+            foreach (['user_id', 'admin_id', 'partner_id', 'title_ar', 'start_price', 'date_start_at',
+                'date_end_at', 'time_start_at', 'time_end_at', 'status', 'image', 'information_ar',
+                'terms_conditions_ar', 'city_id', 'type', 'partners_type', 'commission_amount',
+                'commission_payer', 'service_fee', 'agora_channel_name', 'agora_token', 'agora_app_id',
+                'title', 'terms_conditions', 'information', 'schedule_start_utc', 'schedule_end_utc', 'schedule_timezone'] as $field) {
+                $table->string($field)->nullable();
+            }
+            $table->timestamps();
+        });
+        Schema::create('live_video_items', function (Blueprint $table) {
+            $table->id();
+            foreach (['live_video_id', 'title_ar', 'status', 'user_id', 'seller_id', 'video', 'address',
+                'type', 'image', 'category_id', 'information_ar', 'bidding', 'terms', 'color_id',
+                'terms_ar', 'quantity', 'piece_multiplier_number', 'health_certificate', 'title',
+                'information', 'finished_price', 'user_finished_id', 'transferred_from_item_id'] as $field) { $table->string($field)->nullable(); }
+            $table->timestamps();
         });
         // Exercise the real FormRequest lifecycle with an isolated persistence probe.
         // Valid requests reaching this probe do not exercise external auction services.
@@ -114,12 +134,6 @@ class AuctionCreationValidationTest extends TestCase
 
     public function test_partial_scheduling_updates_use_stored_values(): void
     {
-        Schema::create('live_videos', function (Blueprint $table) {
-            $table->id();
-            foreach (['user_id', 'status', 'date_start_at', 'date_end_at', 'time_start_at', 'time_end_at'] as $field) {
-                $table->string($field);
-            }
-        });
         DB::table('live_videos')->insert(['id' => 1, 'user_id' => 1, 'status' => 'pending',
             'date_start_at' => '2026-11-01', 'date_end_at' => '2026-11-01',
             'time_start_at' => '10:00:00', 'time_end_at' => '11:00:00']);
@@ -209,7 +223,7 @@ class AuctionCreationValidationTest extends TestCase
     public function test_gender_is_optional_for_single_and_nested_heads(): void
     {
         $data = ['lineage_title_ar' => ['Animal'], 'quantity' => [2], 'gender' => [null],
-            'pieces' => [[['gender' => 'male'], ['gender' => 'male']]]];
+            'pieces' => [[['gender' => 'male'], ['age' => '2', 'gender' => 'male']]]];
         $this->post('/validation/animal', $data + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
             ->assertOk()->assertJsonPath('success', true);
         unset($data['pieces'][0][1]['gender']);
@@ -233,7 +247,7 @@ class AuctionCreationValidationTest extends TestCase
         $this->postJson('/validation/head', ['gender' => 123])->assertStatus(422)
             ->assertJsonPath('errors.gender.0', 'يجب أن يكون جنس الرأس نصًا.');
         $this->post('/validation/animal', ['lineage_title_ar' => ['Animal']])->assertStatus(422)
-            ->assertJsonPath('errors.image.0', 'يرجى رفع صورة واحدة على الأقل لكل حيوان.');
+            ->assertJsonPath('message', 'يرجى رفع صورة واحدة على الأقل لكل حيوان.');
         $data = $this->auction();
         unset($data['commission_amount']);
         $this->postJson('/validation/auction', $data)
@@ -256,36 +270,30 @@ class AuctionCreationValidationTest extends TestCase
             $table->string('status');
             $table->dateTime('expires_at');
             $table->integer('remaining_auctions');
+            $table->timestamp('replaced_at')->nullable();
             $table->softDeletes();
-            $table->timestamps();
-        });
-        Schema::create('live_videos', function (Blueprint $table) {
-            $table->id();
-            foreach (['user_id', 'admin_id', 'partner_id', 'title_ar', 'start_price', 'date_start_at',
-                'date_end_at', 'time_start_at', 'time_end_at', 'status', 'image', 'information_ar',
-                'terms_conditions_ar', 'city_id', 'type', 'partners_type', 'commission_amount',
-                'commission_payer', 'service_fee', 'agora_channel_name', 'agora_token', 'agora_app_id',
-                'title', 'terms_conditions', 'information'] as $field) {
-                $table->string($field)->nullable();
-            }
-            $table->timestamps();
-        });
-        Schema::create('live_video_items', function (Blueprint $table) {
-            $table->id();
-            foreach (['live_video_id', 'title_ar', 'status', 'user_id', 'seller_id', 'video', 'address',
-                'type', 'image', 'category_id', 'information_ar', 'bidding', 'terms', 'color_id',
-                'terms_ar', 'quantity', 'piece_multiplier_number', 'health_certificate', 'title',
-                'information', 'finished_price'] as $field) {
-                $table->string($field)->nullable();
-            }
             $table->timestamps();
         });
         Schema::create('video_views', function (Blueprint $table) {
             $table->id();
             $table->integer('video_id');
         });
+        foreach (['video_favorites' => 'video_id', 'live_video_item_favorites' => 'live_video_item_id'] as $name => $foreign) {
+            Schema::create($name, function (Blueprint $table) use ($foreign) {
+                $table->id(); $table->unsignedBigInteger($foreign); $table->unsignedBigInteger('user_id');
+                $table->softDeletes();
+            });
+        }
+        Schema::create('follow_users', function (Blueprint $table) {
+            $table->id(); $table->integer('user_id'); $table->integer('follow_id'); $table->softDeletes();
+        });
+        Schema::create('friends', function (Blueprint $table) {
+            $table->id(); $table->integer('user_id'); $table->integer('friend_id'); $table->string('type')->nullable(); $table->softDeletes();
+        });
         require_once database_path('migrations/2026_06_18_130000_create_live_video_item_pieces_table.php');
         (new \CreateLiveVideoItemPiecesTable())->up();
+        (require database_path('migrations/2026_11_04_000000_add_gender_to_live_video_item_pieces.php'))->up();
+        DB::table('users')->insert(['id' => 1]);
         DB::table('user_subscriptions')->insert(['user_id' => 1, 'status' => 'approved',
             'expires_at' => now()->addMonth(), 'remaining_auctions' => 3]);
         $this->postJson('/api/live/add', array_replace($this->auction(), ['date_start_at' => '2026-10-19']))
@@ -339,14 +347,17 @@ class AuctionCreationValidationTest extends TestCase
         }
     }
 
-    public function test_other_account_types_keep_optional_commission_fields(): void
+    public function test_other_account_types_require_payer_but_keep_optional_commission_amount(): void
     {
         auth('api')->user()->setRelation('admin', new Admin(['partner' => 'partner']));
         $data = $this->auction();
-        unset($data['commission_amount'], $data['commission_payer']);
+        unset($data['commission_amount']);
         $this->postJson('/validation/auction', $data)->assertOk()->assertJsonPath('success', true);
         auth('api')->user()->setRelation('admin', null);
         $this->postJson('/validation/auction', $data)->assertOk()->assertJsonPath('success', true);
+        unset($data['commission_payer']);
+        $this->postJson('/validation/auction', $data)->assertOk()->assertJsonPath('success', false)
+            ->assertJsonStructure(['errors' => ['commission_payer']]);
     }
 
     public function test_arabic_validation_messages(): void

@@ -144,7 +144,7 @@ class NotificationDeliveryAuditTest extends NotificationTestCase
     }
 
     /** @dataProvider localizedEvents */
-    public function test_actual_firebase_sdk_payload_matches_private_localized_history(string $event, string $language, string $title): void
+    public function test_actual_firebase_payload_is_generic_while_inbox_retains_localized_history(string $event, string $language, string $title): void
     {
         app()->setLocale($language === 'ar' ? 'en' : 'ar');
         $user = $this->user('old-token', $language);
@@ -174,12 +174,10 @@ class NotificationDeliveryAuditTest extends NotificationTestCase
         $messaging->shouldReceive('send')->once()->withArgs(function ($message) use ($receipt) {
             $payload = json_decode(json_encode($message, JSON_THROW_ON_ERROR), true);
             $this->assertSame('current-token', $payload['token']);
-            $this->assertSame($receipt->title, $payload['notification']['title']);
-            $this->assertSame($receipt->description, $payload['notification']['body']);
-            $this->assertSame((string) $receipt->id, $payload['data']['notification_id']);
-            $this->assertSame($receipt->type, $payload['data']['type']);
-            foreach ($payload['data'] as $value) { $this->assertIsString($value); }
-            $this->assertSame($receipt->data['navigation'], json_decode($payload['data']['navigation'], true));
+            $this->assertSame('Mazadat', $payload['notification']['title']);
+            $this->assertSame('Open the app to view your notifications.', $payload['notification']['body']);
+            $this->assertSame(['type' => 'inbox_updated', 'screen' => 'notification',
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'], $payload['data']);
             return true;
         })->andReturn([]);
         $service = (new \ReflectionClass(FCMService::class))->newInstanceWithoutConstructor();

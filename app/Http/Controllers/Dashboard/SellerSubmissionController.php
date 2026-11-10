@@ -194,13 +194,22 @@ class SellerSubmissionController extends Controller
     public function request_edit($id, Request $request)
     {
         $request->validate(['review_note' => 'required|string|max:1000']);
-        $submission = SellerSubmission::findOrFail($id);
-        PartnerDashboardScope::ensureOwnSellerSubmission($submission);
-
-        $submission->update([
-            'status' => 'needs edit',
-            'review_note' => $request->review_note,
-        ]);
+        DB::transaction(function () use ($id, $request) {
+            $submission = SellerSubmission::whereKey($id)->lockForUpdate()->firstOrFail();
+            PartnerDashboardScope::ensureOwnSellerSubmission($submission);
+            $history = $submission->review_history ?? [];
+            if (! $history && $submission->review_note) {
+                $history[] = ['status' => $submission->status, 'note' => $submission->review_note,
+                    'occurred_at' => $submission->updated_at->toISOString()];
+            }
+            $history[] = ['status' => 'needs edit', 'note' => $request->review_note,
+                'admin_id' => Auth::guard('admin')->id(), 'occurred_at' => now()->toISOString()];
+            $submission->update([
+                'status' => 'needs edit',
+                'review_note' => $request->review_note,
+                'review_history' => $history,
+            ]);
+        });
 
         Toastr::success(TranslationHelper::translate('Updated Successfully'));
         return redirect()->back();

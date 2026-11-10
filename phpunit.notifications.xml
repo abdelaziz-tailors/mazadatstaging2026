@@ -4,6 +4,7 @@
         <testsuite name="Isolated notifications">
             <file>tests/Feature/Services/LifecycleNotificationTest.php</file>
             <file>tests/Feature/Services/NotificationConcurrencyTest.php</file>
+            <file>tests/Feature/Services/PushTokenOwnershipConcurrencyTest.php</file>
             <file>tests/Feature/Services/NotificationDeliveryAuditTest.php</file>
             <file>tests/Feature/Console/SendUpcomingAuctionRemindersTest.php</file>
             <file>tests/Feature/Api/User/NotificationControllerTest.php</file>

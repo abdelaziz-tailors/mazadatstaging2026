@@ -144,7 +144,7 @@
                             <li>
                                 <a class="{{ Request::is(app()->getLocale() . '/admin/partner-finance/invoices*') ? 'active' : '' }}"
                                     href="{{ route('admin.partner-finance.invoices') }}">
-                                    <i class="fa-solid fa-file-invoice"></i>
+                                    <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i>
                                     <span>{{ __('dashboard-ui.nav_invoices') }}</span>
                                 </a>
                             </li>

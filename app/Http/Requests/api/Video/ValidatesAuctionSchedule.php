@@ -3,6 +3,7 @@
 namespace App\Http\Requests\api\Video;
 
 use App\Models\LiveVideo;
+use App\Support\AuctionScheduleUtc;
 use Carbon\CarbonImmutable;
 
 trait ValidatesAuctionSchedule
@@ -12,7 +13,7 @@ trait ValidatesAuctionSchedule
         $validator->after(function ($validator) {
             $fields = ['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at'];
             $updating = $this instanceof UpdateVideoRequest;
-            if ($updating && ! $this->hasAny($fields)) {
+            if ($updating && ! $this->hasAny(array_merge($fields, ['timezone']))) {
                 return;
             }
             $auction = null;
@@ -40,14 +41,11 @@ trait ValidatesAuctionSchedule
                 }
                 $values[$field] = $format === 'H:i' ? $value.':00' : $value;
             }
-            // Offset-free API fields represent wall-clock time in the application timezone.
-            $timezone = $this->input('timezone') ?: (
-            $auction->schedule_timezone ?? (
-                ($this->input('video_type') ?: ($auction->type ?? 'live')) === 'live'
-                    ? 'Africa/Cairo'
-                    : config('app.timezone')
-            )
-        );
+            if ($validator->errors()->has('timezone')) {
+                return;
+            }
+            $timezone = AuctionScheduleUtc::mobileTimezone($this->input('timezone'), $auction->schedule_timezone ?? null,
+                $auction ? ($auction->type ?? 'live') : ($this->input('video_type') ?? 'live'));
             $start = CarbonImmutable::createFromFormat('!Y-m-d H:i:s', $values['date_start_at'].' '.$values['time_start_at'], $timezone);
             $end = CarbonImmutable::createFromFormat('!Y-m-d H:i:s', $values['date_end_at'].' '.$values['time_end_at'], $timezone);
             if ($start->lessThan(CarbonImmutable::now($timezone))) {
@@ -55,6 +53,13 @@ trait ValidatesAuctionSchedule
             }
             if (! $end->greaterThan($start)) {
                 $validator->errors()->add('time_end_at', trans('validation.auction_end_after_start'));
+            }
+            if ($validator->errors()->isEmpty()) {
+                try {
+                    AuctionScheduleUtc::fromFields($values, $timezone);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    $validator->errors()->add('timezone', $e->getMessage());
+                }
             }
         });
     }

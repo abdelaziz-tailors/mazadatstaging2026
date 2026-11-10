@@ -215,14 +215,10 @@ class LifecycleNotificationTest extends NotificationTestCase
         catch (\RuntimeException $e) { $this->assertNull($receipt->fresh()->push_completed_at); }
         $mock->shouldReceive('sendToDevice')->once()->withArgs(function ($token, $title, $body, $data) use ($receipt) {
             $this->assertSame('recipient-token', $token);
-            $this->assertSame($receipt->title, $title);
-            $this->assertSame($receipt->description, $body);
-            $this->assertSame((string) $receipt->id, $data['notification_id']);
-            $this->assertSame('seller_request_status_changed', $data['type']);
-            $this->assertSame('FLUTTER_NOTIFICATION_CLICK', $data['click_action']);
-            $this->assertSame('notification', $data['screen']);
-            $this->assertSame((string) $receipt->data['seller_submission_id'], $data['seller_submission_id']);
-            $this->assertIsArray(json_decode($data['navigation'], true));
+            $this->assertSame('Mazadat', $title);
+            $this->assertSame('Open the app to view your notifications.', $body);
+            $this->assertSame(['type' => 'inbox_updated', 'screen' => 'notification',
+                'click_action' => 'FLUTTER_NOTIFICATION_CLICK'], $data);
             return true;
         })->andReturn(['success' => true]);
         $job->handle();

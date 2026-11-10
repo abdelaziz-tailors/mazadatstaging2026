@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Notification;
 use App\Services\FCMService;
+use App\Services\PushTokenOwnership;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -31,22 +32,18 @@ class SendStoredNotification implements ShouldQueue
             if (! $notification || ! $notification->event_key || $notification->push_completed_at) {
                 return;
             }
-            // Resolve current owner/token; never send a private receipt to a supplied token.
-            $user = $notification->user;
-            if ($user && $user->is_active && $user->fcm_token) {
-                $data = array_map(function ($value) {
-                    return is_array($value) ? json_encode($value, JSON_THROW_ON_ERROR) : (string) $value;
-                }, array_merge($notification->data ?? [], [
-                    'notification_id' => $notification->id, 'type' => $notification->type,
-                ]));
+            app(PushTokenOwnership::class)->deliver((int) $notification->user_id, function ($token) {
+                // FCM can deliver after account switching, even after our lock is
+                // released. Only authenticated inbox retrieval exposes details.
                 $result = app(FCMService::class)->sendToDevice(
-                    $user->fcm_token, $notification->title, $notification->description, $data
+                    $token, 'Mazadat', 'Open the app to view your notifications.',
+                    ['type' => 'inbox_updated', 'screen' => 'notification', 'click_action' => 'FLUTTER_NOTIFICATION_CLICK']
                 );
                 if (! ($result['success'] ?? false)) {
                     throw new \RuntimeException('Notification push failed.');
                 }
-            }
-            // No active device is terminal; history is still available in the inbox.
+            });
+            // No exclusively owned active device is terminal; the inbox remains available.
             DB::table('notifications')->where('id', $notification->id)->update(['push_completed_at' => now()]);
         });
     }

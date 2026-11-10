@@ -8,6 +8,12 @@ use Illuminate\Validation\ValidationException;
 /** Legacy date/time columns remain unchanged; new schedule columns are UTC. */
 final class AuctionScheduleUtc
 {
+    public static function mobileTimezone(?string $requested, ?string $stored = null, string $type = 'live'): string
+    {
+        // Existing live clients submit Cairo wall-clock fields without a zone.
+        return $requested ?: ($stored ?: ($type === 'live' ? 'Africa/Cairo' : config('app.timezone')));
+    }
+
     public static function fromFields(array $fields, ?string $timezone): array
     {
         // No timezone from a legacy mobile client means NO timezone assumption.

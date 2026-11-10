@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <div class="col-lg-3 form-group mb-3 auction-fees-payer">
                     {!! Form::label('commission_payer', TranslationHelper::translate('commission_payer'), ['class' => 'form-label md-label-2-lines', 'for' => 'commission_payer']) !!}
-                    <select name="commission_payer" id="commission_payer" class="form-control @error('commission_payer') is-invalid @enderror">
+                    <select name="commission_payer" id="commission_payer" required class="form-control @error('commission_payer') is-invalid @enderror">
                         <option value="">{{ TranslationHelper::translate('commission_payer') }}</option>
                         <option value="buyer" {{ old('commission_payer', isset($data) ? $data->commission_payer : null) == 'buyer' ? 'selected' : '' }}>
                             {{ TranslationHelper::translate('buyer') }}

@@ -404,10 +404,7 @@ class UserProfileController extends Controller
         }
 
 
-        $patients = auth('api')->user();
-        $patients->update([
-            'fcm_token' => $request->fcm_token,
-        ]);
+        app(\App\Services\PushTokenOwnership::class)->register((int) auth('api')->id(), $request->fcm_token);
         return $this->success_response(TranslationHelper::translate('your_account_updated_successfully'), '');
     }
     public function updateLang(UpdateLangRequest $request) {

@@ -141,7 +141,7 @@ class LiveVideoController extends Controller
             $agoraToken = null;
             $agoraAppId = null;
             if ($videoType !== 'photo') {
-                $agoraService = new AgoraService();
+                $agoraService = app(AgoraService::class);
                 $channelName = $agoraService->generateChannelName(time());
                 $agoraToken = $agoraService->generateToken($channelName);
                 $agoraAppId = $agoraService->getAppId();
@@ -150,7 +150,7 @@ class LiveVideoController extends Controller
             $utcSchedule = \App\Support\AuctionScheduleUtc::fromFields(
                 $request->only(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at']),
                 $request->input('timezone') ?: (
-                    $videoType === 'live' ? 'Africa/Cairo' : null
+                    $videoType === 'live' ? \App\Support\AuctionScheduleUtc::mobileTimezone(null) : null
                 )
             );
             $data = app(\App\Services\SubscriptionService::class)->createAuction([
@@ -188,7 +188,7 @@ class LiveVideoController extends Controller
             ]);
         }
         try {
-            $firebase = new FirebaseController();
+            $firebase = app(FirebaseController::class);
             $firebase->create($data);
         } catch (\Exception $t) {
         }
@@ -206,7 +206,7 @@ class LiveVideoController extends Controller
 
         // Send FCM notifications directly
         try {
-            $fcmService = new FCMService();
+            $fcmService = app(FCMService::class);
 
             if (!empty($tokens_en)) {
                 $result_en = $fcmService->sendToMultipleDevices(
@@ -254,7 +254,7 @@ class LiveVideoController extends Controller
         $requestData['admin_id'] = auth('api')->user()->admin->id;
         $requestData['user_id'] = auth('api')->user()->id;
         // Only recompute when a schedule field changes; preserve partial-update semantics.
-        if ($request->hasAny(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at'])) {
+        if ($request->hasAny(['date_start_at', 'time_start_at', 'date_end_at', 'time_end_at', 'timezone'])) {
             $combined = [
                 'date_start_at' => $request->input('date_start_at', $live_video->date_start_at),
                 'time_start_at' => $request->input('time_start_at', $live_video->time_start_at),
@@ -262,7 +262,9 @@ class LiveVideoController extends Controller
                 'time_end_at' => $request->input('time_end_at', $live_video->time_end_at),
             ];
             $requestData = array_merge($requestData, \App\Support\AuctionScheduleUtc::fromFields(
-                $combined, $request->input('timezone', $live_video->schedule_timezone)
+                $combined, ($live_video->type ?? 'live') === 'live'
+                    ? \App\Support\AuctionScheduleUtc::mobileTimezone($request->input('timezone'), $live_video->schedule_timezone)
+                    : ($request->input('timezone') ?: $live_video->schedule_timezone)
             ));
         }
         unset($requestData['timezone']);

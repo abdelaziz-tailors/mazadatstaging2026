@@ -4,6 +4,7 @@ namespace App\Http\Requests\api\Video\item;
 
 use App\Helpers\TranslationHelper;
 use App\Models\LiveVideo;
+use App\Support\AuctionSellerEligibility;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -17,7 +18,8 @@ class StoreItemRequest extends FormRequest
      */
     public function authorize()
     {
-        return true; // Set to true for now; adjust based on your auth logic
+        $auction = $this->route('id') ? LiveVideo::find($this->route('id')) : null;
+        return ! $auction || (auth('api')->check() && (int) $auction->user_id === (int) auth('api')->id());
     }
 
     /**
@@ -27,6 +29,7 @@ class StoreItemRequest extends FormRequest
      */
     public function rules()
     {
+        $auction = $this->route('id') ? LiveVideo::find($this->route('id')) : null;
         $rules = [
             // Ensure each item in the 'title' array is required, a string, and max 255 chars
             'lineage_title_ar' => 'required|array|min:1',
@@ -36,7 +39,8 @@ class StoreItemRequest extends FormRequest
             'category_id'=>'nullable',
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
-            'seller_id.*' => 'nullable|integer|exists:users,id',
+            'seller_id' => 'nullable|array',
+            'seller_id.*' => ['nullable', 'integer', AuctionSellerEligibility::rule($auction ?? new LiveVideo())],
             'gender' => 'nullable|array',
             'gender.*' => 'nullable|string|max:255',
             'age' => 'nullable',
@@ -70,7 +74,7 @@ class StoreItemRequest extends FormRequest
             'baham_count.*' => 'nullable|string|max:255',
         ];
 
-        $requiresVideo = LiveVideo::whereKey($this->route('id'))->value('type') === 'recorded';
+        $requiresVideo = $auction && $auction->type === 'recorded';
 
         foreach ((array) $this->input('lineage_title_ar', []) as $index => $title) {
             $rules["image.$index"] = 'required|array|min:1';

@@ -70,6 +70,8 @@ abstract class NotificationTestCase extends TestCase
         (new \AddUserFieldsToNotificationsTable())->up();
         (require database_path('migrations/2026_06_22_100000_create_orders_table.php'))->up();
         (require database_path('migrations/2026_04_13_120000_create_seller_submissions_tables.php'))->up();
+        (require database_path('migrations/2026_11_10_000000_add_review_history_to_seller_submissions.php'))->up();
+        (require database_path('migrations/2026_11_10_000001_create_push_token_owners_table.php'))->up();
         require_once database_path('migrations/2026_10_28_000001_add_notification_delivery_ledger.php');
         (new \AddNotificationDeliveryLedger())->up();
     }
@@ -80,7 +82,7 @@ abstract class NotificationTestCase extends TestCase
         if ($this->mysqlConfig) {
             // Explicitly allow-listed, disposable schema only; no application DB sweep.
             $this->assertSame('mazadat_notifications_test', DB::connection()->getDatabaseName());
-            foreach (['seller_submission_media', 'seller_submissions', 'orders', 'notifications', 'video_comments',
+            foreach (['push_token_owners', 'seller_submission_media', 'seller_submissions', 'orders', 'notifications', 'video_comments',
                 'live_video_users', 'live_video_item_favorites', 'follow_users', 'live_video_items', 'live_videos', 'cities', 'users'] as $table) {
                 Schema::dropIfExists($table);
             }

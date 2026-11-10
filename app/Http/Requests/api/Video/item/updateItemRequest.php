@@ -3,6 +3,9 @@
 namespace App\Http\Requests\api\Video\item;
 
 use App\Helpers\TranslationHelper;
+use App\Models\LiveVideoItem;
+use App\Models\LiveVideo;
+use App\Support\AuctionSellerEligibility;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -16,7 +19,9 @@ class updateItemRequest extends FormRequest
      */
     public function authorize()
     {
-        return true; // Set to true for now; adjust based on your auth logic
+        $item = $this->route('id') ? LiveVideoItem::without('pieces')->find($this->route('id')) : null;
+        return ! $item || (auth('api')->check() && $item->videoLive
+            && (int) $item->videoLive->user_id === (int) auth('api')->id());
     }
 
     /**
@@ -26,6 +31,7 @@ class updateItemRequest extends FormRequest
      */
     public function rules()
     {
+        $item = $this->route('id') ? LiveVideoItem::without('pieces')->find($this->route('id')) : null;
         return [
             // Ensure each item in the 'title' array is required, a string, and max 255 chars
             'lineage_title_ar' => 'sometimes',
@@ -38,7 +44,7 @@ class updateItemRequest extends FormRequest
             'information_ar' => 'sometimes',
             'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
-            'seller_id' => 'nullable|integer|exists:users,id', //  seller
+            'seller_id' => ['nullable', 'integer', AuctionSellerEligibility::rule($item->videoLive ?? new LiveVideo())],
             'gender' => 'nullable|string|max:255',
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer

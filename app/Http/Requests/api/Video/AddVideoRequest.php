@@ -49,7 +49,7 @@ class AddVideoRequest extends FormRequest
             'partners_type'=>'nullable',
             'partner_id'=>'nullable',
             'commission_amount' => $presence.'|numeric|min:0',
-            'commission_payer' => $presence.'|in:buyer,seller',
+            'commission_payer' => 'required|in:buyer,seller',
             'service_fee' => 'nullable|min:0',
             'title' => 'nullable',
             'information' => 'nullable|string|max:255',

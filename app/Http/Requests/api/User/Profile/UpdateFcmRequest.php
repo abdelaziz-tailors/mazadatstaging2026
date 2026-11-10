@@ -27,7 +27,7 @@ class UpdateFcmRequest extends FormRequest
     public function rules()
     {
         return [
-            'fcm_token' => 'required|',
+            'fcm_token' => 'required|string|max:4096',
         ];
     }
 

@@ -13,6 +13,7 @@ class SellerSubmission extends Model
     use HasFactory, SoftDeletes;
 
     protected $guarded = ['id'];
+    protected $casts = ['review_history' => 'array'];
 
     public function user()
     {

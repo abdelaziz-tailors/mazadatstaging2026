@@ -107,7 +107,7 @@ Route::group(['prefix' => 'user', 'namespace' => 'User'], function () {
         ->withoutMiddleware('APISettings')
         ->name('api.seller-invoice.pdf');
 
-        Route::post('seller-submissions', 'SellerSubmissionController@store');
+        Route::post('seller-submissions', 'SellerSubmissionController@store')->middleware('auth:api');
 
 //    });
 
@@ -158,6 +158,7 @@ Route::group(['middleware' => ['auth:api']], function() {
             });
 
             Route::get('seller-submissions/my-list', 'SellerSubmissionController@myList');
+            Route::match(['post', 'put'], 'seller-submissions/{id}', 'SellerSubmissionController@update');
             Route::get('seller-submissions/{id}', 'SellerSubmissionController@show');
 
             Route::group(['prefix' => 'follow'], function(){
