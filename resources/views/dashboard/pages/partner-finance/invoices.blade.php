@@ -153,6 +153,8 @@
 /* Pagination */
 
 .md-inv-card .pagination {
+    /* Physical left alignment preserves the inherited RTL button order. */
+    justify-content: left;
     margin-bottom: 0;
 }
 

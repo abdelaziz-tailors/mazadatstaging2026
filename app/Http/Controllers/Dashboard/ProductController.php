@@ -38,7 +38,8 @@ use App\Models\User\User;
 use App\Support\PartnerDashboardScope;
 use App\Support\AuctionSellerEligibility;
 use App\Support\AuctionItemFinancialGuard;
-use App\Services\LiveVideoItemPieceService;
+use App\Services\DashboardItemPieceService;
+use App\Services\DashboardProductSubmission;
 use App\Services\AuctionItemTransferService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -282,6 +283,16 @@ class ProductController extends Controller
     public function store(Request $request)
     {
         $request->validate(['video_id' => 'required|integer|exists:live_videos,id']);
+        $auction = LiveVideo::findOrFail($request->video_id);
+        PartnerDashboardScope::ensureOwnLiveVideo($auction);
+        return DashboardProductSubmission::run($request, 'create:'.$request->input('video_id'), function () use ($request) {
+            return $this->storeProduct($request);
+        });
+    }
+
+    private function storeProduct(Request $request)
+    {
+        $request->validate(['video_id' => 'required|integer|exists:live_videos,id']);
         $live_video = LiveVideo::findOrFail($request->video_id);
         PartnerDashboardScope::ensureOwnLiveVideo($live_video);
         if ($live_video->partners_type === 'single') {
@@ -315,24 +326,21 @@ class ProductController extends Controller
             'image'                  => 'nullable|array',
             'image.*'                => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
             'video'                  => 'nullable|file|mimes:mp4,avi,wmv,flv|max:204800',
-            'pieces'                 => 'nullable|array|size:'.$quantity,
-            'pieces.*.age'           => 'nullable|string|max:255',
-            'pieces.*.gender'        => 'nullable|string|max:255',
-            'pieces.*.identifier'    => 'nullable|string|max:100',
-            'pieces.*.baham_count'   => 'nullable|integer|min:0',
         ];
 
         if ($live_video && $live_video->type === 'recorded') {
             $rules['video'] = 'required|file|mimes:mp4,avi,wmv,flv|max:204800';
         }
 
-        $request->validate($rules);
+        $request->validate($rules + DashboardItemPieceService::rules($request));
 
         $sellerId = $request->input('seller_source', 'owner') === 'from_list' && $request->filled('seller_id')
             ? (int) $request->seller_id
             : null;
 
         $files = [];
+        $health_certificate = null;
+        $video = null;
 
         if ($request->hasFile('image')) {
             foreach ($request->file('image') as $image) {
@@ -360,34 +368,39 @@ class ProductController extends Controller
         }
 
 
-        $add_iteam=LiveVideoItem::create([
-            'live_video_id' => $request->video_id,
-            'title' => $request->title,
-            'title_ar' => $request->title_ar,
-            'status'=>'pending',
-            'user_id' => $request->user_id ?? null,
-            'seller_id' => $sellerId,
-            'image' => json_encode($files),
-            'category_id' => $request->category_id ?? null,
-            'information' => $request->information ?? null,
-            'information_ar' => $request->information_ar ?? null,
-            'color_id'=>$request->color_id,
-            'type'=>$request->type,
-            'date_barth'=>$request->date_barth,
-            'animal_pen_id'=>$request->animal_pen_id,
-            'health_certificate' => $health_certificate ?? null,
-            'video' => $video ?? null,
-            'address'=>$request->address,
-            'terms'=>$request->terms,
-            'terms_ar'=>$request->terms_ar,
-            // 'start_price' => $request->start_price,
-            'bidding' => $request->bidding,
-            'quantity'=>$quantity ?: 1,
-            'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
-            'show_partner_name' => $request->has('show_partner_name') ? true : false,
-        ]);
+        $add_iteam = DB::transaction(function () use ($request, $quantity, $sellerId, $files, $health_certificate, $video) {
+            $auction = LiveVideo::whereKey($request->video_id)->lockForUpdate()->firstOrFail();
+            PartnerDashboardScope::ensureOwnLiveVideo($auction);
+            $add_iteam = LiveVideoItem::create([
+                'live_video_id' => $request->video_id,
+                'title' => $request->title,
+                'title_ar' => $request->title_ar,
+                'status'=>'pending',
+                'user_id' => $request->user_id ?? null,
+                'seller_id' => $sellerId,
+                'image' => json_encode($files),
+                'category_id' => $request->category_id ?? null,
+                'information' => $request->information ?? null,
+                'information_ar' => $request->information_ar ?? null,
+                'color_id'=>$request->color_id,
+                'type'=>$request->type,
+                'date_barth'=>$request->date_barth,
+                'animal_pen_id'=>$request->animal_pen_id,
+                'health_certificate' => $health_certificate ?? null,
+                'video' => $video ?? null,
+                'address'=>$request->address,
+                'terms'=>$request->terms,
+                'terms_ar'=>$request->terms_ar,
+                // 'start_price' => $request->start_price,
+                'bidding' => $request->bidding,
+                'quantity'=>$quantity ?: 1,
+                'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
+                'show_partner_name' => $request->has('show_partner_name') ? true : false,
+            ]);
 
-        LiveVideoItemPieceService::syncPieces($add_iteam, $request->input('pieces', []));
+            DashboardItemPieceService::save($add_iteam, $request);
+            return $add_iteam;
+        }, 3);
 
         $add_iteam->load('pieces');
 
@@ -442,6 +455,15 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $item = LiveVideoItem::findOrFail($id);
+        PartnerDashboardScope::ensureOwnLiveVideo($item->videoLive);
+        return DashboardProductSubmission::run($request, 'edit:'.$id, function () use ($request, $id) {
+            return $this->updateProduct($request, $id);
+        });
+    }
+
+    private function updateProduct(Request $request, $id)
+    {
         //$this->authorizable('edit video');
         $live_video = LiveVideoItem::findorfail($id);
         PartnerDashboardScope::ensureOwnLiveVideo($live_video->videoLive);
@@ -449,7 +471,7 @@ class ProductController extends Controller
         // organizer. Only creation normalizes this identity.
         $request->merge(['user_id' => $live_video->user_id]);
 
-        $quantity = max(1, (int) ($request->quantity ?? $live_video->quantity ?? 1));
+        $quantity = (int) ($request->quantity ?? $live_video->quantity ?? 1);
 
         $request->merge([
             'title' => $request->input('title') ?: $request->input('title_ar'),
@@ -473,12 +495,7 @@ class ProductController extends Controller
             'bidding' => 'required|numeric|min:0',
             'quantity' => 'nullable|integer|min:1',
             'piece_multiplier_number' => 'nullable|string|max:100',
-            'pieces' => 'nullable|array|size:'.$quantity,
-            'pieces.*.age' => 'nullable|string|max:255',
-            'pieces.*.gender' => 'nullable|string|max:255',
-            'pieces.*.identifier' => 'nullable|string|max:100',
-            'pieces.*.baham_count' => 'nullable|integer|min:0',
-        ]);
+        ] + DashboardItemPieceService::rules($request));
 
         $sellerId = $request->input('seller_source', $live_video->seller_id ? 'from_list' : 'owner') === 'from_list'
             && ($request->filled('seller_id') || ! $request->has('seller_source'))
@@ -517,12 +534,12 @@ class ProductController extends Controller
                 'terms'=>$request->terms,
                 'terms_ar'=>$request->terms_ar,
                 'bidding'=>$request->bidding,
-                'quantity'=>$quantity ?: 1,
+                'quantity'=>$quantity,
                 'piece_multiplier_number' => $request->piece_multiplier_number ?? null,
                 'show_partner_name' => $showPartnerName,
             ]);
 
-            LiveVideoItemPieceService::syncPieces($live_video, $request->input('pieces', []));
+            DashboardItemPieceService::save($live_video, $request);
             return $live_video;
         }, 3);
 

@@ -1660,4 +1660,11 @@
   'updated_successfully' => 'تم التحديث بنجاح',
   'back' => 'Back',
   'subscription_information' => 'Subscription Information',
+  'dashboard_pieces_toggle' => 'إضافة الرؤوس واحدة واحدة',
+  'dashboard_pieces_help' => 'يمكنك إدخال بيانات كل رأس بشكل مستقل. الكمية وعدد الرؤوس المدخلة مستقلان. إيقاف الخيار يخفي الجدول ويحفظ الرؤوس المسجلة؛ الحذف من زر حذف الرأس فقط.',
+  'dashboard_pieces_count' => 'عدد الرؤوس المدخلة',
+  'dashboard_pieces_add' => 'إضافة رأس',
+  'dashboard_pieces_remove' => 'حذف الرأس',
+  'dashboard_pieces_stale' => 'بعض الرؤوس لم تعد موجودة أو لا تتبع هذا العنصر. أعد تحميل الصفحة.',
+  'dashboard_submission_invalid' => 'تعذر التحقق من النموذج. أعد تحميل الصفحة.',
 );

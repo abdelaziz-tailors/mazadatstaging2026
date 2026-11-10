@@ -8,6 +8,7 @@
     if ($existingPieces === null && isset($data) && $data->relationLoaded('pieces') && $data->pieces->isNotEmpty()) {
         $existingPieces = $data->pieces->map(function ($piece) {
             return [
+                'id' => $piece->id,
                 'age' => $piece->age,
                 'gender' => $piece->gender,
                 'identifier' => $piece->identifier,
@@ -16,7 +17,8 @@
         })->toArray();
     }
     $existingPieces = $existingPieces ?? [];
-    $initialQuantity = (int) old('quantity', $data->quantity ?? 1);
+    $piecesEnabled = (bool) old('individual_pieces', false);
+    $submissionScope = isset($data) ? 'edit:'.$data->id : 'create:'.$id;
 @endphp
 
 <div class="col-12 d-flex">
@@ -128,55 +130,58 @@
                 @enderror
             </div>
 
-            <div class="col-12" id="pieces-section">
-                <div class="card border mt-2 mb-3">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+            <input type="hidden" name="dashboard_submission" value="{{ old('dashboard_submission', \App\Services\DashboardProductSubmission::token($submissionScope)) }}">
+            @error('dashboard_submission')<div class="col-12 text-danger">{{ $message }}</div>@enderror
+            <div class="col-12" id="individual-pieces-editor">
+                <input type="hidden" name="individual_pieces" value="0">
+                <div class="form-check form-switch mb-2">
+                    <input type="checkbox" class="form-check-input" id="individual-pieces-toggle" name="individual_pieces" value="1" aria-controls="pieces-section" aria-describedby="individual-pieces-help" {{ $piecesEnabled ? 'checked' : '' }}>
+                    <label class="form-check-label" for="individual-pieces-toggle">{{ trans('app.dashboard_pieces_toggle') }}</label>
+                </div>
+                <p class="text-muted small" id="individual-pieces-help">{{ trans('app.dashboard_pieces_help') }}</p>
+                <p aria-live="polite">{{ trans('app.dashboard_pieces_count') }}: <strong id="entered-pieces-count">{{ count($existingPieces) }}</strong></p>
+                <div id="deleted-piece-inputs"></div>
+                @foreach($errors->getMessages() as $field => $messages)
+                    @if($field === 'pieces' || $field === 'individual_pieces' || str_starts_with($field, 'pieces.') || str_starts_with($field, 'deleted_piece_ids'))
+                        <div class="text-danger small mb-1">{{ implode(' ', $messages) }}</div>
+                    @endif
+                @endforeach
+                <fieldset class="card border mt-2 mb-3" id="pieces-section" @if(!$piecesEnabled) hidden disabled @endif>
+                    <div class="card-header d-flex flex-wrap gap-2 justify-content-between align-items-center">
                         <strong>{{ TranslationHelper::translate('piece_details') }}</strong>
-                        <button type="button" class="btn btn-sm btn-outline-primary @if($initialQuantity <= 1) d-none @endif" id="apply-pieces-to-all">
-                            {{ TranslationHelper::translate('apply_same_to_all') }}
-                        </button>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-bordered mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>{{ TranslationHelper::translate('Age') }} <span class="text-danger">*</span></th>
-                                        <th>{{ TranslationHelper::translate('gender') }}</th>
-                                        <th>{{ TranslationHelper::translate('identifier') }}</th>
-                                        <th>{{ TranslationHelper::translate('baham_count') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pieces-rows"></tbody>
-                            </table>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="apply-pieces-to-all">{{ TranslationHelper::translate('apply_same_to_all') }}</button>
+                            <button type="button" class="btn btn-sm btn-primary" id="add-individual-piece">{{ trans('app.dashboard_pieces_add') }}</button>
                         </div>
                     </div>
-                </div>
-                @error('pieces')
-                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                @enderror
-                @error('pieces.*.age')
-                    <span class="text-danger small d-block mt-1">{{ $message }}</span>
-                @enderror
-            </div>
-
-            <template id="piece-row-template">
-                <tr>
-                    <td class="piece-number align-middle"></td>
-                    <td>
-                        <select class="form-control piece-age" data-name="age" >
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0">
+                            <thead><tr>
+                                <th>#</th><th>{{ TranslationHelper::translate('Age') }}</th>
+                                <th>{{ TranslationHelper::translate('gender') }}</th>
+                                <th>{{ TranslationHelper::translate('identifier') }}</th>
+                                <th>{{ TranslationHelper::translate('baham_count') }}</th>
+                                <th>{{ trans('app.dashboard_pieces_remove') }}</th>
+                            </tr></thead>
+                            <tbody id="pieces-rows"></tbody>
+                        </table>
+                    </div>
+                </fieldset>
+                <template id="piece-row-template">
+                    <tr>
+                        <td><span class="piece-number"></span><input type="hidden" data-name="id"></td>
+                        <td><select class="form-control" data-name="age" aria-label="{{ TranslationHelper::translate('Age') }}">
                             <option value="">{{ TranslationHelper::translate('select_age') }}</option>
-                            @foreach($ages as $age)
-                                <option value="{{ $age->name }}">{{ $age->name }}</option>
-                            @endforeach
-                        </select>
-                    </td>
-                    <td><input type="text" maxlength="255" class="form-control piece-gender" data-name="gender" placeholder="{{ TranslationHelper::translate('gender') }}"></td>
-                    <td><input type="text" class="form-control piece-identifier" data-name="identifier" placeholder="{{ TranslationHelper::translate('identifier') }}"></td>
-                    <td><input type="number" min="0" class="form-control piece-baham" data-name="baham_count" placeholder="0" value="0"></td>
-                </tr>
-            </template>
+                            @foreach($ages as $age)<option value="{{ $age->name }}">{{ $age->name }}</option>@endforeach
+                        </select></td>
+                        <td><input type="text" maxlength="255" class="form-control" data-name="gender" aria-label="{{ TranslationHelper::translate('gender') }}"></td>
+                        <td><input type="text" maxlength="100" class="form-control" data-name="identifier" aria-label="{{ TranslationHelper::translate('identifier') }}"></td>
+                        <td><input type="number" min="0" step="1" class="form-control" data-name="baham_count" aria-label="{{ TranslationHelper::translate('baham_count') }}"></td>
+                        <td><button type="button" class="btn btn-sm btn-outline-danger" data-remove-piece>{{ trans('app.dashboard_pieces_remove') }}</button></td>
+                    </tr>
+                </template>
+                <script type="application/json" id="individual-pieces-data">@json(['pieces' => $existingPieces, 'deleted' => old('deleted_piece_ids', [])])</script>
+            </div>
 
             <div class="col-12"><hr></div>
             <div class="col-12">
@@ -241,11 +246,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         const sellerRadios = document.querySelectorAll('input[name="seller_source"]');
         const sellerField = document.getElementById('seller-from-list-field');
-        const quantityInput = document.getElementById('quantity');
-        const piecesRows = document.getElementById('pieces-rows');
-        const rowTemplate = document.getElementById('piece-row-template');
-        const applyAllBtn = document.getElementById('apply-pieces-to-all');
-        const existingPieces = @json($existingPieces);
 
         sellerRadios.forEach(function (radio) {
             radio.addEventListener('change', function () {
@@ -265,52 +265,6 @@
             });
         });
 
-        function renderPieceRows() {
-            const quantity = Math.max(1, parseInt(quantityInput.value || '1', 10));
-            piecesRows.innerHTML = '';
-
-            if (applyAllBtn) {
-                applyAllBtn.classList.toggle('d-none', quantity <= 1);
-            }
-
-            for (let i = 0; i < quantity; i++) {
-                const row = rowTemplate.content.firstElementChild.cloneNode(true);
-                row.querySelector('.piece-number').textContent = i + 1;
-
-                const piece = existingPieces[i] || {};
-                ['age', 'gender', 'identifier', 'baham_count'].forEach(function (field) {
-                    const input = row.querySelector('[data-name="' + field + '"]');
-                    if (!input) return;
-                    input.name = 'pieces[' + i + '][' + field + ']';
-                    if (piece[field] !== undefined && piece[field] !== null && piece[field] !== '') {
-                        input.value = piece[field];
-                    }
-                });
-
-                piecesRows.appendChild(row);
-            }
-        }
-
-        if (applyAllBtn) {
-            applyAllBtn.addEventListener('click', function () {
-                const firstRow = piecesRows.querySelector('tr');
-                if (!firstRow) return;
-
-                const values = {};
-                firstRow.querySelectorAll('[data-name]').forEach(function (input) {
-                    values[input.dataset.name] = input.value;
-                });
-
-                piecesRows.querySelectorAll('tr').forEach(function (row, index) {
-                    if (index === 0) return;
-                    row.querySelectorAll('[data-name]').forEach(function (input) {
-                        input.value = values[input.dataset.name] || '';
-                    });
-                });
-            });
-        }
-
-        quantityInput.addEventListener('input', renderPieceRows);
-        renderPieceRows();
     });
 </script>
+<script src="{{ asset('dashboard/js/individual-pieces.js') }}?v=1" defer></script>

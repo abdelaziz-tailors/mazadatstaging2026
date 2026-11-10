@@ -1645,4 +1645,12 @@
   'updated_successfully' => 'Updated successfully',
   'back' => 'Back',
   'subscription_information' => 'Subscription Information',
+  'dashboard_pieces_toggle' => 'Add heads individually',
+  'dashboard_pieces_help' => 'Enter each head separately. Quantity and the entered head count are independent. Switching off hides the table and preserves saved heads; only Remove head deletes a saved head.',
+  'dashboard_pieces_count' => 'Entered heads',
+  'dashboard_pieces_add' => 'Add head',
+  'dashboard_pieces_remove' => 'Remove head',
+  'dashboard_pieces_stale' => 'Some heads no longer exist or do not belong to this item. Reload the page.',
+  'dashboard_submission_invalid' => 'The form could not be verified. Reload the page.',
+  'partner_id_must_be_a_number_' => 'partner_id must be a number ',
 );
