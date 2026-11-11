@@ -177,7 +177,8 @@ class VideoController extends Controller
         if (in_array($request->input('type'), ['live', 'recorded'], true) &&
             \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
+                ($request->input('date_start_at') < now($request->input('timezone'))->format('Y-m-d')
+                    ? 'date_start_at' : 'time_start_at') => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
             ]);
         }
 
@@ -361,7 +362,8 @@ class VideoController extends Controller
         if (in_array($request->input('type'), ['live', 'recorded'], true) &&
             \Carbon\CarbonImmutable::parse($utcSchedule['schedule_start_utc'], 'UTC')->lte(now('UTC'))) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'time_start_at' => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
+                ($request->input('date_start_at') < now($request->input('timezone'))->format('Y-m-d')
+                    ? 'date_start_at' : 'time_start_at') => 'موعد بدء المزاد يجب أن يكون في المستقبل.'
             ]);
         }
 

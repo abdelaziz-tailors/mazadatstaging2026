@@ -61,7 +61,9 @@ class AuctionScheduleCompatibilityTest extends AuctionBugfixTestCase
         $before = $auction->getAttributes();
         foreach ([['time_start_at' => '11:59'], ['date_start_at' => '2026-11-09']] as $past) {
             $this->putJson(route('admin.videos.update', $auction->id), array_replace($this->payload(), $past))
-                ->assertUnprocessable()->assertJsonValidationErrors('time_start_at');
+                ->assertUnprocessable()
+                ->assertJsonValidationErrors(isset($past['date_start_at']) ? 'date_start_at' : 'time_start_at')
+                ->assertJsonMissingValidationErrors(isset($past['date_start_at']) ? 'time_start_at' : 'date_start_at');
             $this->assertSame($before, $auction->fresh()->getAttributes());
         }
         $this->putJson(route('admin.videos.update', $auction->id), array_replace($this->payload(), ['time_start_at' => '12:02']))

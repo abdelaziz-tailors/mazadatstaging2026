@@ -78,7 +78,10 @@ class AuctionInputRegressionTest extends AuctionBugfixTestCase
         foreach ([['date_start_at' => '2026-11-09'], ['time_start_at' => '11:59'],
             ['timezone' => 'America/Los_Angeles', 'time_start_at' => '01:59']] as $invalid) {
             $data = array_replace($this->payload(), $invalid);
-            $this->postJson(route('admin.videos.store'), $data)->assertUnprocessable()->assertJsonValidationErrors('time_start_at');
+            $dateIsPast = isset($invalid['date_start_at']);
+            $this->postJson(route('admin.videos.store'), $data)->assertUnprocessable()
+                ->assertJsonValidationErrors($dateIsPast ? 'date_start_at' : 'time_start_at')
+                ->assertJsonMissingValidationErrors($dateIsPast ? 'time_start_at' : 'date_start_at');
             $this->postJson('/api/live/add', $data)->assertOk()->assertJsonPath('success', false)
                 ->assertJsonStructure(['errors' => ['time_start_at']]);
         }
