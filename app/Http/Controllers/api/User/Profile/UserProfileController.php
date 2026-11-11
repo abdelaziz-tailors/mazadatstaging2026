@@ -375,6 +375,7 @@ class UserProfileController extends Controller
 
         }
 
+        app(\App\Services\PushTokenOwnership::class)->unregister((int) auth('api')->id());
         auth('api')->user()->token()->revoke();
         return $this->success_response(TranslationHelper::translate('Successfully logged out'),'');
 

@@ -11,6 +11,70 @@ use Tests\Support\AuctionBugfixTestCase;
 
 class PushTokenOwnershipTest extends AuctionBugfixTestCase
 {
+    public function test_logout_stops_pushes_without_another_login_and_preserves_the_sellers_receipt(): void
+    {
+        $seller = $this->user();
+        $subscriber = $this->user(['user_type' => 'vendor', 'fcm_token' => 'subscriber-device']);
+        app(PushTokenOwnership::class)->register($seller->id, 'seller-device');
+        $request = $this->submission($seller, $subscriber);
+        Passport::actingAs($seller);
+        $seller->token()->shouldReceive('revoke')->once()->andReturn(true);
+
+        $this->postJson('/api/user/logout')->assertOk()->assertJsonPath('success', true);
+
+        $this->assertNull($seller->fresh()->fcm_token);
+        $this->assertNull(DB::table('push_token_owners')->where('token_hash', hash('sha256', 'seller-device'))->value('user_id'));
+        $this->assertSame('subscriber-device', $subscriber->fresh()->fcm_token);
+        $this->app->instance(FCMService::class, \Mockery::mock(FCMService::class)->shouldNotReceive('sendToDevice')->getMock());
+        $this->admin($subscriber);
+        app(\App\Http\Controllers\Dashboard\SellerSubmissionController::class)->approve($request->id);
+        $notification = Notification::sole();
+        $this->assertSame($seller->id, (int) $notification->user_id);
+        (new SendStoredNotification($notification->id))->handle();
+        $this->assertNotNull($notification->fresh()->push_completed_at);
+
+        // A later login can explicitly attach the device again.
+        app(PushTokenOwnership::class)->register($seller->id, 'seller-device');
+        $this->assertSame('seller-device', $seller->fresh()->fcm_token);
+    }
+
+    public function test_push_queued_before_logout_is_suppressed_when_delivered_after_logout(): void
+    {
+        $seller = $this->user(); $subscriber = $this->user(['user_type' => 'vendor']);
+        app(PushTokenOwnership::class)->register($seller->id, 'queued-device');
+        $request = $this->submission($seller, $subscriber);
+        $request->update(['status' => 'approved']);
+        $notification = Notification::sole();
+        Passport::actingAs($seller);
+        $seller->token()->shouldReceive('revoke')->once()->andReturn(true);
+        $this->postJson('/api/user/logout')->assertJsonPath('success', true);
+        $this->app->instance(FCMService::class, \Mockery::mock(FCMService::class)->shouldNotReceive('sendToDevice')->getMock());
+        (new SendStoredNotification($notification->id))->handle();
+        $this->assertSame($seller->id, (int) $notification->fresh()->user_id);
+        $this->assertNotNull($notification->fresh()->push_completed_at);
+    }
+
+    public function test_logout_without_a_push_token_still_revokes_authentication(): void
+    {
+        $user = $this->user();
+        Passport::actingAs($user);
+        $user->token()->shouldReceive('revoke')->once()->andReturn(true);
+        $this->postJson('/api/user/logout')->assertOk()->assertJsonPath('success', true);
+        $this->assertNull($user->fresh()->fcm_token);
+    }
+
+    public function test_unregister_does_not_remove_a_devices_new_owner(): void
+    {
+        $seller = $this->user(); $subscriber = $this->user();
+        $ownership = app(PushTokenOwnership::class);
+        $ownership->register($seller->id, 'shared-device');
+        $ownership->register($subscriber->id, 'shared-device');
+        $ownership->unregister($seller->id);
+        $this->assertSame('shared-device', $subscriber->fresh()->fcm_token);
+        $this->assertSame($subscriber->id, (int) DB::table('push_token_owners')
+            ->where('token_hash', hash('sha256', 'shared-device'))->value('user_id'));
+    }
+
     public function test_registration_transfers_ownership_including_deleted_accounts_and_retains_one_receipt(): void
     {
         $seller = $this->user(['fcm_token' => 'device']); $old = $this->user(['fcm_token' => 'device']); $old->delete();

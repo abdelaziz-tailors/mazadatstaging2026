@@ -1,5 +1,11 @@
 # Notifications
 
+## Logout and device ownership
+
+`POST /api/user/logout` clears the authenticated user's push token and its ownership before revoking the access token. No subsequent login is needed to stop account-targeted pushes, including stored notification jobs processed after logout. Notifications remain in the original recipient's inbox; seller request decisions belong exclusively to the submitting seller. Register the device again through `POST /api/user/update-fcm` after login to resume pushes.
+
+Pushes already handed to FCM before logout cannot be recalled. The mobile app should also clear displayed notifications and its local notification/session state when logging out.
+
 Replaces the old, broken `UserProfileController::notifications()` (which listed every notification ever created after the user's registration date, with no per-user targeting, no read state, and no pagination) with a proper per-user notification inbox.
 
 All endpoints below require an authenticated user (Passport bearer token). Like other `Profile`-style endpoints in this app, the route itself has no `auth:api` middleware — the controller checks `auth('api')->user()` manually and returns an "Un Authenticated" failure if missing.

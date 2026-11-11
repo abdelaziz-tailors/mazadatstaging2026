@@ -22,6 +22,27 @@ final class PushTokenOwnership
         }, 3);
     }
 
+    public function unregister(int $userId): void
+    {
+        do {
+            $token = User::withTrashed()->whereKey($userId)->value('fcm_token');
+            $completed = DB::transaction(function () use ($userId, $token) {
+                // Match registration/delivery lock order so logout waits for an
+                // in-flight send and prevents subsequent sends to this device.
+                $hash = $token ? $this->lockToken($token) : null;
+                $user = User::withTrashed()->whereKey($userId)->lockForUpdate()->first();
+                if (! $user) { return true; }
+                if ($user->fcm_token !== $token) { return false; }
+                $user->update(['fcm_token' => null]);
+                if ($hash) {
+                    DB::table('push_token_owners')->where('token_hash', $hash)
+                        ->where('user_id', $userId)->update(['user_id' => null]);
+                }
+                return true;
+            }, 3);
+        } while (! $completed);
+    }
+
     /** Execute inside the notification transaction. Never return a token for use after unlocking. */
     public function deliver(int $userId, callable $send): void
     {
