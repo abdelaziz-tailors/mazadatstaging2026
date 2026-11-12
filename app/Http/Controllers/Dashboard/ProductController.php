@@ -311,7 +311,7 @@ class ProductController extends Controller
         $rules = [
             'user_id'                => 'nullable|exists:users,id',
             'seller_source'          => 'sometimes|in:owner,from_list',
-            'seller_id'              => ['required_if:seller_source,from_list', 'nullable', 'integer', AuctionSellerEligibility::rule($live_video)],
+            'seller_id'              => ['exclude_if:seller_source,owner', 'required_if:seller_source,from_list', 'nullable', 'integer', AuctionSellerEligibility::rule($live_video)],
             'title'                  => 'required|string|max:255',
             'title_ar'               => 'required|string|max:255',
             'bidding'                => 'required|numeric|min:0',
@@ -483,7 +483,7 @@ class ProductController extends Controller
         $request->validate([
             'user_id' => 'nullable|exists:users,id',
             'seller_source' => 'sometimes|in:owner,from_list',
-            'seller_id' => ['required_if:seller_source,from_list', 'nullable', 'integer', function ($attribute, $value, $fail) use ($live_video) {
+            'seller_id' => ['exclude_if:seller_source,owner', 'required_if:seller_source,from_list', 'nullable', 'integer', function ($attribute, $value, $fail) use ($live_video) {
                 // Keeping a historical assignment does not select a new seller.
                 if ((string) $value !== (string) $live_video->seller_id) {
                     (AuctionSellerEligibility::rule($live_video->videoLive))($attribute, $value, $fail);

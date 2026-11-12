@@ -51,7 +51,7 @@
                     </div>
                 </div>
                 <div class="mt-2 @if($sellerSource !== 'from_list') d-none @endif" id="seller-from-list-field">
-                    <select class="form-control select @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id">
+                    <select class="form-control select @error('seller_id') is-invalid @enderror" id="seller_id" name="seller_id" @if($sellerSource === 'from_list') required @else disabled @endif>
                         <option value="">{{ TranslationHelper::translate('select_seller') }}</option>
                         @if(isset($data) && $data->seller_id && ! $sellers->contains('id', $data->seller_id))
                             {{-- Preserve this lot's historical assignment; new selections remain scoped. --}}
@@ -246,9 +246,12 @@
     document.addEventListener('DOMContentLoaded', function () {
         const sellerRadios = document.querySelectorAll('input[name="seller_source"]');
         const sellerField = document.getElementById('seller-from-list-field');
+        const sellerSelect = document.getElementById('seller_id');
 
         sellerRadios.forEach(function (radio) {
             radio.addEventListener('change', function () {
+                sellerSelect.disabled = this.value !== 'from_list';
+                sellerSelect.required = this.value === 'from_list';
                 if (this.value === 'from_list') {
                     sellerField.classList.remove('d-none');
                     // select2 computes its width while the field is still

@@ -22,6 +22,21 @@ use Tests\TestCase;
 
 class AuctionCreationValidationTest extends TestCase
 {
+    public function test_subscriber_can_add_own_animal_without_seller_id(): void
+    {
+        $auction = \App\Models\LiveVideo::create(['user_id' => 1, 'type' => 'live']);
+        Route::post('/validation/own-animal/{id}', function (StoreItemRequest $request) {
+            return response()->json(['seller_id' => $request->input('seller_id.0')]);
+        });
+
+        foreach ([[], ['seller_id' => null], ['seller_id' => []], ['seller_id' => [null]], ['seller_id' => ['']]] as $sellerInput) {
+            $this->post('/validation/own-animal/'.$auction->id, $sellerInput + [
+                'lineage_title_ar' => ['Subscriber animal'],
+                'image' => [[UploadedFile::fake()->image('animal.jpg')]],
+            ])->assertOk()->assertJsonPath('seller_id', null);
+        }
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
