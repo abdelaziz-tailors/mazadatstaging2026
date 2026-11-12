@@ -29,12 +29,36 @@ class AuctionCreationValidationTest extends TestCase
             return response()->json(['seller_id' => $request->input('seller_id.0')]);
         });
 
-        foreach ([[], ['seller_id' => null], ['seller_id' => []], ['seller_id' => [null]], ['seller_id' => ['']]] as $sellerInput) {
+        foreach ([[], ['seller_id' => null], ['seller_id' => []], ['seller_id' => [null]],
+            ['seller_id' => ['']], ['seller_id' => [0]], ['seller_id' => ['0']],
+            ['seller_id' => [1]], ['seller_id' => ['1']]] as $sellerInput) {
             $this->post('/validation/own-animal/'.$auction->id, $sellerInput + [
                 'lineage_title_ar' => ['Subscriber animal'],
                 'image' => [[UploadedFile::fake()->image('animal.jpg')]],
             ])->assertOk()->assertJsonPath('seller_id', null);
         }
+    }
+
+    public function test_owner_seller_normalization_rejects_malformed_values(): void
+    {
+        $auction = \App\Models\LiveVideo::create(['user_id' => 1, 'type' => 'live']);
+        foreach ([true, false, [], ['id' => 1], 'invalid'] as $sellerId) {
+            $this->postJson('/api/live/items/add/'.$auction->id, [
+                'lineage_title_ar' => ['Animal'], 'seller_id' => [$sellerId],
+            ])->assertUnprocessable()->assertJsonValidationErrors('seller_id.0');
+        }
+        $this->assertDatabaseCount('live_video_items', 0);
+    }
+
+    public function test_self_owned_seller_values_do_not_bypass_auction_ownership(): void
+    {
+        $auction = \App\Models\LiveVideo::create(['user_id' => 2, 'type' => 'live']);
+        foreach ([0, 1, 2] as $sellerId) {
+            $this->postJson('/api/live/items/add/'.$auction->id, [
+                'lineage_title_ar' => ['Animal'], 'seller_id' => [$sellerId],
+            ])->assertForbidden();
+        }
+        $this->assertDatabaseCount('live_video_items', 0);
     }
 
     protected function setUp(): void
