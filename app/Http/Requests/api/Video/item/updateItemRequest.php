@@ -12,6 +12,19 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class updateItemRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        // Omission is a partial update: leave the existing seller untouched.
+        if (! $this->exists('seller_id')) {
+            return;
+        }
+
+        $item = $this->route('id') ? LiveVideoItem::without('pieces')->find($this->route('id')) : null;
+        $this->merge(['seller_id' => AuctionSellerEligibility::normalizeOwnerId(
+            $this->input('seller_id'), $item ? $item->videoLive : null, auth('api')->id()
+        )]);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -44,7 +57,7 @@ class updateItemRequest extends FormRequest
             'information_ar' => 'sometimes',
             'category_id' => 'sometimes|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id' => 'nullable|integer|exists:users,id', // vendor partner
-            'seller_id' => ['nullable', 'integer', AuctionSellerEligibility::rule($item->videoLive ?? new LiveVideo())],
+            'seller_id' => AuctionSellerEligibility::nullableIdRules($item->videoLive ?? new LiveVideo()),
             'gender' => 'nullable|string|max:255',
             'age' => 'sometimes|integer', // Assuming age is an integer
             'age_type' => 'sometimes', // Assuming age is an integer

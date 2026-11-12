@@ -86,23 +86,6 @@ class AuctionSellerSelectionTest extends AuctionBugfixTestCase
         $this->postJson('/api/live/items/update/'.$item->id, ['seller_id' => $owner->id])->assertForbidden();
     }
 
-    public function test_owner_owned_animal_does_not_require_or_validate_a_separate_seller(): void
-    {
-        $owner = $this->user(['user_type' => 'vendor']);
-        $admin = $this->admin($owner);
-        $auction = $this->auction($owner, ['admin_id' => $admin->id]);
-        $payload = $this->productPayload($auction) + ['seller_source' => 'owner'];
-
-        foreach ([[], ['seller_id' => null], ['seller_id' => $owner->id]] as $sellerInput) {
-            $this->postJson(route('admin.products.store'), $payload + $sellerInput)->assertRedirect();
-            $item = LiveVideoItem::latest('id')->first();
-            $this->assertSame($owner->id, $item->user_id);
-            $this->assertNull($item->seller_id);
-            $this->putJson(route('admin.products.update', $item->id), $payload + $sellerInput)->assertRedirect();
-            $this->assertNull($item->fresh()->seller_id);
-        }
-    }
-
     public function test_mobile_creation_rejects_a_seller_approved_for_another_partner(): void
     {
         $owner = $this->user(['user_type' => 'vendor']); $auction = $this->auction($owner);

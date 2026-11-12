@@ -9,6 +9,25 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class AuctionSellerEligibility
 {
+    public static function normalizeOwnerId($sellerId, ?LiveVideo $auction, $ownerId)
+    {
+        if ($auction && $ownerId && (int) $auction->user_id === (int) $ownerId
+            && in_array($sellerId, [0, '0', (int) $ownerId, (string) $ownerId], true)) {
+            return null;
+        }
+
+        return $sellerId;
+    }
+
+    public static function nullableIdRules(LiveVideo $auction): array
+    {
+        return ['bail', 'nullable', function ($attribute, $value, $fail) {
+            if (! is_int($value) && ! is_string($value)) {
+                $fail(trans('validation.integer', ['attribute' => $attribute]));
+            }
+        }, 'integer', self::rule($auction)];
+    }
+
     public static function forAuction(LiveVideo $auction): Builder
     {
         // Submission partner_id is a user ID. Auction partner_id may be a

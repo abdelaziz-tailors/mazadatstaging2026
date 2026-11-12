@@ -20,17 +20,10 @@ class StoreItemRequest extends FormRequest
 
         $auction = $this->route('id') ? LiveVideo::find($this->route('id')) : null;
         $ownerId = auth('api')->id();
-        if (! $auction || ! $ownerId || (int) $auction->user_id !== (int) $ownerId) {
-            return;
-        }
-
         // Mobile clients may send zero for an unselected seller, or the
         // subscriber's own ID. Both represent an owner-owned animal.
-        $selfOwnedValues = [0, '0', (int) $ownerId, (string) $ownerId];
         foreach ($sellerIds as $index => $sellerId) {
-            if (in_array($sellerId, $selfOwnedValues, true)) {
-                $sellerIds[$index] = null;
-            }
+            $sellerIds[$index] = AuctionSellerEligibility::normalizeOwnerId($sellerId, $auction, $ownerId);
         }
 
         $this->merge(['seller_id' => $sellerIds]);
@@ -65,11 +58,7 @@ class StoreItemRequest extends FormRequest
             'category_id.*' => 'required|integer|exists:categories,id', // Assuming category_id references a table
             'partner_id.*' => 'nullable|integer|exists:users,id', // Validate partner_id exists in users table
             'seller_id' => 'nullable|array',
-            'seller_id.*' => ['bail', 'nullable', function ($attribute, $value, $fail) {
-                if (! is_int($value) && ! is_string($value)) {
-                    $fail(trans('validation.integer', ['attribute' => $attribute]));
-                }
-            }, 'integer', AuctionSellerEligibility::rule($auction ?? new LiveVideo())],
+            'seller_id.*' => AuctionSellerEligibility::nullableIdRules($auction ?? new LiveVideo()),
             'gender' => 'nullable|array',
             'gender.*' => 'nullable|string|max:255',
             'age' => 'nullable',
