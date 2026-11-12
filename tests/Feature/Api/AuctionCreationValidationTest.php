@@ -332,6 +332,11 @@ class AuctionCreationValidationTest extends TestCase
         $this->post('/api/live/items/add/1', $animal + ['image' => [[UploadedFile::fake()->image('ok.jpg')]]])
             ->assertOk()->assertJsonPath('success', true);
         $this->assertDatabaseCount('live_video_items', 1);
+        $this->assertDatabaseHas('live_video_items', [
+            'live_video_id' => 1,
+            'user_id' => 1,
+            'seller_id' => null,
+        ]);
         $this->assertDatabaseHas('live_video_item_pieces', ['gender' => 'male']);
         $savedImages = DB::table('live_video_items')->value('image');
         $paths = json_decode($savedImages, true);
