@@ -28,7 +28,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-            <form role="form" action="{{ url('/admin/packages/'.$item->id) }}" class="" method="POST">
+            <form role="form" action="{{ route('admin.packages.destroy', $item->id) }}" class="" method="POST">
                 <input name="_method" type="hidden" value="DELETE">
                 {{ csrf_field() }}
                 <p>{{ TranslationHelper::translate('are_you_sure') }}</p>
