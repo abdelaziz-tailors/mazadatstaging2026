@@ -548,6 +548,27 @@ html[dir='ltr'] .md-sales-trend-link i { transform: rotate(180deg); }
 .md-auth .account-subtitle { margin-bottom: 32px; text-align: start; color: var(--md-text-muted); font-size: 13px; }
 .md-auth .form-group { margin-bottom: 22px; }
 .md-auth .form-control { min-height: 49px; }
+/* Legacy autofill CSS paints fields white even in dark mode. Keep the text,
+   caret and autofill surface on the same theme, including revealed passwords. */
+.md-auth input.form-control {
+  -webkit-text-fill-color: var(--md-text);
+  caret-color: var(--md-text);
+}
+.md-auth input.form-control:autofill {
+  background-color: var(--md-surface) !important;
+  color: var(--md-text);
+}
+.md-auth input.form-control:-webkit-autofill,
+.md-auth input.form-control:-webkit-autofill:hover,
+.md-auth input.form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--md-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--md-surface) inset !important;
+  box-shadow: 0 0 0 1000px var(--md-surface) inset !important;
+}
+.md-auth input.form-control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--md-surface) inset, var(--md-focus) !important;
+  box-shadow: 0 0 0 1000px var(--md-surface) inset, var(--md-focus) !important;
+}
 .md-auth .btn-primary { min-height: 49px; }
 .md-password-field { position: relative; }
 .md-password-field .form-control { padding-inline-end: 48px; }
