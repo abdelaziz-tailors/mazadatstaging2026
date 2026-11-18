@@ -42,7 +42,7 @@ class UpdateProfileRequest extends FormRequest
         return [
             'name' => 'required',
             'user_name' => ['nullable', 'string', $userNameUniqueRule],
-            'email' => 'required|email|unique:admins,email,'.$admin->id.',id,deleted_at,NULL',
+            'email' => 'nullable|email|unique:admins,email,'.$admin->id.',id,deleted_at,NULL',
             'phone' => ['required', 'regex:/^\+9665[0-9]{8}$/'],
             'image' => 'sometimes|required|mimes:png,jpg,jpeg',
             'experience_years'=> 'min:0',

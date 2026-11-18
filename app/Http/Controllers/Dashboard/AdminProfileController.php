@@ -31,13 +31,13 @@ class AdminProfileController extends Controller
         }
         $admin->update([
             'name' => $request->name,
-            'user_name' => $request->user_name,
-            'email' => $request->email,
+            'user_name' => $request->input('user_name', $admin->user_name),
+            'email' => $request->input('email', $admin->email),
             'phone' => $request->phone,
             'image' => ($request->hasFile('image')) ? Storage::disk('public')->putFile('admins', $request->file('image')) : $admin->image
         ]);
 
-        if ($admin->user_id) {
+        if ($admin->user_id && $request->exists('user_name')) {
             User::where('id', $admin->user_id)->update(['user_name' => $request->user_name]);
         }
         Toastr::success(TranslationHelper::translate('Profile Updated Successfully'));
