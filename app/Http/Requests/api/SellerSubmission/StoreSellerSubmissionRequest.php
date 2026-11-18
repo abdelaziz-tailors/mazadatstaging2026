@@ -24,7 +24,7 @@ class StoreSellerSubmissionRequest extends FormRequest
             ],
             'sheep_type' => 'required|string|max:255',
             'age' => 'required|string|max:255',
-            'expected_price' => 'required|numeric|min:0',
+            'expected_price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string',
             'notes' => 'nullable|string',
             'images' => 'required|array|min:1',
