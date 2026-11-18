@@ -38,7 +38,8 @@ class SubscriberBrandImageTest extends TestCase
             $html = $this->renderBrand();
             $this->assertStringContainsString('src="data:image/svg+xml;base64,', $html);
             $this->assertStringContainsString('this.onerror=null; this.src=this.dataset.defaultAvatar;', $html);
-            $this->assertStringContainsString('object-fit: contain', $html);
+            $this->assertStringContainsString('object-fit: cover', $html);
+            $this->assertStringContainsString('border-radius: 50%', $html);
         }
     }
 
