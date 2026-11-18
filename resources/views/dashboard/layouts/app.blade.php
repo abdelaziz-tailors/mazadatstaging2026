@@ -42,10 +42,18 @@
         <div class="header">
             <div class="header-left">
                 <a href="{{ url('admin') }}" class="logo">
+                    @if(Auth::guard('admin')->user()->type === 'partner')
+                        @include('dashboard.partials.subscriber-brand-image')
+                    @else
                     <img src="{{ asset('dashboard/img/logo.png') }}" alt="{{ TranslationHelper::translate('site_name') }}">
+                    @endif
                 </a>
                 <a href="{{ url('admin') }}" class="logo logo-small">
+                    @if(Auth::guard('admin')->user()->type === 'partner')
+                        @include('dashboard.partials.subscriber-brand-image', ['compact' => true])
+                    @else
                     <img src="{{ asset('dashboard/img/logo-small.png') }}" alt="{{ TranslationHelper::translate('site_name') }}" width="30" height="30">
+                    @endif
                 </a>
             </div>
 

@@ -1,6 +1,6 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-inner">
-        @include('dashboard.partials.navigation-brand')
+        @include('dashboard.partials.navigation-brand', ['subscriberBrand' => true])
         <nav id="sidebar-menu" class="sidebar-menu" aria-label="{{ __('dashboard-ui.navigation') }}">
             <ul>
                 <li class="menu-title">

@@ -1,6 +1,10 @@
 <div class="md-navigation-brand">
     <a href="{{ route('admin.dashboard.index') }}">
+        @if($subscriberBrand ?? false)
+            @include('dashboard.partials.subscriber-brand-image')
+        @else
         <img src="{{ asset('dashboard/img/logo.png') }}" alt="{{ TranslationHelper::translate('site_name') }}">
+        @endif
     </a>
     <button type="button" class="md-navigation-close" aria-label="{{ __('dashboard-ui.close_navigation') }}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
 </div>
