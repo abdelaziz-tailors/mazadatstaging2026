@@ -17,6 +17,11 @@ class PartnerController extends Controller
         $partners = User::query()
             ->where('user_type', 'vendor')
             ->where('is_active', 1)
+            // Dashboard deletion soft-deletes the linked Admin, not the User.
+            // Include trashed admins here so previously deleted partners are hidden too.
+            ->whereDoesntHave('admin', function ($query) {
+                $query->onlyTrashed()->where('type', 'partner');
+            })
             ->orderByDesc('id')
             ->paginate(10);
 
