@@ -1,4 +1,4 @@
-<div class="md-navigation-brand">
+<div class=" rounded-sm md-navigation-brand">
     <a href="{{ route('admin.dashboard.index') }}">
         @if($subscriberBrand ?? false)
             @include('dashboard.partials.subscriber-brand-image')
