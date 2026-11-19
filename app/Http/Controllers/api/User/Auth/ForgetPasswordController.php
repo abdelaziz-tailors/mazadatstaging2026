@@ -17,7 +17,8 @@ class ForgetPasswordController extends Controller
 
     public function __invoke(ForgetPasswordRequest $request, SmsService $smsService)
     {
-        return DB::transaction(function () use ($request, $smsService) {
+        $testing = app()->environment(['local', 'testing']) && config('services.otp.password_recovery_testing', false);
+        $issuance = DB::transaction(function () use ($request, $testing) {
             $user = $this->passwordResetUser($request->phone);
 
             if (! $user) {
@@ -28,48 +29,55 @@ class ForgetPasswordController extends Controller
                 return $this->failed_response(TranslationHelper::translate('verify_account_before_reset_password'));
             }
 
-            $testing = config('services.otp.password_recovery_testing', true);
             $otp = $testing ? '1111' : $this->generate_password_otp();
-            $expireAt = Carbon::now()->addMinutes(10);
+            $expireAt = Carbon::now()->startOfSecond()->addMinutes(10);
 
             $user->update([
                 'password_otp' => $otp,
                 'expire_at' => $expireAt,
             ]);
 
-            if (! $testing) {
+            return [$user, (string) $otp, $expireAt];
+        });
+
+        if (! is_array($issuance)) {
+            return $issuance;
+        }
+
+        [$user, $otp, $expireAt] = $issuance;
+        if (! $testing) {
+            try {
                 $otpResult = $smsService->sendWhatsappOtp(
                     $user->phone,
-                    (string) $otp
+                    $otp,
+                    $expireAt
                 );
+            } catch (\Throwable $th) {
+                $otpResult = ['success' => false];
+            }
 
-                if (! ($otpResult['success'] ?? false)) {
-                    \Log::warning('FORGET_PASSWORD_WHATSAPP_OTP_FAILED', [
-                        'error' => $otpResult['error'] ?? null,
-                        'status' => $otpResult['status'] ?? null,
-                        'response' => $otpResult['response'] ?? null,
-                    ]);
-
-                    $user->update([
+            if (! ($otpResult['success'] ?? false)) {
+                // Match the persisted code and expiry before invalidating this attempt.
+                $user->newQuery()->whereKey($user->id)->where('password_otp', $otp)
+                    ->where('expire_at', $expireAt)->update([
                         'password_otp' => null,
                         'expire_at' => null,
                     ]);
 
-                    return $this->failed_response(
-                        TranslationHelper::translate('Something went wrong')
-                    );
-                }
-
-                \Log::info('FORGET_PASSWORD_WHATSAPP_OTP_SENT', [
-                    'provider_message_id' => $otpResult['provider_message_id'] ?? null,
-                    'provider_status' => $otpResult['provider_status_name'] ?? null,
+                \Log::warning('FORGET_PASSWORD_WHATSAPP_OTP_FAILED', [
+                    'http_status' => isset($otpResult['status']) && is_int($otpResult['status']) ? $otpResult['status'] : null,
+                    'transport_success' => ($otpResult['transport_success'] ?? false) === true,
                 ]);
+
+                return $this->failed_response(TranslationHelper::translate('Something went wrong'));
             }
 
-            return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
-                'phone' => $user->phone,
-                'expire_at' => $expireAt,
-            ]);
-        });
+            \Log::info('FORGET_PASSWORD_WHATSAPP_OTP_ACCEPTED');
+        }
+
+        return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
+            'phone' => $user->phone,
+            'expire_at' => $expireAt,
+        ]);
     }
 }
