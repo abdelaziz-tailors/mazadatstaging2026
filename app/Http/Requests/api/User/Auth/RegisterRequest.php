@@ -30,17 +30,35 @@ class RegisterRequest extends FormRequest
         MobileNumber::prepare($this);
     }
 
+    public function roleAccessUser()
+    {
+        if (! is_string($this->phone) || ! is_string($this->password)
+            || ! in_array($this->input('user_type'), ['buyer', 'seller'], true)) {
+            return null;
+        }
+        $matches = MobileNumber::matching(\App\Models\User\User::query(), $this->phone)->limit(2)->get();
+        $user = $matches->count() === 1 ? $matches->first() : null;
+        if (! $user || ! in_array($user->user_type, ['buyer', 'seller'], true)
+            || ! $user->is_active || ! $user->is_verified
+            || ! \Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
+            return null;
+        }
+        return $user;
+    }
+
     public function rules()
     {
+        $existing = $this->roleAccessUser();
+        $ignore = $existing ? $existing->id : null;
         return [
             'name' => 'required|min:3',
 //            'name' => 'required|regex:/^[\pL\s]+$/u|min:3',
-            'phone' => MobileNumber::rules(),
-            'user_name' => 'required|string|unique:users,user_name,NULL,id,deleted_at,NULL',
+            'phone' => MobileNumber::rules($ignore),
+            'user_name' => 'required|string|unique:users,user_name,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
 //            'user_name' => 'required|min:3',
 
-            'national_id' => 'nullable|string|max:32|unique:users,national_id,NULL,id,deleted_at,NULL',
-            'email' => MobileNumber::emailRules(),
+            'national_id' => 'nullable|string|max:32|unique:users,national_id,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
+            'email' => MobileNumber::emailRules($ignore),
             // 'account_type' => 'required',
             'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',

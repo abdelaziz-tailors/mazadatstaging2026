@@ -21,13 +21,18 @@ class LoginController extends Controller
         $identifier = $request->input('email') ?: $request->input('phone');
         $loginField = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-        if ($token = Auth::attempt([$loginField => $identifier, 'password' => request('password')])) {
+        $matches = $loginField === 'phone'
+            ? \App\Helpers\MobileNumber::matching(User::query(), (string) $identifier)->limit(2)->get()
+            : User::whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($identifier), 'UTF-8')])->limit(2)->get();
 
-                if (! $this->userTypeMatches(Auth::user()->user_type, $request->user_type)) {
+        if ($matches->count() === 1 && Auth::attempt(['id' => $matches->first()->id, 'password' => $request->password])) {
+
+                if (! Auth::user()->is_active || ! Auth::user()->is_verified || ! Auth::user()->hasAccessRole($request->user_type)) {
                     Auth::logout();
                     return $this->failed_response(TranslationHelper::translate('account type not match'), 422);
                 }
 
+                Auth::user()->setAttribute('active_role', $request->user_type);
                 $user =Auth::user()->createToken('MyApp')->accessToken;
                 $user_data=Auth::user();
                 $user_data['token'] = $user;
@@ -40,12 +45,4 @@ class LoginController extends Controller
 
     }
 
-    private function userTypeMatches(?string $actualType, ?string $requestedType): bool
-    {
-        if ($actualType === $requestedType) {
-            return true;
-        }
-
-        return $actualType === 'buyer_vendor' && in_array($requestedType, ['buyer', 'vendor'], true);
-    }
 }

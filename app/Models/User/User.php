@@ -232,6 +232,31 @@ class User extends Authenticatable
      *
      * @return array
      */
+    public function availableRoles(): array
+    {
+        $roles = $this->user_type === 'buyer_vendor' ? ['buyer_vendor', 'buyer', 'vendor'] : [$this->user_type];
+        if (\Illuminate\Support\Facades\Schema::hasTable('user_access_roles')) {
+            $roles = array_merge($roles, \Illuminate\Support\Facades\DB::table('user_access_roles')->where('user_id', $this->id)->pluck('role')->all());
+        }
+        return array_values(array_unique(array_filter($roles)));
+    }
+
+    public function hasAccessRole(string $role): bool
+    {
+        return in_array($role, $this->availableRoles(), true);
+    }
+
+    public function scopeWithAccessRole($query, string $role)
+    {
+        return $query->where(function ($query) use ($role) {
+            $types = in_array($role, ['buyer', 'vendor'], true) ? [$role, 'buyer_vendor'] : [$role];
+            $query->whereIn('user_type', $types);
+            if (\Illuminate\Support\Facades\Schema::hasTable('user_access_roles')) {
+                $query->orWhereIn('users.id', \Illuminate\Support\Facades\DB::table('user_access_roles')->select('user_id')->where('role', $role));
+            }
+        });
+    }
+
     public function isVendor(): bool
     {
         return $this->user_type === 'vendor';

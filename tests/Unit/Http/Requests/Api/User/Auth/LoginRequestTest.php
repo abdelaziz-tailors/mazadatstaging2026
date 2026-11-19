@@ -18,8 +18,8 @@ class LoginRequestTest extends TestCase
     {
         $rules = (new LoginRequest())->rules();
 
-        $this->assertSame('required', $rules['phone']);
-        $this->assertSame('required', $rules['password']);
+        $this->assertSame('nullable|string|required_without:email', $rules['phone']);
+        $this->assertSame('required|string', $rules['password']);
         $this->assertSame('required|in:buyer,vendor,buyer_vendor,seller', $rules['user_type']);
     }
 

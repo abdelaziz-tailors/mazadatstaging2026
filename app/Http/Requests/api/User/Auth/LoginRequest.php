@@ -36,9 +36,9 @@ class LoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'phone' => 'nullable|required_without:email',
+            'phone' => 'nullable|string|required_without:email',
             'email' => 'nullable|email|required_without:phone',
-            'password' => 'required',
+            'password' => 'required|string',
             'user_type' => 'required|in:buyer,vendor,buyer_vendor,seller',
         ];
     }

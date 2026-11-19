@@ -379,7 +379,7 @@ class OptionalRegistrationEmailTest extends TestCase
 
     public function test_login_resolves_legacy_phone_without_rewriting_the_user(): void
     {
-        $user = User::create(['phone' => '01012345678', 'password' => bcrypt('secret123'), 'user_type' => 'buyer_vendor']);
+        $user = User::create(['phone' => '01012345678', 'password' => bcrypt('secret123'), 'user_type' => 'buyer_vendor', 'is_verified' => true]);
         foreach (['buyer', 'vendor'] as $type) {
             $this->postJson('/api/user/login', ['phone' => '+201012345678', 'password' => 'secret123', 'user_type' => $type])
                 ->assertJsonPath('success', true);

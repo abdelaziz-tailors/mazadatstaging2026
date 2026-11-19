@@ -17,7 +17,7 @@ class SellerUserController extends Controller
     {
 
         $sellers = User::query()
-            ->where('user_type', 'seller')
+            ->withAccessRole('seller')
             ->where('is_active', 1)
             ->whereIn('id', SellerSubmission::query()
                 ->select('user_id')

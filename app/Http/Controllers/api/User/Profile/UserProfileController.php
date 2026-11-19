@@ -239,7 +239,7 @@ class UserProfileController extends Controller
         // available_balance is used by the mobile UI as "Paid".
         // pending_balance is used as "Debt".
         // total_withdrawals is "Total Payments".
-        if (in_array($user->user_type, ['buyer', 'buyer_vendor'], true)) {
+        if ($user->hasAccessRole('buyer')) {
             $paidBuyerPayments = OrderService::paidBuyerOrdersTotal((int) $user->id);
             $buyerDebt = OrderService::unpaidBuyerOrdersSubtotal((int) $user->id);
 
@@ -267,10 +267,10 @@ class UserProfileController extends Controller
         // balance - pending_balance, which goes negative whenever pending
         // exceeds the current balance).
         $dues = 0.0;
-        if (in_array($user->user_type, ['buyer', 'buyer_vendor'], true)) {
+        if ($user->hasAccessRole('buyer')) {
             $dues += OrderService::unpaidBuyerTotal($user->id);
         }
-        if (in_array($user->user_type, ['seller', 'vendor', 'buyer_vendor'], true)) {
+        if (($user->hasAccessRole('seller') || $user->hasAccessRole('vendor'))) {
             $dues += OrderService::unsettledSellerNet($user->id);
         }
 

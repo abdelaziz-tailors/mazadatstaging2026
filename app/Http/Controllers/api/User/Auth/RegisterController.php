@@ -19,6 +19,8 @@ class RegisterController extends Controller
     public function __invoke(RegisterRequest $request, SmsService $smsService)
     {
         try {
+            $existing = $request->roleAccessUser();
+            $otpType = $existing ? 'role_access' : 'register';
             $numbers = config('services.otp.testing')
                 ? (string) config('services.otp.test_code', '1111')
                 : (string) random_int(1000, 9999);
@@ -33,7 +35,7 @@ class RegisterController extends Controller
             }
 
             $pendingRegistration = [
-                'type' => 'register',
+                'type' => $otpType,
                 'is_verified' => false,
                 'name' => $request->name,
                 'email' => $request->email,
@@ -43,13 +45,13 @@ class RegisterController extends Controller
                 'user_type' => $request->user_type ?? 'buyer',
                 'city_id' => $request->city,
                 'commercial_register' => $commercialRegisterName,
-                'password' => bcrypt($request->password),
+                'password' => $existing ? hash('sha256', $existing->id.':'.$existing->password) : bcrypt($request->password),
                 'otp' => $numbers,
                 'expire_at' => $expire_at,
             ];
 
             $otpRecords = \App\Helpers\MobileNumber::matching(UserOtp::withTrashed(), $request->phone)
-                ->where('type', 'register')->limit(2)->get();
+                ->where('type', $otpType)->limit(2)->get();
             if ($otpRecords->count() > 1) {
                 throw new \RuntimeException('Ambiguous pending registration');
             }

@@ -201,7 +201,7 @@ class UserAuctionController extends Controller
     {
         $user = auth('api')->user();
 
-        if ($user->user_type !== 'seller') {
+        if (! $user->hasAccessRole('seller')) {
             abort(403, TranslationHelper::translate('unauthorized_access'));
         }
 

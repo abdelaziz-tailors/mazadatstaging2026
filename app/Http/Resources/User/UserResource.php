@@ -39,6 +39,8 @@ class UserResource extends JsonResource
             'user_name ' => $this->resource['user_name'] ?? '-',
             'share_url' => isset($this->resource['id']) ? ($shareBaseUrl . '/u/' . $this->resource['id']) : null,
             'is_verified' => boolval($this->resource['is_verified']),
+            'available_roles' => $this->resource->availableRoles(),
+            'active_role' => $this->resource['active_role'] ?? $this->resource['user_type'],
             'user_type' => $this->resource['user_type'] ?? '-',
             'image' => (Storage::disk('public')->exists($this->image)) ? Storage::disk('public')->url($this->image) : NULL,
         ];

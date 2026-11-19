@@ -21,6 +21,9 @@ class VerifyAccountController extends Controller
     use HelperTrait, ResponseTrait;
 
     public function __invoke(VerifyAccountRequest $request) {
+        if (\App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)->where('type', 'role_access')->where('is_verified', false)->exists()) {
+            return $this->verifyRoleAccess($request);
+        }
         $pendingRegistration = UserOtp::where('phone', $request->phone)
             ->where('type', 'register')
             ->where('is_verified', false)
@@ -131,4 +134,40 @@ class VerifyAccountController extends Controller
 
         return $this->success_response(TranslationHelper::translate('your_account_logged_in_successfully'), $data);
     }
+    private function verifyRoleAccess(VerifyAccountRequest $request)
+    {
+        try {
+            $user = DB::transaction(function () use ($request) {
+                $pending = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+                    ->where('type', 'role_access')->where('is_verified', false)->lockForUpdate()->first();
+                if (! $pending || ! is_scalar($request->otp) || ! hash_equals((string) $pending->otp, (string) $request->otp)
+                    || ! $pending->expire_at || now()->greaterThanOrEqualTo($pending->expire_at)) {
+                    throw new \RuntimeException('Invalid role verification');
+                }
+                $matches = \App\Helpers\MobileNumber::matching(User::query(), $pending->phone)->lockForUpdate()->limit(2)->get();
+                $user = $matches->count() === 1 ? $matches->first() : null;
+                if (! $user || ! $user->is_verified || ! $user->is_active
+                    || ! in_array($user->user_type, ['buyer', 'seller'], true)
+                    || ! in_array($pending->user_type, ['buyer', 'seller'], true)
+                    || ! hash_equals(hash('sha256', $user->id.':'.$user->password), (string) $pending->password)) {
+                    throw new \RuntimeException('Account no longer eligible');
+                }
+                if (! $user->hasAccessRole($pending->user_type)) {
+                    DB::table('user_access_roles')->insert([
+                        'user_id' => $user->id, 'role' => $pending->user_type,
+                        'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                }
+                $user->setAttribute('active_role', $pending->user_type);
+                $pending->update(['is_verified' => true]);
+                $pending->delete();
+                return $user;
+            });
+        } catch (\Throwable $exception) {
+            return $this->failed_response(TranslationHelper::translate('wrong_otp'), 403);
+        }
+        $user['token'] = $user->createToken('MyApp')->accessToken;
+        return $this->success_response(TranslationHelper::translate('your_account_logged_in_successfully'), new UserResource($user));
+    }
+
 }
