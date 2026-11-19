@@ -228,19 +228,20 @@ class OptionalRegistrationEmailTest extends TestCase
     /** @dataProvider supportedMobiles */
     public function test_sms_and_whatsapp_use_the_same_destination(string $phone, string $canonical): void
     {
-        config(['services.infobip.base_url' => 'https://otp.example.test', 'services.infobip.api_key' => 'test',
-            'services.infobip.whatsapp_from' => 'test', 'services.infobip.whatsapp_template' => 'test',
+        config(['services.whatsapp_sender.base_url' => 'https://otp.example.test', 'services.whatsapp_sender.api_token' => 'test',
             'services.sms.endpoint' => 'https://sms.example.test', 'services.sms.username' => 'test',
             'services.sms.password' => 'test']);
         \Illuminate\Support\Facades\Http::fake([
-            'otp.example.test/*' => \Illuminate\Support\Facades\Http::response(['messages' => [['messageId' => 'test', 'status' => ['groupName' => 'PENDING']]]]),
+            'otp.example.test/*' => \Illuminate\Support\Facades\Http::response('{}'),
             'sms.example.test' => \Illuminate\Support\Facades\Http::response([]),
         ]);
         // Resolve the real service, rather than the no-send registration mock.
         $service = new \App\Services\SmsService();
-        $this->assertTrue($service->sendWhatsappOtp($phone, '0123')['success']);
+        $result = $service->sendWhatsappOtp($phone, '0123');
+        $this->assertTrue($result['transport_success']);
+        $this->assertFalse($result['success']); // No success indicator was returned.
         $this->assertTrue($service->send($phone, 'test')['success']);
-        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => ($r['messages'][0]['to'] ?? null) === substr($canonical, 1));
+        \Illuminate\Support\Facades\Http::assertSent(fn ($r) => ($r['phone'] ?? null) === $canonical);
         \Illuminate\Support\Facades\Http::assertSent(fn ($r) => ($r['SMSReceiver'] ?? null) === substr($canonical, 1));
     }
 
@@ -393,7 +394,7 @@ class OptionalRegistrationEmailTest extends TestCase
     {
         config(['services.otp.testing' => false]);
         $this->mock(\App\Services\SmsService::class, function ($mock) {
-            $mock->shouldReceive('sendRegistrationOtp')->once()->with('+201012345678', \Mockery::type('string'))
+            $mock->shouldReceive('sendRegistrationOtp')->once()->with('+201012345678', \Mockery::type('string'), \Mockery::type(\DateTimeInterface::class))
                 ->andReturn(['success' => true]);
         });
         $this->postJson('/api/user/register', $this->payload(['phone' => '01012345678']))
@@ -409,5 +410,146 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])->assertStatus(403);
         $this->assertSame(0, User::count());
         $this->travelBack();
+    }
+
+    public function test_registration_posts_persisted_code_and_expiry_but_unverified_acceptance_fails_closed(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        config(['services.otp.testing' => false,
+            'services.whatsapp_sender.base_url' => 'https://sender.example.test',
+            'services.whatsapp_sender.api_token' => 'fake-token']);
+        app()->forgetInstance(\App\Services\SmsService::class);
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory());
+        $issuedCode = null;
+        \Illuminate\Support\Facades\Http::fake(function ($request) use (&$issuedCode) {
+            $record = UserOtp::firstOrFail();
+            $issuedCode = $record->otp;
+            $this->assertSame(0, DB::transactionLevel());
+            $this->assertMatchesRegularExpression('/^[0-9]{4}$/D', $issuedCode);
+            $this->assertTrue($record->expire_at->equalTo(now()->addMinutes(10)));
+            $this->assertStringContainsString('*'.$issuedCode.'*', $request['message']);
+            $this->assertStringContainsString($record->expire_at->copy()->utc()->format('Y-m-d H:i:s').' UTC', $request['message']);
+            return \Illuminate\Support\Facades\Http::response('{}', 202);
+        });
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $record = UserOtp::firstOrFail();
+        $this->assertNull($record->expire_at);
+        $this->assertSame('Test User', $record->name);
+        $this->assertFalse($record->is_verified);
+        $this->assertSame(0, User::count());
+        $this->postJson('/api/user/verify-account', ['phone' => $record->phone, 'otp' => $issuedCode])->assertStatus(403);
+        \Illuminate\Support\Facades\Http::assertSentCount(1);
+        $this->travelBack();
+    }
+
+    /** @dataProvider failedRegistrationDeliveries */
+    public function test_failed_registration_delivery_invalidates_code_and_preserves_details(bool $throws): void
+    {
+        config(['services.otp.testing' => false]);
+        $this->mock(\App\Services\SmsService::class, function ($mock) use ($throws) {
+            $expectation = $mock->shouldReceive('sendRegistrationOtp')->once();
+            if ($throws) {
+                $expectation->andThrow(new \RuntimeException('sensitive provider body'));
+            } else {
+                $expectation->andReturn(['success' => false, 'response' => 'sensitive provider body']);
+            }
+        });
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false)
+            ->assertDontSee('sensitive provider body');
+        $record = UserOtp::firstOrFail();
+        $this->assertNull($record->expire_at);
+        $this->assertNull($record->deleted_at);
+        $this->assertSame(0, User::count());
+    }
+
+    public static function failedRegistrationDeliveries(): array
+    {
+        return [[false], [true]];
+    }
+
+    public function test_failed_registration_does_not_invalidate_a_newer_resend(): void
+    {
+        config(['services.otp.testing' => false]);
+        $this->mock(\App\Services\SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendRegistrationOtp')->once()->andReturnUsing(function ($phone, $code) {
+                UserOtp::firstOrFail()->update(['otp' => $code === '9876' ? '9875' : '9876', 'expire_at' => now()->addMinutes(11)]);
+                return ['success' => false];
+            });
+        });
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $this->assertNotNull(UserOtp::firstOrFail()->expire_at);
+    }
+
+    public function test_confirmed_provider_acceptance_remains_compatible_with_registration_verification(): void
+    {
+        config(['services.otp.testing' => false,
+            'services.whatsapp_sender.base_url' => 'https://sender.example.test',
+            'services.whatsapp_sender.api_token' => 'fake-key']);
+        app()->forgetInstance(\App\Services\SmsService::class);
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory());
+        \Illuminate\Support\Facades\Http::fake(fn () => \Illuminate\Support\Facades\Http::response([
+            'success' => true, 'messageId' => 3358, 'status' => 'pending', 'pointsCharged' => 1, 'remainingPoints' => 1419,
+        ]));
+        \Illuminate\Support\Facades\Log::spy();
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true)
+            ->assertJsonStructure(['data' => ['phone', 'expire_at']])
+            ->assertJsonCount(2, 'data'); // No OTP or provider metadata is exposed.
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('info')->once()->with('REGISTER_WHATSAPP_OTP_ACCEPTED');
+        \Illuminate\Support\Facades\Http::assertSentCount(1);
+        $record = UserOtp::firstOrFail();
+        $this->postJson('/api/user/verify-account', ['phone' => $record->phone, 'otp' => $record->otp])
+            ->assertJsonPath('success', true);
+        $this->assertTrue((bool) User::firstOrFail()->is_verified);
+    }
+
+    public function test_production_ignores_registration_test_mode_and_does_not_log_sensitive_result(): void
+    {
+        app()->instance('env', 'production');
+        config(['services.otp.testing' => true, 'services.otp.test_code' => 'STATIC-CODE']);
+        \Illuminate\Support\Facades\Log::spy();
+        $this->mock(\App\Services\SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendRegistrationOtp')->once()->andReturn([
+                'success' => false, 'error' => 'SECRET', 'response' => 'SECRET',
+                'provider_message_id' => 'SECRET', 'status' => 'SECRET',
+            ]);
+        });
+        $response = $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $this->assertMatchesRegularExpression('/^[0-9]{4}$/D', UserOtp::firstOrFail()->otp);
+        $response->assertDontSee('SECRET')->assertDontSee('STATIC-CODE');
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')->once()->with(
+            'REGISTER_WHATSAPP_OTP_FAILED', ['http_status' => null, 'transport_success' => false]
+        );
+        \Illuminate\Support\Facades\Log::shouldNotHaveReceived('info');
+    }
+
+    public function test_unconfigured_registration_provider_invalidates_code_without_sending(): void
+    {
+        config(['services.otp.testing' => false, 'services.whatsapp_sender.api_token' => null]);
+        app()->forgetInstance(\App\Services\SmsService::class);
+        \Illuminate\Support\Facades\Http::fake();
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $this->assertNull(UserOtp::firstOrFail()->expire_at);
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
+    public function test_failed_resend_keeps_pending_registration_and_retry_can_complete(): void
+    {
+        // First use the existing local test mode, then simulate delivery failure on resend.
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $record = UserOtp::firstOrFail();
+        config(['services.otp.testing' => false]);
+        $this->mock(\App\Services\SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendRegistrationOtp')->once()->andReturn(['success' => false]);
+        });
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $this->assertSame(1, UserOtp::count());
+        $this->assertSame($record->id, UserOtp::firstOrFail()->id);
+        $this->assertNull($record->fresh()->expire_at);
+
+        config(['services.otp.testing' => true]);
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $record->refresh();
+        $this->postJson('/api/user/verify-account', ['phone' => $record->phone, 'otp' => $record->otp])
+            ->assertJsonPath('success', true);
     }
 }
