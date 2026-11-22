@@ -1667,5 +1667,4 @@
   'dashboard_pieces_remove' => 'حذف الرأس',
   'dashboard_pieces_stale' => 'بعض الرؤوس لم تعد موجودة أو لا تتبع هذا العنصر. أعد تحميل الصفحة.',
   'dashboard_submission_invalid' => 'تعذر التحقق من النموذج. أعد تحميل الصفحة.',
-  'whatsapp_otp_message' => "رمز التحقق الخاص بك في مزادات هو: *:otp*\nتنتهي صلاحيته في :expires_at.",
 );

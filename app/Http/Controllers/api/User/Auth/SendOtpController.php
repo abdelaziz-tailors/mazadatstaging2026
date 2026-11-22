@@ -2,100 +2,64 @@
 
 namespace App\Http\Controllers\api\User\Auth;
 
+use App\Helpers\MobileNumber;
+use App\Helpers\TranslationHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\api\User\Auth\SendOtpRequest;
-use App\Helpers\TranslationHelper;
-
 use App\Http\Requests\api\User\Auth\SendPhoneOtpRequest;
-use App\Http\Resources\UserOTPResource;
-use App\Models\Patient;
 use App\Models\User\User;
-
-use App\Http\Resources\UserResource;
-
-use App\Traits\HelperTrait;
+use App\Services\OtpService;
+use App\Services\SmsService;
 use App\Traits\ResponseTrait;
-use Carbon\Carbon;
-use GuzzleHttp\Client;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
+/** Legacy entry points; no public routes currently reference this controller. */
 class SendOtpController extends Controller
 {
-    use HelperTrait, ResponseTrait;
+    use ResponseTrait;
 
-    public function __invoke(SendOtpRequest $request) {
-        $user_exists = Patient::where('phone', $request->phone)
-            ->exists();
-
-        if ($user_exists) {
-            $client = Patient::where([['phone', $request->phone]])->first();
-
-            $numbers =  mt_rand(1000, 9999);
-            $uuid = \Str::uuid();
-
-
-            $mobile="2".$request->phone;
-
-            $client_sms = new Client();
-            $headers = [
-                'Content-Type' => 'application/json'
-            ];
-            $body = '{
-              "UserName": "DacktraAPI",
-              "Password": "rsDdr|u:&&",
-              "SMSText": "verification code is '.$numbers.'",
-              "SMSLang": "e",
-              "SMSSender": "Dacktra",
-              "SMSReceiver": "'.$mobile.'",
-              "SMSID": "'.$uuid.'"
-            }';
-//              dd($body);
-            $request = new \GuzzleHttp\Psr7\Request('POST', 'https://smsvas.vlserv.com/VLSMSPlatformResellerAPI/NewSendingAPI/api/SMSSender/SendSMS', $headers, $body);
-            $res = $client_sms->sendAsync($request)->wait();
-
-
-            $expire_at=Carbon::now()->addMinutes(10);
-
-            $client->update(['otp' => $numbers, 'expire_at' => $expire_at]);
-
-
-            $data = new UserOTPResource($client);
-                return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), $data);
-
-        }
-        else {
-            return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
-        }
+    public function __invoke(SendOtpRequest $request)
+    {
+        return DB::transaction(function () use ($request) {
+            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
+            if (! $user || $user->is_verified) {
+                return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
+            }
+            $policy = app(OtpService::class);
+            $user->update($policy->challenge($user->phone));
+            if (! $policy->usesFixedCode($user->phone)) {
+                try {
+                    $result = app(SmsService::class)->sendWhatsappOtp($user->phone, $user->otp);
+                } catch (\Throwable $exception) {
+                    $result = ['success' => false];
+                }
+                if (! ($result['success'] ?? false)) {
+                    $policy->consume($user);
+                    return $this->failed_response(TranslationHelper::translate('Something went wrong'));
+                }
+            }
+            return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
+                'phone' => $user->phone, 'expire_at' => $user->expire_at,
+            ]);
+        });
     }
 
     public function approvedMobile(SendPhoneOtpRequest $request)
     {
-
-
-        $now = Carbon::now();
-        $otp=Patient::where([['phone',$request->phone],['otp',$request->otp]])->first();
-
-        if (isset($otp)) {
-            if($now->isAfter($otp->expire_at)){
-
-
-                return response()->json(['success'=>false,'code' => 403, 'message' =>TranslationHelper::translate('otp expire')], 403);
-
-
-
+        return DB::transaction(function () use ($request) {
+            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
+            $policy = app(OtpService::class);
+            if (! $user || $user->is_verified || ! $policy->matches($user->phone, $user->otp, $request->otp)) {
+                return response()->json(['success' => false, 'code' => 422,
+                    'message' => TranslationHelper::translate('wrong_phone_number')], 422);
             }
-
-            $otp->update([
-                    'approved_mobile'=>'1',
-                ]
-            );
+            if ($policy->expired($user->expire_at)) {
+                return response()->json(['success' => false, 'code' => 403,
+                    'message' => TranslationHelper::translate('otp expire')], 403);
+            }
+            $user->is_verified = true;
+            $policy->consume($user);
             return $this->success_response(TranslationHelper::translate('Successfully'), '');
-
-        }
-
-        return response()->json(['success'=>false,'code' => 422, 'message' =>TranslationHelper::translate('mobile not exist')], 422);
-
+        });
     }
-
 }

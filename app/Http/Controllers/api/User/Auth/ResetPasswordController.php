@@ -19,14 +19,15 @@ class ResetPasswordController extends Controller
     public function __invoke(ResetPasswordRequest $request)
     {
         return DB::transaction(function () use ($request) {
+            $otpService = app(\App\Services\OtpService::class);
             $user = $this->passwordResetUser($request->phone);
 
             if (! $user || ! $user->is_verified || ! $user->password_otp
-                || ! hash_equals((string) $user->password_otp, $request->otp)) {
+                || ! $otpService->matches($user->phone, $user->password_otp, $request->otp)) {
                 return $this->failed_response(TranslationHelper::translate('wrong_otp'));
             }
 
-            if (! $user->expire_at || Carbon::now()->greaterThanOrEqualTo($user->expire_at)) {
+            if ($otpService->expired($user->expire_at)) {
                 return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
             }
 
@@ -38,9 +39,7 @@ class ResetPasswordController extends Controller
             }
 
             $user->password = bcrypt($request->password);
-            $user->password_otp = null;
-            $user->expire_at = null;
-            $user->save();
+            $otpService->consume($user, 'password_otp');
 
             $user->token = $user->createToken('MyApp')->accessToken;
 

@@ -57,16 +57,10 @@ return [
         'timeout' => env('INFOBIP_TIMEOUT', 10),
     ],
 
-    'whatsapp_sender' => [
-        'base_url' => env('WHATSAPP_SENDER_BASE_URL'),
-        'api_token' => env('WHATSAPP_SENDER_API_TOKEN'),
-        'timeout' => env('WHATSAPP_SENDER_TIMEOUT', 15),
-    ],
-
     'otp' => [
-        'password_recovery_testing' => env('PASSWORD_RECOVERY_OTP_TESTING', false),
-        'testing' => env('OTP_TESTING', false),
-        'test_code' => env('OTP_TEST_CODE', '1111'),
+        'qa_phones' => array_values(array_filter(array_map('trim', explode(',', (string) env('OTP_QA_PHONES', ''))), function ($phone) {
+            return $phone !== '';
+        })),
     ],
 
     'agora' => [

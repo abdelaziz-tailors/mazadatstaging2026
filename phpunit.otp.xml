@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="tests/Support/whatsapp-bootstrap.php" colors="true" cacheResult="false">
+<phpunit bootstrap="tests/Support/otp-bootstrap.php" colors="true" cacheResult="false">
     <testsuites>
-        <testsuite name="WhatsApp and authentication regression">
-            <file>tests/Unit/Services/WhatsappSenderTest.php</file>
+        <testsuite name="Centralized OTP and authentication regression">
             <file>tests/Feature/Api/User/Auth/OptionalRegistrationEmailTest.php</file>
             <file>tests/Feature/Api/User/Auth/PasswordRecoveryTest.php</file>
+            <file>tests/Unit/Services/OtpServiceTest.php</file>
             <file>tests/Feature/Api/AuthenticationErrorResponseTest.php</file>
+            <file>tests/Feature/Api/User/Auth/BuyerSellerAccessTest.php</file>
         </testsuite>
     </testsuites>
     <php>
         <env name="APP_ENV" value="testing" force="true"/>
-        <env name="APP_CONFIG_CACHE" value="storage/framework/testing/whatsapp-config.php" force="true"/>
-        <env name="APP_ROUTES_CACHE" value="storage/framework/testing/whatsapp-routes.php" force="true"/>
+        <env name="APP_CONFIG_CACHE" value="storage/framework/testing/otp-config.php" force="true"/>
+        <env name="APP_ROUTES_CACHE" value="storage/framework/testing/otp-routes.php" force="true"/>
         <env name="DB_CONNECTION" value="sqlite" force="true"/>
         <env name="DB_DATABASE" value=":memory:" force="true"/>
         <env name="DATABASE_URL" value="" force="true"/>
@@ -23,10 +24,7 @@
         <env name="MAIL_MAILER" value="array" force="true"/>
         <env name="LOG_CHANNEL" value="null" force="true"/>
         <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+        <env name="OTP_QA_PHONES" value="" force="true"/>
         <env name="BCRYPT_ROUNDS" value="4" force="true"/>
-        <env name="OTP_TESTING" value="false" force="true"/>
-        <env name="PASSWORD_RECOVERY_OTP_TESTING" value="false" force="true"/>
-        <env name="WHATSAPP_SENDER_BASE_URL" value="" force="true"/>
-        <env name="WHATSAPP_SENDER_API_TOKEN" value="" force="true"/>
     </php>
 </phpunit>

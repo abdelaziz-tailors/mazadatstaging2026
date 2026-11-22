@@ -1653,5 +1653,4 @@
   'dashboard_pieces_stale' => 'Some heads no longer exist or do not belong to this item. Reload the page.',
   'dashboard_submission_invalid' => 'The form could not be verified. Reload the page.',
   'partner_id_must_be_a_number_' => 'partner_id must be a number ',
-  'whatsapp_otp_message' => "Your Mazadat verification code is: *:otp*\nIt expires at :expires_at.",
 );

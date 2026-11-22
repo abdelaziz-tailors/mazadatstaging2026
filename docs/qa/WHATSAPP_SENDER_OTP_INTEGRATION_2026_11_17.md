@@ -1,3 +1,5 @@
+> **OBSOLETE after selective OTP rollback (2026-11-22).** Retained as historical audit evidence. Provider-readiness instructions and test commands below no longer apply. See OTP_SELECTIVE_ROLLBACK_2026_11_22.md.
+
 # WhatsApp Sender OTP integration — 2026-11-17
 
 Implemented the confirmed request contract in the existing `SmsService` and connected both active OTP issuance flows. Automated verification passes. **Provider acceptance, wallet response semantics, actual WhatsApp delivery, and production readiness remain unverified.**

@@ -16,10 +16,75 @@ use Tests\TestCase;
 
 class PasswordRecoveryTest extends TestCase
 {
+    public function test_interleaved_reset_attempt_cannot_reuse_code_before_first_transaction_commits(): void
+    {
+        $user = $this->user();
+        $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
+            $mock->shouldReceive('make')->once()->andReturnUsing(function () {
+                $this->assertGreaterThan(0, DB::transactionLevel());
+                // Reenter verification while the first request is still issuing its token.
+                $this->reset()->assertJsonPath('success', false);
+                return new PersonalAccessTokenResult('test-token', new Token());
+            });
+        });
+        $this->reset()->assertJsonPath('data.token', 'test-token');
+        $this->assertNull($user->fresh()->password_otp);
+        $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
+    }
+
+    public function test_production_qa_recovery_uses_normalized_allowlist_and_consumes_code(): void
+    {
+        config(['services.otp.qa_phones' => ['00966512345678']]);
+        $user = $this->user();
+        $this->mock(SmsService::class, function ($mock) {
+            $mock->shouldNotReceive('sendWhatsappOtp');
+        });
+        $this->postJson('/api/user/forgot-password', ['phone' => '0512345678'])->assertJsonPath('success', true);
+        $this->assertSame('1111', $user->fresh()->password_otp);
+        $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
+            $mock->shouldReceive('make')->once()->andReturn(new PersonalAccessTokenResult('test-token', new Token()));
+        });
+        $this->reset(['otp' => '1111'])->assertJsonPath('data.token', 'test-token');
+        $this->assertNull($user->fresh()->password_otp);
+        $this->reset(['otp' => '1111'])->assertJsonPath('success', false);
+        Http::assertNothingSent();
+    }
+
+    public function test_previously_stored_global_fixed_code_is_rejected_for_non_qa_production_user(): void
+    {
+        $this->user(['password_otp' => '1111']);
+        $this->reset(['otp' => '1111'])->assertJsonPath('success', false);
+    }
+
+    public function test_provider_exception_invalidates_recovery_code_without_logging_payload(): void
+    {
+        $user = $this->user();
+        \Illuminate\Support\Facades\Log::spy();
+        $this->mock(SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendWhatsappOtp')->once()->andThrow(new \RuntimeException('private provider payload'));
+        });
+        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])
+            ->assertJsonPath('success', false)->assertDontSee('private provider payload');
+        $this->assertNull($user->fresh()->password_otp);
+        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')->once()->with('FORGET_PASSWORD_OTP_DELIVERY_FAILED');
+    }
+
+    public function test_production_ignores_legacy_global_test_flags(): void
+    {
+        config(['services.otp.password_recovery_testing' => true, 'services.otp.testing' => true]);
+        $user = $this->user();
+        $this->mock(SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendWhatsappOtp')->once()->andReturn(['success' => true]);
+        });
+        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', true);
+        $this->assertNotSame('1111', $user->fresh()->password_otp);
+        $this->assertMatchesRegularExpression('/^[1-9][0-9]{3}$/D', $user->fresh()->password_otp);
+    }
     protected function setUp(): void
     {
         parent::setUp();
-        config(['services.otp.password_recovery_testing' => false]);
+        app()->instance('env', 'production');
+        config(['services.otp.qa_phones' => []]);
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
             'cache.default' => 'array', 'app.debug' => false]);
         DB::purge('sqlite');
@@ -58,7 +123,7 @@ class PasswordRecoveryTest extends TestCase
 
     public function test_local_phone_receives_otp_and_reset_is_one_time(): void
     {
-        config(['services.otp.password_recovery_testing' => true]);
+        app()->instance('env', 'testing');
         $user = $this->user();
         $code = '1111';
         $this->mock(SmsService::class, function ($mock) {
@@ -159,7 +224,7 @@ class PasswordRecoveryTest extends TestCase
         $user = $this->user(['phone' => '01012345678']);
         $this->mock(SmsService::class, function ($mock) {
             $mock->shouldReceive('sendWhatsappOtp')->once()
-                ->with('01012345678', \Mockery::type('string'), \Mockery::type(\DateTimeInterface::class))->andReturn(['success' => true]);
+                ->with('01012345678', \Mockery::type('string'))->andReturn(['success' => true]);
         });
         $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])
             ->assertJsonPath('success', true)->assertJsonPath('data.phone', $user->phone);
@@ -213,12 +278,13 @@ class PasswordRecoveryTest extends TestCase
     public function test_whatsapp_response_controls_recovery_result(array $body, int $httpStatus, bool $accepted): void
     {
         $user = $this->user();
-        config(['services.whatsapp_sender.base_url' => 'https://whatsapp.example.test',
-            'services.whatsapp_sender.api_token' => 'fake-key']);
+        config(['services.infobip.base_url' => 'https://whatsapp.example.test',
+            'services.infobip.api_key' => 'fake-key', 'services.infobip.whatsapp_from' => '966500000000',
+            'services.infobip.whatsapp_template' => 'otp-template', 'services.infobip.whatsapp_lang' => 'en']);
         // Laravel 8 appends fake callbacks; replace the default fail-closed factory.
         Http::swap(new \Illuminate\Http\Client\Factory());
         Http::fake(function ($request) use ($body, $httpStatus) {
-            if ($request->url() !== 'https://whatsapp.example.test/api/external/messages/send') {
+            if ($request->url() !== 'https://whatsapp.example.test/whatsapp/1/message/template') {
                 throw new \RuntimeException('Unexpected HTTP request');
             }
             return Http::response($body, $httpStatus);
@@ -226,10 +292,11 @@ class PasswordRecoveryTest extends TestCase
         $this->postJson('/api/user/forgot-password', ['phone' => '0512345678'])
             ->assertJsonPath('success', $accepted);
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://whatsapp.example.test/api/external/messages/send'
-                && $request->hasHeader('X-API-Token', 'fake-key')
-                && $request['phone'] === '+966512345678'
-                && preg_match('/\*[0-9]{4}\*/', $request['message']);
+            return $request->url() === 'https://whatsapp.example.test/whatsapp/1/message/template'
+                && $request->hasHeader('Authorization', 'App fake-key')
+                && $request['messages'][0]['to'] === '966512345678'
+                && $request['messages'][0]['content']['templateName'] === 'otp-template'
+                && preg_match('/^[0-9]{4}$/D', $request['messages'][0]['content']['templateData']['body']['placeholders'][0]);
         });
         Http::assertSentCount(1);
         if ($accepted) {
@@ -242,22 +309,23 @@ class PasswordRecoveryTest extends TestCase
 
     public static function whatsappResponses(): array
     {
+        $message = fn ($group) => ['messages' => [['messageId' => 'fake-id', 'status' => ['groupName' => $group]]]];
         return [
-            'explicit success' => [['success' => true], 200, true],
-            'confirmed pending response' => [['success' => true, 'messageId' => 3358,
-                'status' => 'pending', 'pointsCharged' => 1, 'remainingPoints' => 1419], 200, true],
-            'apparent rejection' => [['success' => false], 200, false],
-            'queued remains unverified' => [['status' => 'queued'], 202, false],
+            'pending' => [$message('PENDING'), 200, true],
+            'delivered' => [$message('DELIVERED'), 200, true],
+            'rejected despite HTTP 200' => [$message('REJECTED'), 200, false],
+            'expired' => [$message('EXPIRED'), 200, false],
+            'undeliverable' => [$message('UNDELIVERABLE'), 200, false],
             'missing message' => [[], 200, false],
+            'missing message ID' => [['messages' => [['status' => ['groupName' => 'PENDING']]]], 200, false],
             'HTTP failure' => [[], 401, false],
-            'success cannot override HTTP failure' => [['success' => true], 500, false],
         ];
     }
 
     public function test_unconfigured_provider_sends_nothing_and_invalidates_code(): void
     {
         $user = $this->user();
-        config(['services.whatsapp_sender.api_token' => null]);
+        config(['services.infobip.api_key' => null]);
         $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', false);
         Http::assertNothingSent();
         $this->assertNull($user->fresh()->password_otp);
@@ -282,103 +350,5 @@ class PasswordRecoveryTest extends TestCase
         $this->reset(['otp' => '0123'])->assertJsonPath('success', true);
         $this->reset(['otp' => '0123'])->assertJsonPath('success', false);
         $this->assertNull($user->fresh()->expire_at);
-    }
-
-    public function test_recovery_persists_ten_minute_expiry_before_http_without_holding_transaction(): void
-    {
-        $this->travelTo(now()->startOfSecond());
-        $user = $this->user();
-        config(['services.whatsapp_sender.base_url' => 'https://sender.example.test',
-            'services.whatsapp_sender.api_token' => 'fake-key']);
-        Http::swap(new \Illuminate\Http\Client\Factory());
-        $issued = null;
-        Http::fake(function ($request) use ($user, &$issued) {
-            $issued = $user->fresh();
-            $this->assertSame(0, DB::transactionLevel());
-            $this->assertTrue($issued->expire_at->equalTo(now()->addMinutes(10)));
-            $this->assertStringContainsString('*'.$issued->password_otp.'*', $request['message']);
-            $this->assertStringContainsString($issued->expire_at->copy()->utc()->format('Y-m-d H:i:s').' UTC', $request['message']);
-            return Http::response('{}', 202);
-        });
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', false);
-        $this->assertNotNull($issued);
-        $this->assertNull($user->fresh()->password_otp);
-        $this->assertNull($user->fresh()->expire_at);
-        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
-        Http::assertSentCount(1);
-        $this->travelBack();
-    }
-
-    public function test_recovery_failure_preserves_a_newer_resend(): void
-    {
-        $user = $this->user();
-        $this->mock(SmsService::class, function ($mock) use ($user) {
-            $mock->shouldReceive('sendWhatsappOtp')->once()->andReturnUsing(function ($phone, $code) use ($user) {
-                $user->update(['password_otp' => $code === '9876' ? '9875' : '9876', 'expire_at' => now()->addMinutes(11)]);
-                return ['success' => false];
-            });
-        });
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', false);
-        $this->assertNotNull($user->fresh()->password_otp);
-        $this->assertNotNull($user->fresh()->expire_at);
-    }
-
-    public function test_recovery_service_exception_clears_new_code_without_leaking_exception(): void
-    {
-        $user = $this->user();
-        $this->mock(SmsService::class, function ($mock) {
-            $mock->shouldReceive('sendWhatsappOtp')->once()->andThrow(new \RuntimeException('SECRET'));
-        });
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])
-            ->assertJsonPath('success', false)->assertDontSee('SECRET');
-        $this->assertNull($user->fresh()->password_otp);
-    }
-
-    public function test_production_ignores_password_recovery_test_mode_and_sanitizes_logs(): void
-    {
-        app()->instance('env', 'production');
-        config(['services.otp.password_recovery_testing' => true]);
-        $user = $this->user();
-        \Illuminate\Support\Facades\Log::spy();
-        $this->mock(SmsService::class, function ($mock) {
-            $mock->shouldReceive('sendWhatsappOtp')->once()->andReturn([
-                'success' => false, 'error' => 'SECRET', 'response' => 'SECRET', 'status' => 'SECRET',
-            ]);
-        });
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])
-            ->assertJsonPath('success', false)->assertDontSee('SECRET');
-        $this->assertNull($user->fresh()->password_otp);
-        \Illuminate\Support\Facades\Log::shouldHaveReceived('warning')->once()->with(
-            'FORGET_PASSWORD_WHATSAPP_OTP_FAILED', ['http_status' => null, 'transport_success' => false]
-        );
-    }
-
-    public function test_confirmed_provider_acceptance_still_allows_password_reset(): void
-    {
-        $user = $this->user();
-        config(['services.whatsapp_sender.base_url' => 'https://sender.example.test',
-            'services.whatsapp_sender.api_token' => 'fake-key']);
-        Http::swap(new \Illuminate\Http\Client\Factory());
-        Http::fake(fn () => Http::response(['success' => true, 'messageId' => 3358,
-            'status' => 'pending', 'pointsCharged' => 1, 'remainingPoints' => 1419]));
-        \Illuminate\Support\Facades\Log::spy();
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', true)
-            ->assertJsonStructure(['data' => ['phone', 'expire_at']])
-            ->assertJsonCount(2, 'data'); // No OTP or provider metadata is exposed.
-        \Illuminate\Support\Facades\Log::shouldHaveReceived('info')->once()->with('FORGET_PASSWORD_WHATSAPP_OTP_ACCEPTED');
-        Http::assertSentCount(1);
-        $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
-            $mock->shouldReceive('make')->once()->andReturn(new PersonalAccessTokenResult('test-token', new Token()));
-        });
-        $this->reset(['otp' => $user->fresh()->password_otp])->assertJsonPath('success', true);
-        $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
-    }
-
-    public function test_unverified_account_cannot_request_recovery_delivery(): void
-    {
-        $user = $this->user(['is_verified' => false]);
-        $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', false);
-        $this->assertSame('1234', $user->fresh()->password_otp);
-        Http::assertNothingSent();
     }
 }
