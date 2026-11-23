@@ -109,6 +109,7 @@ class RegisterRequest extends FormRequest
             'code' => 422,
             'success' => false,
             'message' => $validator->errors()->first(),
+            'errors' => $validator->errors()->toArray(),
         ], 422));
     }
 }

@@ -15,6 +15,161 @@ use Tests\TestCase;
 
 class OptionalRegistrationEmailTest extends TestCase
 {
+    public function test_static_otp_workflow_activation_isolation_and_reuse(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        \Illuminate\Support\Facades\Http::fake();
+        $unrelated = User::create(['phone' => '+966599999999', 'user_name' => 'unrelated',
+            'password' => bcrypt('secret123'), 'is_verified' => false]);
+        $before = $unrelated->fresh()->getRawOriginal();
+        $response = $this->post('/api/user/register', $this->payload(['user_type' => 'buyer']))
+            ->assertOk()->assertJsonPath('success', true)->assertJsonPath('code', 200);
+        $this->assertArrayNotHasKey('otp', $response->json('data'));
+        $pending = UserOtp::firstOrFail();
+        $this->assertSame('1111', $pending->otp);
+        $this->assertSame('+966512345678', $pending->phone);
+        $this->assertFalse($pending->is_verified);
+        $this->assertTrue($pending->expire_at->equalTo(now()->addMinutes(10)));
+        $this->assertSame(1, User::count());
+        // Fixed-code registration intentionally bypasses the delivery service.
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+        $this->postJson('/api/user/verify-account', ['phone' => '+966599999999', 'otp' => '1111'])
+            ->assertJsonPath('success', false);
+        $this->assertSame($before, $unrelated->fresh()->getRawOriginal());
+        $this->postJson('/api/user/verify-account', ['phone' => '0512345678', 'otp' => '1111'])
+            ->assertOk()->assertJsonPath('code', 200)->assertJsonPath('success', true);
+        $user = User::where('phone', $pending->phone)->firstOrFail();
+        $this->assertTrue((bool) $user->is_verified);
+        $this->assertTrue((bool) $user->is_active);
+        $this->assertNull($user->otp);
+        $this->assertNull($user->expire_at);
+        $consumed = UserOtp::withTrashed()->findOrFail($pending->id);
+        $this->assertTrue($consumed->is_verified);
+        $this->assertTrue($consumed->trashed());
+        $this->assertNull($consumed->otp);
+        $this->assertNull($consumed->expire_at);
+        $verifiedState = $user->getRawOriginal();
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])
+                ->assertJsonPath('success', false);
+        }
+        $this->assertSame($verifiedState, $user->fresh()->getRawOriginal());
+        $this->assertSame($before, $unrelated->fresh()->getRawOriginal());
+        $this->assertSame(2, User::count());
+        $this->travelBack();
+    }
+
+    /** @dataProvider invalidStaticCodes */
+    public function test_static_otp_invalid_inputs_leave_pending_account_unchanged(array $input): void
+    {
+        $this->post('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $pending = UserOtp::firstOrFail();
+        $before = $pending->getRawOriginal();
+        $response = $this->postJson('/api/user/verify-account', array_merge(['phone' => $pending->phone], $input))
+            ->assertOk()->assertJsonPath('success', false)->assertJsonPath('code', 200);
+        $this->assertArrayNotHasKey('exception', $response->json());
+        $this->assertSame($before, $pending->fresh()->getRawOriginal());
+        $this->assertSame(0, User::count());
+    }
+
+    public static function invalidStaticCodes(): array
+    {
+        return [[['otp' => '2222']], [['otp' => '0000']], [['otp' => '']], [[]],
+            [['otp' => 'abcd']], [['otp' => '11111']], [['otp' => ['1111']]],
+            [['otp' => '1111', 'phone' => '+966588888888']], [['otp' => '1111', 'phone' => '']]];
+    }
+
+    public function test_static_otp_expiry_and_repeated_expired_requests_do_not_activate(): void
+    {
+        $this->travelTo(now()->startOfSecond());
+        $this->post('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $pending = UserOtp::firstOrFail();
+        $before = $pending->getRawOriginal();
+        $this->travelTo($pending->expire_at);
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $this->postJson('/api/user/verify-account', ['phone' => $pending->phone, 'otp' => '1111'])
+                ->assertStatus(403)->assertJsonPath('code', 403)->assertJsonPath('success', false);
+        }
+        $this->assertSame($before, $pending->fresh()->getRawOriginal());
+        $this->assertSame(0, User::count());
+        $this->travelBack();
+    }
+
+    /** @dataProvider registrationWhatsappResponses */
+    public function test_static_otp_whatsapp_adapter_and_registration_delivery(array $body, int $status, bool $accepted, bool $timeout): void
+    {
+        config(['services.infobip.base_url' => 'https://whatsapp.example.test',
+            'services.infobip.api_key' => 'isolated-fake-key', 'services.infobip.whatsapp_from' => 'fake-sender',
+            'services.infobip.whatsapp_template' => 'fake-template', 'services.infobip.whatsapp_lang' => 'en']);
+        $service = new \App\Services\SmsService();
+        app()->instance(\App\Services\SmsService::class, $service);
+        $diagnostics = [];
+        $nullLogger = \Illuminate\Support\Facades\Log::channel('null');
+        \Illuminate\Support\Facades\Log::shouldReceive('channel')->andReturn($nullLogger);
+        \Illuminate\Support\Facades\Log::shouldReceive('error')->andReturnUsing(function ($event, $context = []) use (&$diagnostics) {
+            $diagnostics[] = [$event, $context];
+        });
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')->andReturnUsing(function ($event) use (&$diagnostics) {
+            $diagnostics[] = [$event];
+        });
+        $requests = [];
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory());
+        \Illuminate\Support\Facades\Http::fake(function ($request) use ($body, $status, $timeout, &$requests) {
+            $this->assertSame('https://whatsapp.example.test/whatsapp/1/message/template', $request->url());
+            $this->assertSame('POST', $request->method());
+            $this->assertTrue($request->hasHeader('Authorization', 'App isolated-fake-key'));
+            $this->assertSame('966512345678', $request['messages'][0]['to']);
+            $this->assertSame('fake-template', $request['messages'][0]['content']['templateName']);
+            $requests[] = $request->data();
+            if ($timeout) {
+                throw new \Illuminate\Http\Client\ConnectionException('simulated timeout');
+            }
+            return \Illuminate\Support\Facades\Http::response($body, $status);
+        });
+        // Exercise the real adapter using the actual fixed code staged by registration.
+        $this->post('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $pending = UserOtp::firstOrFail();
+        $this->assertSame('1111', $pending->otp);
+        $result = $service->sendRegistrationOtp($pending->phone, $pending->otp);
+        $this->assertSame($accepted, $result['success']);
+        $this->assertSame(['1111'], $requests[0]['messages'][0]['content']['templateData']['body']['placeholders']);
+
+        // The actual controller delivery branch uses random codes. Only the in-memory app environment changes.
+        app()->instance('env', 'production');
+        $response = $this->post('/api/user/register', $this->payload());
+        $this->assertSame($accepted ? 200 : 500, $response->status());
+        $response->assertStatus($accepted ? 200 : 500)
+            ->assertJsonPath('code', $accepted ? 200 : 500)->assertJsonPath('success', $accepted);
+        $this->assertCount(2, $requests);
+        $sentCode = $requests[1]['messages'][0]['content']['templateData']['body']['placeholders'][0];
+        $this->assertNotSame('1111', $sentCode);
+        $this->assertArrayNotHasKey('exception', $response->json());
+        if ($accepted) {
+            $this->assertSame($sentCode, $pending->fresh()->otp);
+        } else {
+            $this->assertNull($pending->fresh()->otp);
+            $this->assertNull($pending->fresh()->expire_at);
+            app()->instance('env', 'testing');
+            $this->postJson('/api/user/verify-account', ['phone' => $pending->phone, 'otp' => '1111'])
+                ->assertJsonPath('success', false);
+        }
+        $this->assertSame(0, User::count());
+        $this->assertSame(1, UserOtp::count());
+        $this->assertSame($accepted ? [] : [['REGISTER_OTP_DELIVERY_FAILED']], $diagnostics);
+    }
+
+    public static function registrationWhatsappResponses(): array
+    {
+        return [
+            'accepted' => [['messages' => [['messageId' => 'fake-id', 'status' => ['groupName' => 'PENDING']]]], 200, true, false],
+            'http400' => [[], 400, false, false],
+            'http500' => [[], 500, false, false],
+            'timeout' => [[], 200, false, true],
+            'invalid_response' => [['unexpected' => true], 200, false, false],
+            'provider_rejected' => [['messages' => [['messageId' => 'fake-id', 'status' => ['groupName' => 'REJECTED']]]], 200, false, false],
+        ];
+    }
+
     public function test_production_registration_ignores_client_and_legacy_test_flags(): void
     {
         app()->instance('env', 'production');
@@ -84,10 +239,83 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->mock(\App\Services\SmsService::class, function ($mock) {
             $mock->shouldReceive('sendRegistrationOtp')->once()->andReturn(['success' => false]);
         });
-        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', false);
+        $this->postJson('/api/user/register', $this->payload())->assertStatus(500)
+            ->assertJsonPath('code', 500)->assertJsonPath('success', false);
         $record = UserOtp::firstOrFail();
         $this->assertNull($record->otp);
         $this->assertNull($record->expire_at);
+        $this->assertSame(0, User::count());
+    }
+
+    public function test_registration_insert_failure_is_safe_and_rolls_back(): void
+    {
+        Schema::drop('user_otps');
+        \Illuminate\Support\Facades\Log::shouldReceive('error')->once()->with('REGISTER_FAILED',
+            \Mockery::on(fn ($context) => $context['exception_class'] === \Illuminate\Database\QueryException::class
+                && array_keys($context) === ['exception_class', 'file', 'line', 'sqlstate']));
+        $response = $this->postJson('/api/user/register', $this->payload())->assertStatus(500)
+            ->assertJsonPath('code', 500)->assertJsonPath('success', false);
+        $this->assertArrayNotHasKey('exception', $response->json());
+        $this->assertArrayNotHasKey('trace', $response->json());
+        $this->assertSame(0, User::count());
+        $this->assertSame(0, DB::transactionLevel());
+    }
+
+    public function test_registration_form_fields_stage_a_hashed_password(): void
+    {
+        $this->post('/api/user/register', $this->payload(['user_type' => 'buyer']))
+            ->assertOk()->assertJsonPath('success', true)->assertJsonPath('code', 200);
+        $pending = UserOtp::firstOrFail();
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('secret123', $pending->password));
+        $this->assertSame(0, User::count());
+    }
+
+    /** @dataProvider invalidRegistrations */
+    public function test_registration_validation_is_structured(array $overrides, string $field): void
+    {
+        $this->post('/api/user/register', $this->payload($overrides))->assertStatus(422)
+            ->assertJsonPath('code', 422)->assertJsonPath('success', false)
+            ->assertJsonStructure(['errors' => [$field]]);
+        $this->assertSame(0, UserOtp::count());
+        $this->assertSame(0, User::count());
+    }
+
+    public static function invalidRegistrations(): array
+    {
+        return [
+            [['user_type' => 'admin'], 'user_type'],
+            [['user_type' => 'partner'], 'user_type'],
+            [['user_type' => 'unknown'], 'user_type'],
+            [['name' => ''], 'name'],
+            [['phone' => 'invalid'], 'phone'],
+            [['password_confirmation' => 'different'], 'password'],
+        ];
+    }
+
+    public function test_registration_duplicate_username_is_rejected(): void
+    {
+        User::create(['user_name' => 'testuser', 'phone' => '+966599999999']);
+        $this->postJson('/api/user/register', $this->payload())->assertStatus(422)
+            ->assertJsonPath('code', 422)->assertJsonStructure(['errors' => ['user_name']]);
+        $this->assertSame(0, UserOtp::count());
+    }
+
+    public function test_registration_delivery_exception_is_sanitized_and_invalidates_code(): void
+    {
+        app()->instance('env', 'production');
+        $this->mock(\App\Services\SmsService::class, function ($mock) {
+            $mock->shouldReceive('sendRegistrationOtp')->once()
+                ->andThrow(new \RuntimeException('sensitive provider details'));
+        });
+        \Illuminate\Support\Facades\Log::shouldReceive('error')->once()
+            ->with('REGISTER_OTP_DELIVERY_EXCEPTION', \Mockery::on(fn ($context) =>
+                $context['exception_class'] === \RuntimeException::class
+                && array_keys($context) === ['exception_class', 'file', 'line', 'sqlstate']));
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')->once()->with('REGISTER_OTP_DELIVERY_FAILED');
+        $response = $this->postJson('/api/user/register', $this->payload())->assertStatus(500)
+            ->assertJsonPath('code', 500)->assertJsonPath('success', false);
+        $this->assertStringNotContainsString('sensitive provider details', $response->getContent());
+        $this->assertNull(UserOtp::firstOrFail()->otp);
         $this->assertSame(0, User::count());
     }
 
@@ -95,7 +323,13 @@ class OptionalRegistrationEmailTest extends TestCase
     {
         parent::setUp();
         config(['database.default' => 'sqlite', 'database.connections.sqlite.database' => ':memory:',
-            'services.otp.qa_phones' => [], 'app.dashboard_locale' => 'en', 'cache.default' => 'array']);
+            'services.otp.qa_phones' => [], 'app.dashboard_locale' => 'en', 'cache.default' => 'array',
+            'logging.default' => 'null']);
+        // Intercept every destination; tests exercising the adapter install their own complete fake.
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory());
+        \Illuminate\Support\Facades\Http::fake(function () {
+            throw new \RuntimeException('Unexpected HTTP request in isolated registration tests');
+        });
         DB::purge('sqlite');
         $this->withoutMiddleware('APISettings');
         app('laravellocalization')->setSupportedLocales(['en' => ['name' => 'English', 'native' => 'English']]);
@@ -308,10 +542,16 @@ class OptionalRegistrationEmailTest extends TestCase
             'services.infobip.whatsapp_from' => 'test', 'services.infobip.whatsapp_template' => 'test',
             'services.sms.endpoint' => 'https://sms.example.test', 'services.sms.username' => 'test',
             'services.sms.password' => 'test']);
-        \Illuminate\Support\Facades\Http::fake([
-            'otp.example.test/*' => \Illuminate\Support\Facades\Http::response(['messages' => [['messageId' => 'test', 'status' => ['groupName' => 'PENDING']]]]),
-            'sms.example.test' => \Illuminate\Support\Facades\Http::response([]),
-        ]);
+        \Illuminate\Support\Facades\Http::swap(new \Illuminate\Http\Client\Factory());
+        \Illuminate\Support\Facades\Http::fake(function ($request) {
+            if ($request->url() === 'https://otp.example.test/whatsapp/1/message/template') {
+                return \Illuminate\Support\Facades\Http::response(['messages' => [['messageId' => 'test', 'status' => ['groupName' => 'PENDING']]]]);
+            }
+            if ($request->url() === 'https://sms.example.test') {
+                return \Illuminate\Support\Facades\Http::response([]);
+            }
+            throw new \RuntimeException('Unexpected HTTP request in destination test');
+        });
         // Resolve the real service, rather than the no-send registration mock.
         $service = new \App\Services\SmsService();
         $this->assertTrue($service->sendWhatsappOtp($phone, '0123')['success']);

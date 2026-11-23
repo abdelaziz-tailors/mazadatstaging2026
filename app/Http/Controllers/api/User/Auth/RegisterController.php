@@ -68,12 +68,13 @@ class RegisterController extends Controller
                     try {
                         $result = $smsService->sendRegistrationOtp($request->phone, $numbers);
                     } catch (\Throwable $exception) {
+                        $this->logRegistrationFailure('REGISTER_OTP_DELIVERY_EXCEPTION', $exception);
                         $result = ['success' => false];
                     }
                     if (! ($result['success'] ?? false)) {
                         $otpRecord->update(['otp' => null, 'expire_at' => null]);
                         \Log::warning('REGISTER_OTP_DELIVERY_FAILED');
-                        return $this->failed_response(TranslationHelper::translate('Something went wrong'));
+                        return $this->failed_response(TranslationHelper::translate('Something went wrong'), 500);
                     }
                 }
                 return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
@@ -86,8 +87,21 @@ class RegisterController extends Controller
             if ($th instanceof \Illuminate\Database\QueryException && \App\Exceptions\Handler::identityConflict($th)) {
                 return app(\App\Exceptions\Handler::class)->render($request, $th);
             }
-            return $this->failed_response(TranslationHelper::translate('Something went wrong'),);
+            $this->logRegistrationFailure('REGISTER_FAILED', $th);
+            return $this->failed_response(TranslationHelper::translate('Something went wrong'), 500);
         }
+    }
+
+    private function logRegistrationFailure(string $event, \Throwable $exception): void
+    {
+        // Exception messages, SQL bindings and traces may contain passwords or OTPs.
+        \Log::error($event, [
+            'exception_class' => get_class($exception),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine(),
+            'sqlstate' => $exception instanceof \Illuminate\Database\QueryException
+                ? ($exception->errorInfo[0] ?? null) : null,
+        ]);
     }
     public function UserCheckData(RegisterRequest $request)
     {
