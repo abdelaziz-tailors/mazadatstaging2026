@@ -48,19 +48,18 @@ class RegisterRequest extends FormRequest
 
     public function rules()
     {
-        $existing = $this->roleAccessUser();
-        $ignore = $existing ? $existing->id : null;
+        $ignore = null;
         return [
             'name' => 'required|min:3',
 //            'name' => 'required|regex:/^[\pL\s]+$/u|min:3',
-            'phone' => MobileNumber::rules($ignore),
+            'phone' => MobileNumber::rules(null, 'users', is_string($this->input('user_type')) ? ($this->input('user_type') ?: 'buyer') : 'buyer'),
             'user_name' => 'required|string|unique:users,user_name,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
 //            'user_name' => 'required|min:3',
 
             'national_id' => 'nullable|string|max:32|unique:users,national_id,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
             'email' => MobileNumber::emailRules($ignore),
             // 'account_type' => 'required',
-            'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
+            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',
             'password' => 'required|min:6|confirmed',
             'city' => 'nullable|exists:cities,id',

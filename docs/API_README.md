@@ -60,11 +60,20 @@ on a request (or duplicate the folder) to send `en` instead.
 
 ## 6) Basic auth workflow
 
-1. `POST /user/register` (or `/user/login` if the account already exists).
-2. Copy the returned access token into `{{access_token}}`.
-3. Call any authenticated endpoint — the `Authorization` header is already
+1. `POST /user/register` returns `data.phone`, `data.expire_at` and a private
+   `data.challenge_id`. Retain the challenge only for the active registration.
+2. Submit `phone`, `otp` and that exact `challenge_id` to `POST /user/verify-account`.
+   In Postman, set `registration_challenge_id` to the latest registration response.
+   Repeating registration refreshes the pending operation and rotates the challenge;
+   replace the previous value. Missing, expired or consumed references fail closed.
+   Pre-release pending registrations must repeat registration to obtain a reference.
+   Older mobile versions without this field cannot complete verification and need
+   a coordinated release. No phone/code-only fallback is provided.
+3. Copy the verification access token (or `/user/login` token for existing accounts)
+   into `{{access_token}}`. Clear the registration challenge after completion or cancellation.
+4. Call any authenticated endpoint — the `Authorization` header is already
    configured on those requests.
-4. `POST /user/logout` to invalidate the token when done.
+5. `POST /user/logout` to invalidate the token when done.
 
 ## 7) Example: auction item transfer flow
 

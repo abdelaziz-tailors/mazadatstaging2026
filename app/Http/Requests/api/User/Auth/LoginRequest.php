@@ -26,11 +26,7 @@ class LoginRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        $phone = $this->input('phone');
-        if (is_string($phone)) {
-            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
-            $this->merge(['phone' => $user ? $user->phone : $phone]);
-        }
+        // Account resolution belongs to the role-scoped login query.
     }
 
     public function rules()
@@ -39,7 +35,7 @@ class LoginRequest extends FormRequest
             'phone' => 'nullable|string|required_without:email',
             'email' => 'nullable|email|required_without:phone',
             'password' => 'required|string',
-            'user_type' => 'required|in:buyer,vendor,buyer_vendor,seller',
+            'user_type' => 'required|string|in:buyer,vendor,buyer_vendor,seller',
         ];
     }
 

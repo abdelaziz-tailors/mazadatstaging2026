@@ -19,11 +19,11 @@ class RegisterController extends Controller
         try {
             return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
                 $otpService = app(\App\Services\OtpService::class);
-                $existing = $request->roleAccessUser();
-                $otpType = $existing ? 'role_access' : 'register';
+                $otpType = 'register';
                 $challenge = $otpService->registrationChallenge();
                 $numbers = $challenge['otp'];
                 $expire_at = $challenge['expire_at'];
+                $challengeId = bin2hex(random_bytes(32));
 
                 $commercialRegisterName = null;
                 if (($request->user_type ?? 'buyer') === 'vendor' && $request->hasFile('commercial_register')) {
@@ -43,13 +43,14 @@ class RegisterController extends Controller
                     'user_type' => $request->user_type ?? 'buyer',
                     'city_id' => $request->city,
                     'commercial_register' => $commercialRegisterName,
-                    'password' => $existing ? hash('sha256', $existing->id.':'.$existing->password) : bcrypt($request->password),
+                    'password' => bcrypt($request->password),
                     'otp' => $numbers,
                     'expire_at' => $expire_at,
+                    'registration_challenge_hash' => hash('sha256', $challengeId),
                 ];
 
                 $otpRecords = \App\Helpers\MobileNumber::matching(UserOtp::withTrashed(), $request->phone)
-                    ->where('type', $otpType)->lockForUpdate()->limit(2)->get();
+                    ->where('type', $otpType)->where('user_type', $request->input('user_type') ?: 'buyer')->lockForUpdate()->limit(2)->get();
                 if ($otpRecords->count() > 1) {
                     throw new \RuntimeException('Ambiguous pending registration');
                 }
@@ -65,6 +66,7 @@ class RegisterController extends Controller
 
                 return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
                     'phone' => $request->phone,
+                    'challenge_id' => $challengeId,
                     'expire_at' => $expire_at,
                 ]);
 

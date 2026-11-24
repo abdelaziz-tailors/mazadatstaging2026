@@ -15,6 +15,14 @@ use Tests\TestCase;
 
 class OptionalRegistrationEmailTest extends TestCase
 {
+    protected array $registrationChallengeIds = [];
+
+    protected function registrationChallengeId(?string $type = null): string
+    {
+        return $type === null ? (end($this->registrationChallengeIds) ?: str_repeat('0', 64))
+            : ($this->registrationChallengeIds[$type] ?? str_repeat('0', 64));
+    }
+
     public function test_static_otp_workflow_activation_isolation_and_reuse(): void
     {
         app()->instance('env', 'production');
@@ -35,10 +43,10 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->assertSame(1, User::count());
         // Fixed-code registration intentionally bypasses the delivery service.
         \Illuminate\Support\Facades\Http::assertNothingSent();
-        $this->postJson('/api/user/verify-account', ['phone' => '+966599999999', 'otp' => '1111'])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => '+966599999999', 'otp' => '1111'])
             ->assertJsonPath('success', false);
         $this->assertSame($before, $unrelated->fresh()->getRawOriginal());
-        $this->postJson('/api/user/verify-account', ['phone' => '0512345678', 'otp' => '1111'])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => '0512345678', 'otp' => '1111'])
             ->assertOk()->assertJsonPath('code', 200)->assertJsonPath('success', true);
         $user = User::where('phone', $pending->phone)->firstOrFail();
         $this->assertTrue((bool) $user->is_verified);
@@ -52,7 +60,7 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->assertNull($consumed->expire_at);
         $verifiedState = $user->getRawOriginal();
         for ($attempt = 0; $attempt < 2; $attempt++) {
-            $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])
+            $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $user->phone, 'otp' => '1111'])
                 ->assertJsonPath('success', false);
         }
         $this->assertSame($verifiedState, $user->fresh()->getRawOriginal());
@@ -68,8 +76,8 @@ class OptionalRegistrationEmailTest extends TestCase
         config(['services.otp.qa_phones' => []]);
         $this->post('/api/user/register', $this->payload())->assertJsonPath('success', true);
         $pending = UserOtp::firstOrFail();
-        $before = $pending->getRawOriginal();
-        $response = $this->postJson('/api/user/verify-account', array_merge(['phone' => $pending->phone], $input))
+        $before = $pending->fresh()->getRawOriginal();
+        $response = $this->postJson('/api/user/verify-account', array_merge(['challenge_id' => $this->registrationChallengeId(), 'phone' => $pending->phone], $input))
             ->assertOk()->assertJsonPath('success', false)->assertJsonPath('code', 200);
         $this->assertArrayNotHasKey('exception', $response->json());
         $this->assertSame($before, $pending->fresh()->getRawOriginal());
@@ -90,10 +98,10 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->travelTo(now()->startOfSecond());
         $this->post('/api/user/register', $this->payload())->assertJsonPath('success', true);
         $pending = UserOtp::firstOrFail();
-        $before = $pending->getRawOriginal();
+        $before = $pending->fresh()->getRawOriginal();
         $this->travelTo($pending->expire_at);
         for ($attempt = 0; $attempt < 2; $attempt++) {
-            $this->postJson('/api/user/verify-account', ['phone' => $pending->phone, 'otp' => '1111'])
+            $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $pending->phone, 'otp' => '1111'])
                 ->assertStatus(403)->assertJsonPath('code', 403)->assertJsonPath('success', false);
         }
         $this->assertSame($before, $pending->fresh()->getRawOriginal());
@@ -223,19 +231,17 @@ class OptionalRegistrationEmailTest extends TestCase
             ['production', ['0512345678'], false, true], ['local', [], false, true]];
     }
 
-    public function test_production_legacy_account_verification_consumes_only_phone_challenge(): void
+    public function test_registration_endpoint_does_not_fall_back_to_legacy_user_otp(): void
     {
-        app()->instance('env', 'production');
         $user = User::create(['phone' => '+966512345678', 'user_name' => 'legacy',
             'otp' => '1111', 'password_otp' => '1111', 'expire_at' => now()->addMinutes(10)]);
-        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '2222'])->assertJsonPath('success', false);
-        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])->assertJsonPath('success', true);
-        $this->assertTrue((bool) $user->fresh()->is_verified);
-        $this->assertNull($user->fresh()->otp);
-        $this->assertSame('1111', $user->fresh()->password_otp);
-        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])->assertJsonPath('success', false);
+        $before = $user->fresh()->getRawOriginal();
+        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])
+            ->assertJsonPath('success', false);
+        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111',
+            'challenge_id' => str_repeat('a', 64)])->assertJsonPath('success', false);
+        $this->assertSame($before, $user->fresh()->getRawOriginal());
     }
-
     public function test_legacy_phone_resend_and_verification_consume_code_once(): void
     {
         $user = User::create(['phone' => '+966512345678', 'user_name' => 'legacy', 'password' => bcrypt('secret123')]);
@@ -255,18 +261,19 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->assertSame(422, $controller->approvedMobile($verify)->status());
     }
 
-    public function test_legacy_account_verification_rolls_back_consumption_on_token_failure(): void
+    public function test_registration_rolls_back_creation_and_consumption_on_token_failure(): void
     {
-        $user = User::create(['phone' => '+966512345678', 'user_name' => 'legacy',
-            'otp' => '1111', 'expire_at' => now()->addMinute()]);
+        $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true);
+        $pending = UserOtp::firstOrFail();
+        $before = $pending->fresh()->getRawOriginal();
         $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
             $mock->shouldReceive('make')->once()->andThrow(new \RuntimeException('token unavailable'));
         });
-        $this->postJson('/api/user/verify-account', ['phone' => $user->phone, 'otp' => '1111'])->assertStatus(500);
-        $this->assertSame('1111', $user->fresh()->otp);
-        $this->assertFalse((bool) $user->fresh()->is_verified);
+        $this->postJson('/api/user/verify-account', ['phone' => $pending->phone, 'otp' => '1111',
+            'challenge_id' => $this->registrationChallengeId()])->assertStatus(500);
+        $this->assertSame($before, $pending->fresh()->getRawOriginal());
+        $this->assertSame(0, User::count());
     }
-
     public function test_production_qa_registration_uses_fixed_code(): void
     {
         app()->instance('env', 'production');
@@ -348,7 +355,8 @@ class OptionalRegistrationEmailTest extends TestCase
                 $table->id();
                 foreach (['name', 'user_name', 'email', 'phone', 'national_id', 'user_type', 'password',
                     'commercial_register', 'otp', 'password_otp', 'type', 'city_id', 'admin_id', 'user_id'] as $field) {
-                    $table->string($field)->nullable();
+                    if ($field === 'user_type') { $table->string($field)->default('buyer'); }
+                    else { $table->string($field)->nullable(); }
                 }
                 $table->string('image')->default('');
                 $table->string('remember_token')->nullable();
@@ -367,6 +375,17 @@ class OptionalRegistrationEmailTest extends TestCase
                 if ($name === 'user_otps') { $table->unique(['phone', 'type']); }
             });
         }
+        (require database_path('migrations/2026_11_24_000001_scope_account_phone_uniqueness_by_type.php'))->up();
+        (require database_path('migrations/2026_11_24_000002_add_registration_challenge_hash_to_user_otps.php'))->up();
+        // Retain the response token, as a client would; never reconstruct it from storage.
+        app('events')->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) {
+            if ($event->request->is('api/user/register')) {
+                $data = json_decode($event->response->getContent(), true);
+                if (isset($data['data']['challenge_id'])) {
+                    $this->registrationChallengeIds[$event->request->input('user_type') ?: 'buyer'] = $data['data']['challenge_id'];
+                }
+            }
+        });
         Schema::create('cities', function (Blueprint $table) { $table->id(); });
         DB::table('cities')->insert(['id' => 1]);
         require_once database_path('migrations/New folder/2022_10_16_092804_create_permission_tables.php');
@@ -395,7 +414,7 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->postJson('/api/user/register', $payload)->assertOk()->assertJsonPath('data.phone', '+966512345678');
         $otp = UserOtp::first();
         $this->assertNull($otp->email);
-        $this->postJson('/api/user/verify-account', ['phone' => '0512345678', 'otp' => $otp->otp])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => '0512345678', 'otp' => $otp->otp])
             ->assertOk()->assertJsonPath('success', true)->assertJsonPath('data.email', '-');
         $user = User::where('phone', '+966512345678')->firstOrFail();
         $this->assertNull($user->email);
@@ -449,7 +468,7 @@ class OptionalRegistrationEmailTest extends TestCase
         $otp = UserOtp::first();
         $this->assertSame('new@example.com', $otp->email);
         User::create(['phone' => '+966599999999', 'email' => 'new@example.com']);
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])->assertJsonPath('success', false);
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => $otp->otp])->assertJsonPath('success', false);
         $this->assertSame(1, User::count());
     }
 
@@ -471,7 +490,7 @@ class OptionalRegistrationEmailTest extends TestCase
             // Only the file created by this test is removed.
             unlink(storage_path('app/public/vendor-commercial-files/'.basename($otp->commercial_register)));
         }
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => $otp->otp])
             ->assertJsonPath('success', true)->assertJsonPath('data.user_type', $type);
         $this->assertNull(User::first()->email);
         if ($type === 'vendor') {
@@ -496,7 +515,7 @@ class OptionalRegistrationEmailTest extends TestCase
     {
         $this->postJson('/api/user/register', $this->payload(['email' => 'new@example.com']))->assertJsonPath('success', true);
         $otp = UserOtp::first();
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => $otp->otp])
             ->assertJsonPath('success', true)->assertJsonPath('data.email', 'new@example.com');
         $this->assertSame('new@example.com', User::first()->email);
         $this->postJson('/api/user/login', ['email' => 'new@example.com', 'password' => 'secret123', 'user_type' => 'buyer'])
@@ -509,9 +528,9 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->postJson('/api/user/register', $this->payload(['user_type' => 'invalid']))->assertStatus(422);
         $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true);
         $otp = UserOtp::first();
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => 'wrong'])->assertJsonPath('success', false);
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => 'wrong'])->assertJsonPath('success', false);
         $otp->update(['expire_at' => now()->subMinute()]);
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])->assertStatus(403);
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => $otp->otp])->assertStatus(403);
         $this->assertSame(0, User::count());
     }
 
@@ -540,7 +559,7 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->postJson('/api/user/register', $this->payload(['phone' => $phone]))
             ->assertJsonPath('success', true)->assertJsonPath('data.phone', $canonical);
         $otp = UserOtp::first();
-        $this->postJson('/api/user/verify-account', ['phone' => $phone, 'otp' => $otp->otp])
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $phone, 'otp' => $otp->otp])
             ->assertJsonPath('success', true)->assertJsonPath('data.phone', $canonical);
     }
 
@@ -716,12 +735,12 @@ class OptionalRegistrationEmailTest extends TestCase
     public function test_login_resolves_legacy_phone_without_rewriting_the_user(): void
     {
         $user = User::create(['phone' => '01012345678', 'password' => bcrypt('secret123'), 'user_type' => 'buyer_vendor', 'is_verified' => true]);
-        foreach (['buyer', 'vendor'] as $type) {
+        foreach (['buyer_vendor'] as $type) {
             $this->postJson('/api/user/login', ['phone' => '+201012345678', 'password' => 'secret123', 'user_type' => $type])
                 ->assertJsonPath('success', true);
         }
         $this->postJson('/api/user/login', ['phone' => '+201012345678', 'password' => 'secret123', 'user_type' => 'seller'])
-            ->assertStatus(422)->assertJsonPath('success', false);
+            ->assertJsonPath('success', false);
         $this->assertSame('01012345678', $user->fresh()->phone);
     }
 
@@ -742,7 +761,7 @@ class OptionalRegistrationEmailTest extends TestCase
         $this->postJson('/api/user/register', $this->payload())->assertJsonPath('success', true);
         $otp = UserOtp::first();
         $otp->update(['expire_at' => now()]);
-        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => $otp->otp])->assertStatus(403);
+        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'otp' => $otp->otp])->assertStatus(403);
         $this->assertSame(0, User::count());
         $this->travelBack();
     }

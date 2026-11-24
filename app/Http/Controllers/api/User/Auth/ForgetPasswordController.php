@@ -18,7 +18,7 @@ class ForgetPasswordController extends Controller
     public function __invoke(ForgetPasswordRequest $request, SmsService $smsService)
     {
         return DB::transaction(function () use ($request, $smsService) {
-            $user = $this->passwordResetUser($request->phone);
+            $user = $this->passwordResetUser($request->phone, $request->input('user_type'));
 
             if (! $user) {
                 return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));

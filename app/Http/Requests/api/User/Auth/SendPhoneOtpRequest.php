@@ -27,6 +27,7 @@ class SendPhoneOtpRequest extends FormRequest
     public function rules()
     {
         return [
+            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'phone' => 'required',
             'otp' => 'required',
         ];

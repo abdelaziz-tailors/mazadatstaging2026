@@ -26,21 +26,16 @@ class VerifyAccountRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        $phone = $this->input('phone');
-        if (is_string($phone)) {
-            $pending = \App\Helpers\MobileNumber::matching(\App\Models\UserOtp::query(), $phone)
-                ->whereIn('type', ['register', 'role_access'])->where('is_verified', false)->limit(2)->get();
-            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
-            $this->merge(['phone' => $pending->count() === 1 ? $pending->first()->phone
-                : ($user ? $user->phone : $phone)]);
-        }
+        // Resolve only the supplied challenge hash and canonical phone in the controller.
     }
 
     public function rules()
     {
         return [
-            'phone' => 'required',
+            'phone' => 'required|string',
+            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'otp' => 'required',
+            'challenge_id' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/D'],
         ];
     }
 

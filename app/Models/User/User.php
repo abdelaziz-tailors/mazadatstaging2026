@@ -61,6 +61,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'registration_phone_key',
+        'multi_account_phone_key',
         'registration_email_key',
     ];
 

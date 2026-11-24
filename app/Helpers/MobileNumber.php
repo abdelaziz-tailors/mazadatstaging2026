@@ -42,7 +42,8 @@ class MobileNumber
             $value = "REPLACE($value, '".$character."', '')";
         }
         foreach ([9, 10, 11, 12, 13] as $code) {
-            $value = "REPLACE($value, CHAR($code), '')";
+            $character = $driver === 'sqlite' ? "CHAR($code)" : "CHAR($code USING utf8mb4) COLLATE utf8mb4_bin";
+            $value = "REPLACE($value, $character, '')";
         }
         $concat = function ($prefix, $suffix) use ($driver) {
             return $driver === 'sqlite' ? "('$prefix' || $suffix)" : "CONCAT('$prefix', $suffix)";
@@ -61,21 +62,20 @@ class MobileNumber
         return $query->whereRaw(self::sqlKey('phone', $query->getConnection()->getDriverName()).' = ?', [self::normalize($phone)]);
     }
 
-    public static function find(string $model, string $phone, bool $lock = false)
+    public static function find(string $model, string $phone, bool $lock = false, ?string $userType = null)
     {
         $query = $model::query();
         if ($lock) {
             $query->lockForUpdate();
         }
-        $exact = (clone $query)->where('phone', $phone)->first();
-        if ($exact) {
-            return $exact;
+        if ($userType !== null) {
+            $query->where('user_type', $userType);
         }
         $matches = self::matching($query, $phone)->limit(2)->get();
         return $matches->count() === 1 ? $matches->first() : null;
     }
 
-    public static function rules($ignore = null, string $table = 'users'): array
+    public static function rules($ignore = null, string $table = 'users', ?string $userType = null): array
     {
         return ['bail', 'required', 'string',
             function ($attribute, $value, $fail) {
@@ -83,8 +83,9 @@ class MobileNumber
                     $fail(TranslationHelper::translate('please_enter_valid_phone_with_country_code'));
                 }
             },
-            function ($attribute, $value, $fail) use ($ignore, $table) {
+            function ($attribute, $value, $fail) use ($ignore, $table, $userType) {
                 $query = self::matching(DB::table($table), $value);
+                if ($userType !== null) { $query->where('user_type', $userType); }
                 if ($ignore !== null) {
                     $query->where('id', '<>', $ignore);
                 }

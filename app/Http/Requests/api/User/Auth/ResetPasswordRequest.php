@@ -27,6 +27,7 @@ class ResetPasswordRequest extends FormRequest
     public function rules()
     {
         return [
+            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'phone' => 'required|string|max:32',
             'otp' => 'required|string|regex:/^[0-9]{4}$/D',
             'password' => 'required|string|min:6|confirmed',

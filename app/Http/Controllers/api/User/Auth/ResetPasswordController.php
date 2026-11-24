@@ -20,7 +20,7 @@ class ResetPasswordController extends Controller
     {
         return DB::transaction(function () use ($request) {
             $otpService = app(\App\Services\OtpService::class);
-            $user = $this->passwordResetUser($request->phone);
+            $user = $this->passwordResetUser($request->phone, $request->input('user_type'));
 
             if (! $user || ! $user->is_verified || ! $user->password_otp
                 || ! $otpService->matches($user->phone, $user->password_otp, $request->otp)) {

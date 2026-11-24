@@ -7,6 +7,7 @@
             <file>tests/Unit/Services/OtpServiceTest.php</file>
             <file>tests/Feature/Api/AuthenticationErrorResponseTest.php</file>
             <file>tests/Feature/Api/User/Auth/BuyerSellerAccessTest.php</file>
+            <file>tests/Feature/Api/User/Auth/RegistrationReplayContractTest.php</file>
         </testsuite>
     </testsuites>
     <php>

@@ -19,6 +19,10 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
         $this->hideSensitiveRequestDetails();
 
         Telescope::filter(function (IncomingEntry $entry) {
+            // Request entries include response bodies, including the raw challenge token.
+            if ($entry->type === 'request' && preg_match('#^/api/user/(register|verify-account)(?:\\?|$)#', $entry->content['uri'] ?? '')) {
+                return false;
+            }
             if ($this->app->environment('local')) {
                 return true;
             }
@@ -36,6 +40,7 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
      */
     protected function hideSensitiveRequestDetails(): void
     {
+        Telescope::hideRequestParameters(['challenge_id', 'otp', 'password', 'password_confirmation']);
         if ($this->app->environment('local')) {
             return;
         }

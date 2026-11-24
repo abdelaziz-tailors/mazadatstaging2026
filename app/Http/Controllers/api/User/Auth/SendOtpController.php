@@ -21,7 +21,7 @@ class SendOtpController extends Controller
     public function __invoke(SendOtpRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
+            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true, $request->input('user_type')) : null;
             if (! $user || $user->is_verified) {
                 return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
             }
@@ -47,7 +47,7 @@ class SendOtpController extends Controller
     public function approvedMobile(SendPhoneOtpRequest $request)
     {
         return DB::transaction(function () use ($request) {
-            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
+            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true, $request->input('user_type')) : null;
             $policy = app(OtpService::class);
             if (! $user || $user->is_verified || ! $policy->matches($user->phone, $user->otp, $request->otp)) {
                 return response()->json(['success' => false, 'code' => 422,

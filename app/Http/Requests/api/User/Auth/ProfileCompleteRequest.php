@@ -35,7 +35,7 @@ class ProfileCompleteRequest extends FormRequest
         return [
             'user_name' => 'required|string|regex:/^\S*$/u|max:20|unique:users,user_name,'.auth('api')->user()->id.',id,deleted_at,NULL',
             'email' => MobileNumber::emailRules(auth('api')->id()),
-            'phone' => MobileNumber::rules(auth('api')->id()),
+            'phone' => MobileNumber::rules(auth('api')->id(), 'users', auth('api')->user()->user_type),
             'birth_date' => 'required|date_format:Y-m-d',
             'birth_date.required' => TranslationHelper::translate('Please Enter Date Of Birth'),
             'birth_date.date_format' => TranslationHelper::translate('please Enter Valid Date'),

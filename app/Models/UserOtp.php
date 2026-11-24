@@ -13,6 +13,8 @@ class UserOtp extends Model
         'id',
     ];
 
+    protected $hidden = ['registration_challenge_hash'];
+
     protected $casts = [
         'expire_at' => 'datetime',
         'is_verified' => 'boolean',

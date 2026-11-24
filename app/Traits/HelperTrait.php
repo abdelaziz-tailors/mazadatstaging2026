@@ -13,8 +13,8 @@ trait HelperTrait
     public function generate_password_otp(string $phone = '') {
         return app(\App\Services\OtpService::class)->generate($phone);
     }
-    protected function passwordResetUser(string $phone): ?User
+    protected function passwordResetUser(string $phone, ?string $userType = null): ?User
     {
-        return \App\Helpers\MobileNumber::find(User::class, $phone, true);
+        return \App\Helpers\MobileNumber::find(User::class, $phone, true, $userType);
     }
 }

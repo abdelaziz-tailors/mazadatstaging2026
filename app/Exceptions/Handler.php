@@ -27,6 +27,8 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        'challenge_id',
+        'otp',
     ];
 
     /**
@@ -102,7 +104,7 @@ class Handler extends ExceptionHandler
             return null;
         }
         foreach (['phone', 'email'] as $field) {
-            if (preg_match('/registration_'.$field.'_(?:unique|key)|(?:users|admins)_'.$field.'_unique/', $exception->getMessage())) {
+            if (preg_match('/(?:multi_account_'.$field.'_key|registration_'.$field.'_(?:unique|key|role_unique)|(?:users|admins)_'.$field.'_unique)/', $exception->getMessage())) {
                 return $field;
             }
         }

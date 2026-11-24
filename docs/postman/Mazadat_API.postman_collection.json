@@ -503,7 +503,7 @@
                         "description": "Controller action: App\\Http\\Controllers\\api\\User\\Auth\\VerifyAccountController",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"phone\": \"966500000000\",\n    \"otp\": \"123456\"\n}",
+                            "raw": "{\n    \"phone\": \"966500000000\",\n    \"otp\": \"1111\",\n    \"challenge_id\": \"{{registration_challenge_id}}\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

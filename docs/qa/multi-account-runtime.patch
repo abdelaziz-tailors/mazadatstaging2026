@@ -1,0 +1,484 @@
+diff --git a/app/Exceptions/Handler.php b/app/Exceptions/Handler.php
+index 32685f9..04c4f26 100644
+--- a/app/Exceptions/Handler.php
++++ b/app/Exceptions/Handler.php
+@@ -102,7 +102,7 @@ public static function identityConflict(\Illuminate\Database\QueryException $exc
+             return null;
+         }
+         foreach (['phone', 'email'] as $field) {
+-            if (preg_match('/registration_'.$field.'_(?:unique|key)|(?:users|admins)_'.$field.'_unique/', $exception->getMessage())) {
++            if (preg_match('/(?:multi_account_'.$field.'_key|registration_'.$field.'_(?:unique|key|role_unique)|(?:users|admins)_'.$field.'_unique)/', $exception->getMessage())) {
+                 return $field;
+             }
+         }
+diff --git a/app/Helpers/MobileNumber.php b/app/Helpers/MobileNumber.php
+index 28c89de..789d505 100644
+--- a/app/Helpers/MobileNumber.php
++++ b/app/Helpers/MobileNumber.php
+@@ -42,7 +42,8 @@ public static function sqlKey(string $column = 'phone', string $driver = 'mysql'
+             $value = "REPLACE($value, '".$character."', '')";
+         }
+         foreach ([9, 10, 11, 12, 13] as $code) {
+-            $value = "REPLACE($value, CHAR($code), '')";
++            $character = $driver === 'sqlite' ? "CHAR($code)" : "CHAR($code USING utf8mb4) COLLATE utf8mb4_bin";
++            $value = "REPLACE($value, $character, '')";
+         }
+         $concat = function ($prefix, $suffix) use ($driver) {
+             return $driver === 'sqlite' ? "('$prefix' || $suffix)" : "CONCAT('$prefix', $suffix)";
+@@ -61,21 +62,20 @@ public static function matching($query, string $phone)
+         return $query->whereRaw(self::sqlKey('phone', $query->getConnection()->getDriverName()).' = ?', [self::normalize($phone)]);
+     }
+ 
+-    public static function find(string $model, string $phone, bool $lock = false)
++    public static function find(string $model, string $phone, bool $lock = false, ?string $userType = null)
+     {
+         $query = $model::query();
+         if ($lock) {
+             $query->lockForUpdate();
+         }
+-        $exact = (clone $query)->where('phone', $phone)->first();
+-        if ($exact) {
+-            return $exact;
++        if ($userType !== null) {
++            $query->where('user_type', $userType);
+         }
+         $matches = self::matching($query, $phone)->limit(2)->get();
+         return $matches->count() === 1 ? $matches->first() : null;
+     }
+ 
+-    public static function rules($ignore = null, string $table = 'users'): array
++    public static function rules($ignore = null, string $table = 'users', ?string $userType = null): array
+     {
+         return ['bail', 'required', 'string',
+             function ($attribute, $value, $fail) {
+@@ -83,8 +83,9 @@ function ($attribute, $value, $fail) {
+                     $fail(TranslationHelper::translate('please_enter_valid_phone_with_country_code'));
+                 }
+             },
+-            function ($attribute, $value, $fail) use ($ignore, $table) {
++            function ($attribute, $value, $fail) use ($ignore, $table, $userType) {
+                 $query = self::matching(DB::table($table), $value);
++                if ($userType !== null) { $query->where('user_type', $userType); }
+                 if ($ignore !== null) {
+                     $query->where('id', '<>', $ignore);
+                 }
+diff --git a/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php b/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
+index 8ee9842..f4461da 100644
+--- a/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
++++ b/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
+@@ -18,7 +18,7 @@ class ForgetPasswordController extends Controller
+     public function __invoke(ForgetPasswordRequest $request, SmsService $smsService)
+     {
+         return DB::transaction(function () use ($request, $smsService) {
+-            $user = $this->passwordResetUser($request->phone);
++            $user = $this->passwordResetUser($request->phone, $request->input('user_type'));
+ 
+             if (! $user) {
+                 return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
+diff --git a/app/Http/Controllers/api/User/Auth/LoginController.php b/app/Http/Controllers/api/User/Auth/LoginController.php
+index e286b49..9f805ca 100644
+--- a/app/Http/Controllers/api/User/Auth/LoginController.php
++++ b/app/Http/Controllers/api/User/Auth/LoginController.php
+@@ -22,12 +22,12 @@ public function __invoke(LoginRequest $request) {
+         $loginField = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+ 
+         $matches = $loginField === 'phone'
+-            ? \App\Helpers\MobileNumber::matching(User::query(), (string) $identifier)->limit(2)->get()
+-            : User::whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($identifier), 'UTF-8')])->limit(2)->get();
++            ? \App\Helpers\MobileNumber::matching(User::where('user_type', $request->user_type), (string) $identifier)->limit(2)->get()
++            : User::where('user_type', $request->user_type)->whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($identifier), 'UTF-8')])->limit(2)->get();
+ 
+         if ($matches->count() === 1 && Auth::attempt(['id' => $matches->first()->id, 'password' => $request->password])) {
+ 
+-                if (! Auth::user()->is_active || ! Auth::user()->is_verified || ! Auth::user()->hasAccessRole($request->user_type)) {
++                if (! Auth::user()->is_active || ! Auth::user()->is_verified || Auth::user()->user_type !== $request->user_type) {
+                     Auth::logout();
+                     return $this->failed_response(TranslationHelper::translate('account type not match'), 422);
+                 }
+diff --git a/app/Http/Controllers/api/User/Auth/RegisterController.php b/app/Http/Controllers/api/User/Auth/RegisterController.php
+index 9602a5d..3da2f94 100644
+--- a/app/Http/Controllers/api/User/Auth/RegisterController.php
++++ b/app/Http/Controllers/api/User/Auth/RegisterController.php
+@@ -19,8 +19,7 @@ public function __invoke(RegisterRequest $request)
+         try {
+             return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                 $otpService = app(\App\Services\OtpService::class);
+-                $existing = $request->roleAccessUser();
+-                $otpType = $existing ? 'role_access' : 'register';
++                $otpType = 'register';
+                 $challenge = $otpService->registrationChallenge();
+                 $numbers = $challenge['otp'];
+                 $expire_at = $challenge['expire_at'];
+@@ -43,13 +42,13 @@ public function __invoke(RegisterRequest $request)
+                     'user_type' => $request->user_type ?? 'buyer',
+                     'city_id' => $request->city,
+                     'commercial_register' => $commercialRegisterName,
+-                    'password' => $existing ? hash('sha256', $existing->id.':'.$existing->password) : bcrypt($request->password),
++                    'password' => bcrypt($request->password),
+                     'otp' => $numbers,
+                     'expire_at' => $expire_at,
+                 ];
+ 
+                 $otpRecords = \App\Helpers\MobileNumber::matching(UserOtp::withTrashed(), $request->phone)
+-                    ->where('type', $otpType)->lockForUpdate()->limit(2)->get();
++                    ->where('type', $otpType)->where('user_type', $request->input('user_type') ?: 'buyer')->lockForUpdate()->limit(2)->get();
+                 if ($otpRecords->count() > 1) {
+                     throw new \RuntimeException('Ambiguous pending registration');
+                 }
+diff --git a/app/Http/Controllers/api/User/Auth/ResetPasswordController.php b/app/Http/Controllers/api/User/Auth/ResetPasswordController.php
+index cd76270..9e5281d 100644
+--- a/app/Http/Controllers/api/User/Auth/ResetPasswordController.php
++++ b/app/Http/Controllers/api/User/Auth/ResetPasswordController.php
+@@ -20,7 +20,7 @@ public function __invoke(ResetPasswordRequest $request)
+     {
+         return DB::transaction(function () use ($request) {
+             $otpService = app(\App\Services\OtpService::class);
+-            $user = $this->passwordResetUser($request->phone);
++            $user = $this->passwordResetUser($request->phone, $request->input('user_type'));
+ 
+             if (! $user || ! $user->is_verified || ! $user->password_otp
+                 || ! $otpService->matches($user->phone, $user->password_otp, $request->otp)) {
+diff --git a/app/Http/Controllers/api/User/Auth/SendOtpController.php b/app/Http/Controllers/api/User/Auth/SendOtpController.php
+index bb17bb2..0eea74c 100644
+--- a/app/Http/Controllers/api/User/Auth/SendOtpController.php
++++ b/app/Http/Controllers/api/User/Auth/SendOtpController.php
+@@ -21,7 +21,7 @@ class SendOtpController extends Controller
+     public function __invoke(SendOtpRequest $request)
+     {
+         return DB::transaction(function () use ($request) {
+-            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
++            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true, $request->input('user_type')) : null;
+             if (! $user || $user->is_verified) {
+                 return $this->failed_response(TranslationHelper::translate('wrong_phone_number'));
+             }
+@@ -47,7 +47,7 @@ public function __invoke(SendOtpRequest $request)
+     public function approvedMobile(SendPhoneOtpRequest $request)
+     {
+         return DB::transaction(function () use ($request) {
+-            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true) : null;
++            $user = is_string($request->phone) ? MobileNumber::find(User::class, $request->phone, true, $request->input('user_type')) : null;
+             $policy = app(OtpService::class);
+             if (! $user || $user->is_verified || ! $policy->matches($user->phone, $user->otp, $request->otp)) {
+                 return response()->json(['success' => false, 'code' => 422,
+diff --git a/app/Http/Controllers/api/User/Auth/VerifyAccountController.php b/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
+index b9e51ff..69c50ce 100644
+--- a/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
++++ b/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
+@@ -22,14 +22,18 @@ class VerifyAccountController extends Controller
+     public function __invoke(VerifyAccountRequest $request) {
+         $otpService = app(\App\Services\OtpService::class);
+         return DB::transaction(function () use ($request, $otpService) {
+-            if (\App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)->where('type', 'role_access')->where('is_verified', false)->exists()) {
++            $query = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
++                ->whereIn('type', ['register', 'role_access'])->where('is_verified', false);
++            if ($request->filled('user_type')) { $query->where('user_type', $request->user_type); }
++            $pending = $query->lockForUpdate()->limit(2)->get();
++            if ($pending->count() > 1) {
++                return $this->failed_response(TranslationHelper::translate('wrong_otp'));
++            }
++            $pendingRegistration = $pending->first();
++            if ($pendingRegistration && $pendingRegistration->type === 'role_access') {
+                 return $this->verifyRoleAccess($request);
+             }
+-            $pendingRegistration = UserOtp::where('phone', $request->phone)
+-                ->where('type', 'register')
+-                ->where('is_verified', false)->lockForUpdate()
+-                ->first();
+-            $existingUser = User::where('phone', $request->phone)->lockForUpdate()->first();
++            $existingUser = \App\Helpers\MobileNumber::find(User::class, $request->phone, true, $request->input('user_type'));
+ 
+             // Backward compatibility for old accounts that were created before OTP verification.
+             if (! $pendingRegistration && $existingUser) {
+@@ -62,7 +66,7 @@ public function __invoke(VerifyAccountRequest $request) {
+                 return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+             }
+ 
+-            if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $pendingRegistration->phone)->exists()) {
++            if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $pendingRegistration->phone)->where('user_type', $pendingRegistration->user_type)->exists()) {
+                 return $this->failed_response(TranslationHelper::translate('phone_number_exists'));
+             }
+ 
+@@ -135,7 +139,9 @@ private function verifyRoleAccess(VerifyAccountRequest $request)
+             $otpService = app(\App\Services\OtpService::class);
+             $user = DB::transaction(function () use ($request, $otpService) {
+                 $pending = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+-                    ->where('type', 'role_access')->where('is_verified', false)->lockForUpdate()->first();
++                    ->where('type', 'role_access')->where('is_verified', false)
++                    ->when($request->filled('user_type'), fn ($query) => $query->where('user_type', $request->user_type))
++                    ->lockForUpdate()->first();
+                 if (! $pending || ! $otpService->matchesRegistration($pending->otp, $request->otp)
+                     || $otpService->expired($pending->expire_at)) {
+                     throw new \RuntimeException('Invalid role verification');
+diff --git a/app/Http/Requests/api/User/Auth/ForgetPasswordRequest.php b/app/Http/Requests/api/User/Auth/ForgetPasswordRequest.php
+index b5d6f89..65987f6 100644
+--- a/app/Http/Requests/api/User/Auth/ForgetPasswordRequest.php
++++ b/app/Http/Requests/api/User/Auth/ForgetPasswordRequest.php
+@@ -27,6 +27,7 @@ public function authorize()
+     public function rules()
+     {
+         return [
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'phone' => 'required|string|max:32',
+         ];
+     }
+diff --git a/app/Http/Requests/api/User/Auth/LoginRequest.php b/app/Http/Requests/api/User/Auth/LoginRequest.php
+index 014f2f1..3b57cfd 100644
+--- a/app/Http/Requests/api/User/Auth/LoginRequest.php
++++ b/app/Http/Requests/api/User/Auth/LoginRequest.php
+@@ -26,11 +26,7 @@ public function authorize()
+      */
+     protected function prepareForValidation()
+     {
+-        $phone = $this->input('phone');
+-        if (is_string($phone)) {
+-            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
+-            $this->merge(['phone' => $user ? $user->phone : $phone]);
+-        }
++        // Account resolution belongs to the role-scoped login query.
+     }
+ 
+     public function rules()
+@@ -39,7 +35,7 @@ public function rules()
+             'phone' => 'nullable|string|required_without:email',
+             'email' => 'nullable|email|required_without:phone',
+             'password' => 'required|string',
+-            'user_type' => 'required|in:buyer,vendor,buyer_vendor,seller',
++            'user_type' => 'required|string|in:buyer,vendor,buyer_vendor,seller',
+         ];
+     }
+ 
+diff --git a/app/Http/Requests/api/User/Auth/ProfileCompleteRequest.php b/app/Http/Requests/api/User/Auth/ProfileCompleteRequest.php
+index 2864e62..d139fb1 100644
+--- a/app/Http/Requests/api/User/Auth/ProfileCompleteRequest.php
++++ b/app/Http/Requests/api/User/Auth/ProfileCompleteRequest.php
+@@ -35,7 +35,7 @@ public function rules()
+         return [
+             'user_name' => 'required|string|regex:/^\S*$/u|max:20|unique:users,user_name,'.auth('api')->user()->id.',id,deleted_at,NULL',
+             'email' => MobileNumber::emailRules(auth('api')->id()),
+-            'phone' => MobileNumber::rules(auth('api')->id()),
++            'phone' => MobileNumber::rules(auth('api')->id(), 'users', auth('api')->user()->user_type),
+             'birth_date' => 'required|date_format:Y-m-d',
+             'birth_date.required' => TranslationHelper::translate('Please Enter Date Of Birth'),
+             'birth_date.date_format' => TranslationHelper::translate('please Enter Valid Date'),
+diff --git a/app/Http/Requests/api/User/Auth/RegisterRequest.php b/app/Http/Requests/api/User/Auth/RegisterRequest.php
+index 1840df1..1de9238 100644
+--- a/app/Http/Requests/api/User/Auth/RegisterRequest.php
++++ b/app/Http/Requests/api/User/Auth/RegisterRequest.php
+@@ -48,19 +48,18 @@ public function roleAccessUser()
+ 
+     public function rules()
+     {
+-        $existing = $this->roleAccessUser();
+-        $ignore = $existing ? $existing->id : null;
++        $ignore = null;
+         return [
+             'name' => 'required|min:3',
+ //            'name' => 'required|regex:/^[\pL\s]+$/u|min:3',
+-            'phone' => MobileNumber::rules($ignore),
++            'phone' => MobileNumber::rules(null, 'users', is_string($this->input('user_type')) ? ($this->input('user_type') ?: 'buyer') : 'buyer'),
+             'user_name' => 'required|string|unique:users,user_name,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
+ //            'user_name' => 'required|min:3',
+ 
+             'national_id' => 'nullable|string|max:32|unique:users,national_id,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
+             'email' => MobileNumber::emailRules($ignore),
+             // 'account_type' => 'required',
+-            'user_type' => 'nullable|in:buyer,vendor,buyer_vendor,seller',
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',
+             'password' => 'required|min:6|confirmed',
+             'city' => 'nullable|exists:cities,id',
+diff --git a/app/Http/Requests/api/User/Auth/ResetPasswordRequest.php b/app/Http/Requests/api/User/Auth/ResetPasswordRequest.php
+index 6dd3f10..39b5613 100644
+--- a/app/Http/Requests/api/User/Auth/ResetPasswordRequest.php
++++ b/app/Http/Requests/api/User/Auth/ResetPasswordRequest.php
+@@ -27,6 +27,7 @@ public function authorize()
+     public function rules()
+     {
+         return [
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'phone' => 'required|string|max:32',
+             'otp' => 'required|string|regex:/^[0-9]{4}$/D',
+             'password' => 'required|string|min:6|confirmed',
+diff --git a/app/Http/Requests/api/User/Auth/SendOtpRequest.php b/app/Http/Requests/api/User/Auth/SendOtpRequest.php
+index d58b325..c42576d 100644
+--- a/app/Http/Requests/api/User/Auth/SendOtpRequest.php
++++ b/app/Http/Requests/api/User/Auth/SendOtpRequest.php
+@@ -27,6 +27,7 @@ public function authorize()
+     public function rules()
+     {
+         return [
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'phone' => 'required',
+         ];
+     }
+diff --git a/app/Http/Requests/api/User/Auth/SendPhoneOtpRequest.php b/app/Http/Requests/api/User/Auth/SendPhoneOtpRequest.php
+index 97675a4..32dcefa 100644
+--- a/app/Http/Requests/api/User/Auth/SendPhoneOtpRequest.php
++++ b/app/Http/Requests/api/User/Auth/SendPhoneOtpRequest.php
+@@ -27,6 +27,7 @@ public function authorize()
+     public function rules()
+     {
+         return [
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'phone' => 'required',
+             'otp' => 'required',
+         ];
+diff --git a/app/Http/Requests/api/User/Auth/VerifyAccountRequest.php b/app/Http/Requests/api/User/Auth/VerifyAccountRequest.php
+index e6e0d21..d8a1690 100644
+--- a/app/Http/Requests/api/User/Auth/VerifyAccountRequest.php
++++ b/app/Http/Requests/api/User/Auth/VerifyAccountRequest.php
+@@ -26,20 +26,14 @@ public function authorize()
+      */
+     protected function prepareForValidation()
+     {
+-        $phone = $this->input('phone');
+-        if (is_string($phone)) {
+-            $pending = \App\Helpers\MobileNumber::matching(\App\Models\UserOtp::query(), $phone)
+-                ->whereIn('type', ['register', 'role_access'])->where('is_verified', false)->limit(2)->get();
+-            $user = \App\Helpers\MobileNumber::find(\App\Models\User\User::class, $phone);
+-            $this->merge(['phone' => $pending->count() === 1 ? $pending->first()->phone
+-                : ($user ? $user->phone : $phone)]);
+-        }
++        // Resolve pending challenges by canonical phone and optional account type in the controller.
+     }
+ 
+     public function rules()
+     {
+         return [
+-            'phone' => 'required',
++            'phone' => 'required|string',
++            'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
+             'otp' => 'required',
+         ];
+     }
+diff --git a/app/Models/User/User.php b/app/Models/User/User.php
+index f3d74ed..444c4c5 100644
+--- a/app/Models/User/User.php
++++ b/app/Models/User/User.php
+@@ -61,6 +61,7 @@ class User extends Authenticatable
+         'password',
+         'remember_token',
+         'registration_phone_key',
++        'multi_account_phone_key',
+         'registration_email_key',
+     ];
+ 
+diff --git a/app/Traits/HelperTrait.php b/app/Traits/HelperTrait.php
+index 5e99d24..434e3bc 100644
+--- a/app/Traits/HelperTrait.php
++++ b/app/Traits/HelperTrait.php
+@@ -13,8 +13,8 @@ public function generate_otp(string $phone = '') {
+     public function generate_password_otp(string $phone = '') {
+         return app(\App\Services\OtpService::class)->generate($phone);
+     }
+-    protected function passwordResetUser(string $phone): ?User
++    protected function passwordResetUser(string $phone, ?string $userType = null): ?User
+     {
+-        return \App\Helpers\MobileNumber::find(User::class, $phone, true);
++        return \App\Helpers\MobileNumber::find(User::class, $phone, true, $userType);
+     }
+ }
+diff --git a/database/migrations/2026_11_24_000001_scope_account_phone_uniqueness_by_type.php b/database/migrations/2026_11_24_000001_scope_account_phone_uniqueness_by_type.php
+new file mode 100644
+--- /dev/null
++++ b/database/migrations/2026_11_24_000001_scope_account_phone_uniqueness_by_type.php
+@@ -0,0 +1,99 @@
++<?php
++
++use App\Helpers\MobileNumber;
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration {
++    /** Read-only preflight. No rows are rewritten, including soft-deleted records. */
++    public function audit(): array
++    {
++        $driver = DB::getDriverName();
++        if (! in_array($driver, ['mysql', 'sqlite'], true)) {
++            throw new RuntimeException('Unsupported multi-account migration database.');
++        }
++        $plans = [];
++        foreach (['users', 'user_otps'] as $table) {
++            foreach (['phone', 'user_type'] as $column) {
++                if (! Schema::hasColumn($table, $column)) {
++                    throw new RuntimeException("Missing {$table}.{$column}");
++                }
++            }
++            if (DB::table($table)->whereNull('user_type')->orWhere('user_type', '')->exists()) {
++                throw new RuntimeException("Account types need explicit review in {$table}; no records changed.");
++            }
++            $key = MobileNumber::sqlKey('phone', $driver);
++            $group = $table === 'users' ? 'user_type' : 'user_type, type';
++            if (DB::select("SELECT 1 FROM `{$table}` WHERE phone IS NOT NULL GROUP BY {$key}, {$group} HAVING COUNT(*) > 1 LIMIT 1")) {
++                throw new RuntimeException("Canonical phone/type conflicts in {$table}; no records changed.");
++            }
++            $indexes = [];
++            if ($driver === 'mysql') {
++                foreach (DB::select("SHOW INDEX FROM `{$table}`") as $index) {
++                    if (! $index->Non_unique && $index->Key_name !== 'PRIMARY') {
++                        $indexes[$index->Key_name][(int) $index->Seq_in_index] = $index->Column_name;
++                    }
++                }
++            } else {
++                foreach (DB::select("PRAGMA index_list(`{$table}`)") as $index) {
++                    if (! $index->unique) { continue; }
++                    $name = str_replace('`', '``', $index->name);
++                    $indexes[$index->name] = array_map(fn ($c) => $c->name, DB::select("PRAGMA index_info(`{$name}`)"));
++                }
++            }
++            // Establish the stronger scoped constraint BEFORE removing global constraints.
++            $newName = $table.'_registration_phone_role_unique';
++            if (! $this->hasColumn($table, 'multi_account_phone_key')) {
++                $plans[] = "ALTER TABLE `{$table}` ADD COLUMN multi_account_phone_key VARCHAR(255) GENERATED ALWAYS AS ({$key}) VIRTUAL";
++            }
++            if (! isset($indexes[$newName])) {
++                $columns = $table === 'users' ? 'multi_account_phone_key, user_type' : 'multi_account_phone_key, user_type, type';
++                $plans[] = "CREATE UNIQUE INDEX {$newName} ON `{$table}` ({$columns})";
++            }
++            foreach ($indexes as $name => $columns) {
++                ksort($columns);
++                $columns = array_values($columns);
++                if (in_array($columns, [['phone'], ['registration_phone_key'], ['phone', 'type'], ['registration_phone_key', 'type']], true)) {
++                    if (strpos($name, 'sqlite_autoindex') === 0) {
++                        throw new RuntimeException('Inline SQLite constraint requires an explicitly reviewed table rebuild; refused.');
++                    }
++                    $quoted = str_replace('`', '``', $name);
++                    $plans[] = $driver === 'mysql' ? "ALTER TABLE `{$table}` DROP INDEX `{$quoted}`" : "DROP INDEX `{$quoted}`";
++                }
++            }
++        }
++        if ($driver === 'mysql') {
++            $column = DB::selectOne("SHOW COLUMNS FROM users LIKE 'user_type'");
++            if (strpos($column->Type, 'enum(') === 0 && strpos($column->Type, "'seller'") === false) {
++                if ($column->Null !== 'NO' || $column->Default !== 'buyer') {
++                    throw new RuntimeException('Unexpected user_type attributes; review before altering enum.');
++                }
++                $type = substr($column->Type, 0, -1).",'seller')";
++                array_unshift($plans, "ALTER TABLE users MODIFY user_type {$type} NOT NULL DEFAULT 'buyer'");
++            }
++        }
++        return $plans;
++    }
++
++    private function hasColumn(string $table, string $column): bool
++    {
++        if (DB::getDriverName() === 'sqlite') {
++            foreach (DB::select("PRAGMA table_xinfo(`{$table}`)") as $field) {
++                if ($field->name === $column) { return true; }
++            }
++            return false;
++        }
++        return Schema::hasColumn($table, $column);
++    }
++
++    public function up(): void
++    {
++        foreach ($this->audit() as $sql) { DB::statement($sql); }
++    }
++
++    public function down(): void
++    {
++        throw new RuntimeException('Independent accounts may share phones. Restore global uniqueness only after an approved conflict audit; use a forward fix.');
++    }
++};
