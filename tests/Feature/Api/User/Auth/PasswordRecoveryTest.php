@@ -50,9 +50,10 @@ class PasswordRecoveryTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_previously_stored_global_fixed_code_is_rejected_for_non_qa_production_user(): void
+    public function test_previously_stored_random_code_is_rejected_for_non_qa_production_user(): void
     {
-        $this->user(['password_otp' => '1111']);
+        $this->user(['password_otp' => '2222']);
+        $this->reset(['otp' => '2222'])->assertJsonPath('success', false);
         $this->reset(['otp' => '1111'])->assertJsonPath('success', false);
     }
 
@@ -77,7 +78,7 @@ class PasswordRecoveryTest extends TestCase
             $mock->shouldReceive('sendWhatsappOtp')->once()->andReturn(['success' => true]);
         });
         $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])->assertJsonPath('success', true);
-        $this->assertNotSame('1111', $user->fresh()->password_otp);
+        $this->assertSame('1111', $user->fresh()->password_otp);
         $this->assertMatchesRegularExpression('/^[1-9][0-9]{3}$/D', $user->fresh()->password_otp);
     }
     protected function setUp(): void
@@ -101,6 +102,7 @@ class PasswordRecoveryTest extends TestCase
             $table->string('image')->default('');
             $table->boolean('is_verified')->default(true);
             $table->string('password_otp')->nullable();
+            $table->string('otp')->nullable();
             $table->timestamp('expire_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
@@ -110,13 +112,13 @@ class PasswordRecoveryTest extends TestCase
     private function user(array $attributes = []): User
     {
         return User::create(array_merge(['phone' => '+966512345678', 'password' => bcrypt('old-password'),
-            'password_otp' => '1234', 'expire_at' => now()->addMinutes(10)], $attributes));
+            'password_otp' => '1111', 'expire_at' => now()->addMinutes(10)], $attributes));
     }
 
     private function reset(array $attributes = [])
     {
         return $this->postJson('/api/user/reset-password', array_merge([
-            'phone' => '0512345678', 'otp' => '1234', 'password' => 'new-password',
+            'phone' => '0512345678', 'otp' => '1111', 'password' => 'new-password',
             'password_confirmation' => 'new-password',
         ], $attributes));
     }
@@ -163,7 +165,7 @@ class PasswordRecoveryTest extends TestCase
 
         $user->refresh();
         $this->assertSame($originalPassword, $user->password);
-        $this->assertSame('1234', $user->password_otp);
+        $this->assertSame('1111', $user->password_otp);
         $this->assertEquals($originalExpiry, $user->expire_at);
     }
 
@@ -190,7 +192,7 @@ class PasswordRecoveryTest extends TestCase
         });
         $this->reset()->assertStatus(500);
         $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
-        $this->assertSame('1234', $user->fresh()->password_otp);
+        $this->assertSame('1111', $user->fresh()->password_otp);
         $this->assertSame(0, DB::table('oauth_access_tokens')->count());
     }
 
@@ -221,15 +223,15 @@ class PasswordRecoveryTest extends TestCase
 
     public function test_exact_legacy_phone_is_preserved_and_resend_replaces_code(): void
     {
-        $user = $this->user(['phone' => '01012345678']);
+        $user = $this->user(['phone' => '01012345678', 'password_otp' => '2222']);
         $this->mock(SmsService::class, function ($mock) {
             $mock->shouldReceive('sendWhatsappOtp')->once()
                 ->with('01012345678', \Mockery::type('string'))->andReturn(['success' => true]);
         });
         $this->postJson('/api/user/forgot-password', ['phone' => $user->phone])
             ->assertJsonPath('success', true)->assertJsonPath('data.phone', $user->phone);
-        $this->assertNotSame('1234', $user->fresh()->password_otp);
-        $this->reset(['phone' => $user->phone])->assertJsonPath('success', false);
+        $this->assertSame('1111', $user->fresh()->password_otp);
+        $this->reset(['phone' => $user->phone, 'otp' => '2222'])->assertJsonPath('success', false);
     }
 
     public function test_code_is_invalid_at_exact_expiry(): void
@@ -296,7 +298,7 @@ class PasswordRecoveryTest extends TestCase
                 && $request->hasHeader('Authorization', 'App fake-key')
                 && $request['messages'][0]['to'] === '966512345678'
                 && $request['messages'][0]['content']['templateName'] === 'otp-template'
-                && preg_match('/^[0-9]{4}$/D', $request['messages'][0]['content']['templateData']['body']['placeholders'][0]);
+                && $request['messages'][0]['content']['templateData']['body']['placeholders'][0] === '1111';
         });
         Http::assertSentCount(1);
         if ($accepted) {
@@ -340,15 +342,27 @@ class PasswordRecoveryTest extends TestCase
         Http::assertNothingSent();
     }
 
-    public function test_leading_zero_otp_is_preserved_and_cannot_be_reused(): void
+    public function test_reset_requires_its_own_challenge_and_preserves_other_account(): void
+    {
+        $user = $this->user(['password_otp' => null, 'otp' => '1111']);
+        $other = $this->user(['phone' => '+966599999999']);
+        $before = $other->fresh()->getRawOriginal();
+        $this->reset()->assertJsonPath('success', false);
+        $this->assertSame('1111', $user->fresh()->otp);
+        $this->assertTrue(Hash::check('old-password', $user->fresh()->password));
+        $this->assertSame($before, $other->fresh()->getRawOriginal());
+    }
+
+    public function test_non_fixed_persisted_codes_are_rejected_without_consumption(): void
     {
         $user = $this->user(['password_otp' => '0123']);
         $this->mock(PersonalAccessTokenFactory::class, function ($mock) {
-            $mock->shouldReceive('make')->once()->andReturn(new PersonalAccessTokenResult('test-token', new Token()));
+            $mock->shouldNotReceive('make');
         });
         $this->reset(['otp' => '123'])->assertStatus(422);
-        $this->reset(['otp' => '0123'])->assertJsonPath('success', true);
+        $this->reset(['otp' => '1111'])->assertJsonPath('success', false);
         $this->reset(['otp' => '0123'])->assertJsonPath('success', false);
-        $this->assertNull($user->fresh()->expire_at);
+        $this->assertSame('0123', $user->fresh()->password_otp);
+        $this->assertNotNull($user->fresh()->expire_at);
     }
 }

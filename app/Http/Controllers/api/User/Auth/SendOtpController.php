@@ -27,7 +27,7 @@ class SendOtpController extends Controller
             }
             $policy = app(OtpService::class);
             $user->update($policy->challenge($user->phone));
-            if (! $policy->usesFixedCode($user->phone)) {
+            if ($policy->shouldSendNotification($user->phone)) {
                 try {
                     $result = app(SmsService::class)->sendWhatsappOtp($user->phone, $user->otp);
                 } catch (\Throwable $exception) {

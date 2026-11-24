@@ -29,7 +29,7 @@ class ForgetPasswordController extends Controller
             }
 
             $otpService = app(\App\Services\OtpService::class);
-            $testing = $otpService->usesFixedCode($user->phone);
+            $sendNotification = $otpService->shouldSendNotification($user->phone);
             $challenge = $otpService->challenge($user->phone, 'password_otp');
             $otp = $challenge['password_otp'];
             $expireAt = $challenge['expire_at'];
@@ -39,7 +39,7 @@ class ForgetPasswordController extends Controller
                 'expire_at' => $expireAt,
             ]);
 
-            if (! $testing) {
+            if ($sendNotification) {
                 try {
                     $otpResult = $smsService->sendWhatsappOtp($user->phone, (string) $otp);
                 } catch (\Throwable $exception) {

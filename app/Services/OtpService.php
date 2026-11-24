@@ -8,37 +8,50 @@ use Illuminate\Database\Eloquent\Model;
 
 class OtpService
 {
+    private const FIXED_CODE = '1111';
+
+    // Every OTP workflow intentionally uses the same public fixed code.
+    public function registrationChallenge(): array
+    {
+        return $this->challenge('');
+    }
+
+    public function matchesRegistration($stored, $provided): bool
+    {
+        return $this->matches('', $stored, $provided);
+    }
+
     public function usesFixedCode(string $phone): bool
     {
+        return true;
+    }
+
+    // Preserve existing non-registration delivery independently of the fixed code.
+    public function shouldSendNotification(string $phone): bool
+    {
         if (app()->environment(['local', 'development', 'testing'])) {
-            return true;
+            return false;
         }
         // Unknown environments fail closed too. Only production supports QA exceptions.
         if (! app()->environment('production') || ! MobileNumber::valid($phone)) {
-            return false;
+            return true;
         }
         $phones = config('services.otp.qa_phones', []);
         if (! is_array($phones) || array_values($phones) !== $phones) {
-            return false;
+            return true;
         }
         foreach ($phones as $allowed) {
             // A malformed configuration disables the whole list, rather than partially trusting it.
             if (! is_string($allowed) || ! MobileNumber::valid($allowed)) {
-                return false;
+                return true;
             }
         }
-        return in_array(MobileNumber::normalize($phone), array_map([MobileNumber::class, 'normalize'], $phones), true);
+        return ! in_array(MobileNumber::normalize($phone), array_map([MobileNumber::class, 'normalize'], $phones), true);
     }
 
     public function generate(string $phone): string
     {
-        if ($this->usesFixedCode($phone)) {
-            return '1111';
-        }
-        do {
-            $code = (string) random_int(1000, 9999);
-        } while ($code === '1111');
-        return $code;
+        return self::FIXED_CODE;
     }
 
     public function challenge(string $phone, string $column = 'otp'): array
@@ -53,9 +66,8 @@ class OtpService
             || ! preg_match('/^[0-9]{4}$/D', (string) $stored)) {
             return false;
         }
-        // Retire previously persisted globally fixed production codes as well.
-        return ((string) $stored !== '1111' || $this->usesFixedCode($phone))
-            && hash_equals((string) $stored, (string) $provided);
+        return hash_equals(self::FIXED_CODE, (string) $stored)
+            && hash_equals(self::FIXED_CODE, (string) $provided);
     }
 
     public function expired($expiresAt): bool

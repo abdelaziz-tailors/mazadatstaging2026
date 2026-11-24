@@ -58,7 +58,7 @@ class VerifyAccountController extends Controller
                 return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
             }
 
-            if (! $otpService->matches($pendingRegistration->phone, $pendingRegistration->otp, $request->otp)) {
+            if (! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)) {
                 return $this->failed_response(TranslationHelper::translate('wrong_otp'));
             }
 
@@ -78,7 +78,7 @@ class VerifyAccountController extends Controller
             try {
                 $pendingRegistration = UserOtp::whereKey($pendingRegistration->id)
                     ->where('is_verified', false)->lockForUpdate()->first();
-                if (! $pendingRegistration || ! $otpService->matches($pendingRegistration->phone, $pendingRegistration->otp, $request->otp)
+                if (! $pendingRegistration || ! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)
                     || $otpService->expired($pendingRegistration->expire_at)) {
                     throw new \RuntimeException('Registration OTP is no longer valid');
                 }
@@ -136,7 +136,7 @@ class VerifyAccountController extends Controller
             $user = DB::transaction(function () use ($request, $otpService) {
                 $pending = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
                     ->where('type', 'role_access')->where('is_verified', false)->lockForUpdate()->first();
-                if (! $pending || ! $otpService->matches($pending->phone, $pending->otp, $request->otp)
+                if (! $pending || ! $otpService->matchesRegistration($pending->otp, $request->otp)
                     || $otpService->expired($pending->expire_at)) {
                     throw new \RuntimeException('Invalid role verification');
                 }

@@ -1,0 +1,195 @@
+diff --git a/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php b/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
+index 098f84f..8ee9842 100644
+--- a/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
++++ b/app/Http/Controllers/api/User/Auth/ForgetPasswordController.php
+@@ -29,7 +29,7 @@ public function __invoke(ForgetPasswordRequest $request, SmsService $smsService)
+             }
+ 
+             $otpService = app(\App\Services\OtpService::class);
+-            $testing = $otpService->usesFixedCode($user->phone);
++            $sendNotification = $otpService->shouldSendNotification($user->phone);
+             $challenge = $otpService->challenge($user->phone, 'password_otp');
+             $otp = $challenge['password_otp'];
+             $expireAt = $challenge['expire_at'];
+@@ -39,7 +39,7 @@ public function __invoke(ForgetPasswordRequest $request, SmsService $smsService)
+                 'expire_at' => $expireAt,
+             ]);
+ 
+-            if (! $testing) {
++            if ($sendNotification) {
+                 try {
+                     $otpResult = $smsService->sendWhatsappOtp($user->phone, (string) $otp);
+                 } catch (\Throwable $exception) {
+diff --git a/app/Http/Controllers/api/User/Auth/RegisterController.php b/app/Http/Controllers/api/User/Auth/RegisterController.php
+index a315753..9602a5d 100644
+--- a/app/Http/Controllers/api/User/Auth/RegisterController.php
++++ b/app/Http/Controllers/api/User/Auth/RegisterController.php
+@@ -6,7 +6,6 @@
+ use App\Http\Requests\api\User\Auth\RegisterRequest;
+ use App\Helpers\TranslationHelper;
+ use App\Models\UserOtp;
+-use App\Services\SmsService;
+ use App\Models\User\User;
+ use App\Traits\HelperTrait;
+ use App\Traits\ResponseTrait;
+@@ -15,14 +14,14 @@ class RegisterController extends Controller
+ {
+     use HelperTrait, ResponseTrait;
+ 
+-    public function __invoke(RegisterRequest $request, SmsService $smsService)
++    public function __invoke(RegisterRequest $request)
+     {
+         try {
+-            return \Illuminate\Support\Facades\DB::transaction(function () use ($request, $smsService) {
++            return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                 $otpService = app(\App\Services\OtpService::class);
+                 $existing = $request->roleAccessUser();
+                 $otpType = $existing ? 'role_access' : 'register';
+-                $challenge = $otpService->challenge($request->phone);
++                $challenge = $otpService->registrationChallenge();
+                 $numbers = $challenge['otp'];
+                 $expire_at = $challenge['expire_at'];
+ 
+@@ -64,19 +63,6 @@ public function __invoke(RegisterRequest $request, SmsService $smsService)
+                     $otpRecord = UserOtp::create($pendingRegistration);
+                 }
+ 
+-                if (! $otpService->usesFixedCode($request->phone)) {
+-                    try {
+-                        $result = $smsService->sendRegistrationOtp($request->phone, $numbers);
+-                    } catch (\Throwable $exception) {
+-                        $this->logRegistrationFailure('REGISTER_OTP_DELIVERY_EXCEPTION', $exception);
+-                        $result = ['success' => false];
+-                    }
+-                    if (! ($result['success'] ?? false)) {
+-                        $otpRecord->update(['otp' => null, 'expire_at' => null]);
+-                        \Log::warning('REGISTER_OTP_DELIVERY_FAILED');
+-                        return $this->failed_response(TranslationHelper::translate('Something went wrong'), 500);
+-                    }
+-                }
+                 return $this->success_response(TranslationHelper::translate('new_otp_has_been_sent'), [
+                     'phone' => $request->phone,
+                     'expire_at' => $expire_at,
+diff --git a/app/Http/Controllers/api/User/Auth/SendOtpController.php b/app/Http/Controllers/api/User/Auth/SendOtpController.php
+index 3c1e64c..bb17bb2 100644
+--- a/app/Http/Controllers/api/User/Auth/SendOtpController.php
++++ b/app/Http/Controllers/api/User/Auth/SendOtpController.php
+@@ -27,7 +27,7 @@ public function __invoke(SendOtpRequest $request)
+             }
+             $policy = app(OtpService::class);
+             $user->update($policy->challenge($user->phone));
+-            if (! $policy->usesFixedCode($user->phone)) {
++            if ($policy->shouldSendNotification($user->phone)) {
+                 try {
+                     $result = app(SmsService::class)->sendWhatsappOtp($user->phone, $user->otp);
+                 } catch (\Throwable $exception) {
+diff --git a/app/Http/Controllers/api/User/Auth/VerifyAccountController.php b/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
+index 95ac819..b9e51ff 100644
+--- a/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
++++ b/app/Http/Controllers/api/User/Auth/VerifyAccountController.php
+@@ -58,7 +58,7 @@ public function __invoke(VerifyAccountRequest $request) {
+                 return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
+             }
+ 
+-            if (! $otpService->matches($pendingRegistration->phone, $pendingRegistration->otp, $request->otp)) {
++            if (! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)) {
+                 return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+             }
+ 
+@@ -78,7 +78,7 @@ public function __invoke(VerifyAccountRequest $request) {
+             try {
+                 $pendingRegistration = UserOtp::whereKey($pendingRegistration->id)
+                     ->where('is_verified', false)->lockForUpdate()->first();
+-                if (! $pendingRegistration || ! $otpService->matches($pendingRegistration->phone, $pendingRegistration->otp, $request->otp)
++                if (! $pendingRegistration || ! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)
+                     || $otpService->expired($pendingRegistration->expire_at)) {
+                     throw new \RuntimeException('Registration OTP is no longer valid');
+                 }
+@@ -136,7 +136,7 @@ private function verifyRoleAccess(VerifyAccountRequest $request)
+             $user = DB::transaction(function () use ($request, $otpService) {
+                 $pending = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+                     ->where('type', 'role_access')->where('is_verified', false)->lockForUpdate()->first();
+-                if (! $pending || ! $otpService->matches($pending->phone, $pending->otp, $request->otp)
++                if (! $pending || ! $otpService->matchesRegistration($pending->otp, $request->otp)
+                     || $otpService->expired($pending->expire_at)) {
+                     throw new \RuntimeException('Invalid role verification');
+                 }
+diff --git a/app/Services/OtpService.php b/app/Services/OtpService.php
+index c535500..fa4c879 100644
+--- a/app/Services/OtpService.php
++++ b/app/Services/OtpService.php
+@@ -8,37 +8,50 @@
+ 
+ class OtpService
+ {
++    private const FIXED_CODE = '1111';
++
++    // Every OTP workflow intentionally uses the same public fixed code.
++    public function registrationChallenge(): array
++    {
++        return $this->challenge('');
++    }
++
++    public function matchesRegistration($stored, $provided): bool
++    {
++        return $this->matches('', $stored, $provided);
++    }
++
+     public function usesFixedCode(string $phone): bool
++    {
++        return true;
++    }
++
++    // Preserve existing non-registration delivery independently of the fixed code.
++    public function shouldSendNotification(string $phone): bool
+     {
+         if (app()->environment(['local', 'development', 'testing'])) {
+-            return true;
++            return false;
+         }
+         // Unknown environments fail closed too. Only production supports QA exceptions.
+         if (! app()->environment('production') || ! MobileNumber::valid($phone)) {
+-            return false;
++            return true;
+         }
+         $phones = config('services.otp.qa_phones', []);
+         if (! is_array($phones) || array_values($phones) !== $phones) {
+-            return false;
++            return true;
+         }
+         foreach ($phones as $allowed) {
+             // A malformed configuration disables the whole list, rather than partially trusting it.
+             if (! is_string($allowed) || ! MobileNumber::valid($allowed)) {
+-                return false;
++                return true;
+             }
+         }
+-        return in_array(MobileNumber::normalize($phone), array_map([MobileNumber::class, 'normalize'], $phones), true);
++        return ! in_array(MobileNumber::normalize($phone), array_map([MobileNumber::class, 'normalize'], $phones), true);
+     }
+ 
+     public function generate(string $phone): string
+     {
+-        if ($this->usesFixedCode($phone)) {
+-            return '1111';
+-        }
+-        do {
+-            $code = (string) random_int(1000, 9999);
+-        } while ($code === '1111');
+-        return $code;
++        return self::FIXED_CODE;
+     }
+ 
+     public function challenge(string $phone, string $column = 'otp'): array
+@@ -53,9 +66,8 @@ public function matches(string $phone, $stored, $provided): bool
+             || ! preg_match('/^[0-9]{4}$/D', (string) $stored)) {
+             return false;
+         }
+-        // Retire previously persisted globally fixed production codes as well.
+-        return ((string) $stored !== '1111' || $this->usesFixedCode($phone))
+-            && hash_equals((string) $stored, (string) $provided);
++        return hash_equals(self::FIXED_CODE, (string) $stored)
++            && hash_equals(self::FIXED_CODE, (string) $provided);
+     }
+ 
+     public function expired($expiresAt): bool

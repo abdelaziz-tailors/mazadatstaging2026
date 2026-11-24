@@ -33,6 +33,8 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
     /** @dataProvider directions */
     public function test_second_role_requires_otp_preserves_identity_and_allows_both_logins($original, $requested): void
     {
+        app()->instance('env', 'production');
+        config(['services.otp.qa_phones' => []]);
         $user = $this->account($original);
         $before = $user->fresh()->getRawOriginal();
         $this->postJson('/api/user/login', ['phone' => $user->phone, 'password' => 'secret123', 'user_type' => $requested])
@@ -40,6 +42,8 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
         $this->postJson('/api/user/register', $this->registration($requested))->assertJsonPath('success', true);
         $this->assertFalse($user->fresh()->hasAccessRole($requested));
         $otp = UserOtp::where('type', 'role_access')->firstOrFail();
+        $this->assertSame('1111', $otp->otp);
+        $this->postJson('/api/user/verify-account', ['phone' => $otp->phone, 'otp' => '2222'])->assertJsonPath('success', false);
         $this->postJson('/api/user/verify-account', ['phone' => '00966512345678', 'otp' => 'wrong'])->assertStatus(403);
         $this->assertFalse($user->fresh()->hasAccessRole($requested));
         $this->postJson('/api/user/verify-account', ['phone' => '00966512345678', 'otp' => $otp->otp])
@@ -73,6 +77,7 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
 
     public function test_expiry_password_change_and_deactivation_invalidate_pending_access(): void
     {
+        app()->instance('env', 'production');
         $user = $this->account();
         foreach (['expiry', 'password', 'status'] as $change) {
             $user->update(['password' => bcrypt('secret123'), 'is_active' => true]);

@@ -8,18 +8,22 @@ use Tests\TestCase;
 class OtpServiceTest extends TestCase
 {
     /** @dataProvider eligibility */
-    public function test_environment_and_allowlist_policy($environment, $phones, bool $fixed): void
+    public function test_environment_and_allowlist_policy($environment, $phones, bool $skipDelivery): void
     {
         app()->instance('env', $environment);
         config(['services.otp.qa_phones' => $phones,
             'services.otp.testing' => true, 'services.otp.password_recovery_testing' => true,
             'services.otp.test_code' => '9999']);
         $service = app(OtpService::class);
-        $this->assertSame($fixed, $service->usesFixedCode('+966512345678'));
+        $this->assertTrue($service->usesFixedCode('+966512345678'));
+        $this->assertSame(! $skipDelivery, $service->shouldSendNotification('+966512345678'));
         $code = $service->generate('00966512345678');
         $this->assertMatchesRegularExpression('/^[1-9][0-9]{3}$/D', $code);
-        $this->assertSame($fixed, $code === '1111');
-        $this->assertSame($fixed, $service->matches('0512345678', '1111', '1111'));
+        $this->assertSame('1111', $code);
+        $this->assertTrue($service->matches('0512345678', '1111', '1111'));
+        $this->assertFalse($service->matches('0512345678', '2222', '2222'));
+        $this->assertFalse($service->matchesRegistration('2222', '2222'));
+        $this->assertFalse($service->matches('0512345678', '2222', '1111'));
         $this->assertTrue($service->matches('0512345678', $code, $code));
         $this->assertFalse($service->matches('0512345678', null, '1111'));
         $this->assertFalse($service->matches('0512345678', '1234', ['1234']));
@@ -37,6 +41,19 @@ class OtpServiceTest extends TestCase
             ['production', ['0512345678', '*'], false], ['production', [true], false],
             ['production', ['phone' => '0512345678'], false], ['staging', ['0512345678'], false],
         ];
+    }
+
+    public function test_helpers_and_challenge_columns_are_globally_fixed(): void
+    {
+        app()->instance('env', 'production');
+        $helper = new class { use \App\Traits\HelperTrait; };
+        $service = app(OtpService::class);
+        foreach (['', 'invalid', '+966599999999'] as $phone) {
+            $this->assertSame('1111', $helper->generate_otp($phone));
+            $this->assertSame('1111', $helper->generate_password_otp($phone));
+            $this->assertSame('1111', $service->challenge($phone)['otp']);
+            $this->assertSame('1111', $service->challenge($phone, 'password_otp')['password_otp']);
+        }
     }
 
     public function test_challenge_has_ten_minute_expiry_and_rejects_boundary_and_malformed_expiry(): void
