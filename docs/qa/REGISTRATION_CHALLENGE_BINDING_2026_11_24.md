@@ -1,5 +1,9 @@
 # Registration challenge binding — 2026-11-24
 
+Superseded by the approved backend-only legacy contract correction:
+[current implementation and verification](BACKEND_LEGACY_REGISTRATION_2026_11_24.md).
+Mandatory challenge binding and the Flutter integration blocker below are historical.
+
 ## Delivery status
 
 Backend correction implemented locally. The original replay acceptance gate now

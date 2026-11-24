@@ -19,19 +19,25 @@ class ChangePasswordController extends Controller
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
         }
 
-        $user = auth('api')->user();
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+            $authenticated = auth('api')->user();
+            if ($authenticated->credential_group_id) {
+                \Illuminate\Support\Facades\DB::table('credential_groups')->where('id', $authenticated->credential_group_id)->lockForUpdate()->first();
+            }
+            $user = \App\Models\User\User::whereKey($authenticated->id)->lockForUpdate()->firstOrFail();
 
-        if (! Hash::check($request->current_password, $user->password)) {
-            return $this->failed_response(TranslationHelper::translate('Current password is incorrect'));
-        }
+            if (! Hash::check($request->current_password, $user->password)) {
+                return $this->failed_response(TranslationHelper::translate('Current password is incorrect'));
+            }
 
-        $user->update([
-            'password' => bcrypt($request->password),
-        ]);
+            $user->update([
+                'password' => bcrypt($request->password),
+            ]);
 
-        return $this->success_response(
-            TranslationHelper::translate('your_password_changed_successfully'),
-            new UserNoTokenResource($user->fresh())
-        );
+            return $this->success_response(
+                TranslationHelper::translate('your_password_changed_successfully'),
+                new UserNoTokenResource($user->fresh())
+            );
+        }, 3);
     }
 }

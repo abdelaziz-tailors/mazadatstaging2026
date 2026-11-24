@@ -21,45 +21,59 @@ class VerifyAccountController extends Controller
 
     public function __invoke(VerifyAccountRequest $request) {
         $otpService = app(\App\Services\OtpService::class);
-        return DB::transaction(function () use ($request, $otpService) {
-            $query = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
-                ->where('registration_challenge_hash', hash('sha256', $request->challenge_id))
-                ->where('type', 'register')->where('is_verified', false);
-            if ($request->filled('user_type')) { $query->where('user_type', $request->user_type); }
-            $pendingRegistration = $query->lockForUpdate()->first();
-            if (! $pendingRegistration) {
-                return $this->failed_response(TranslationHelper::translate('wrong_otp'));
-            }
-            if ($otpService->expired($pendingRegistration->expire_at)) {
-                return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
-            }
+        try {
+            return DB::transaction(function () use ($request, $otpService) {
+                $identity = app(\App\Services\RegistrationIdentity::class);
+                $identity->lock($request->phone);
+                $query = \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+                    ->where('type', 'register')->where('is_verified', false);
+                $pendingRegistration = $query->orderByDesc('created_at')->orderByDesc('id')->lockForUpdate()->first();
+                if ($pendingRegistration && (($request->filled('user_type') && $request->user_type !== $pendingRegistration->user_type)
+                    || ($request->filled('challenge_id') && ! hash_equals((string) $pendingRegistration->registration_challenge_hash, hash('sha256', $request->challenge_id))))) {
+                    return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+                }
+                if (! $pendingRegistration) {
+                    return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+                }
+                if ($otpService->expired($pendingRegistration->expire_at)) {
+                    return $this->failed_response(TranslationHelper::translate('otp expire'), 403);
+                }
 
-            if (! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)) {
-                return $this->failed_response(TranslationHelper::translate('wrong_otp'));
-            }
+                if (! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)) {
+                    return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+                }
 
-            if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $pendingRegistration->phone)->where('user_type', $pendingRegistration->user_type)->exists()) {
-                return $this->failed_response(TranslationHelper::translate('phone_number_exists'));
-            }
+                if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $pendingRegistration->phone)->where('user_type', $pendingRegistration->user_type)->exists()) {
+                    return $this->failed_response(TranslationHelper::translate('phone_number_exists'));
+                }
 
-            if ($pendingRegistration->email !== null && User::where('email', $pendingRegistration->email)->exists()) {
-                return $this->failed_response(TranslationHelper::translate('email_address_exists'));
-            }
+                if (User::where('user_name', $pendingRegistration->user_name)->exists()) {
+                    return $this->failed_response(TranslationHelper::translate('User Name Exists'));
+                }
 
-            if (User::where('user_name', $pendingRegistration->user_name)->exists()) {
-                return $this->failed_response(TranslationHelper::translate('User Name Exists'));
-            }
-
-            DB::beginTransaction();
-            try {
-                $pendingRegistration = UserOtp::whereKey($pendingRegistration->id)
-                    ->where('registration_challenge_hash', hash('sha256', $request->challenge_id))
-                    ->where('type', 'register')->where('is_verified', false)->lockForUpdate()->first();
-                if (! $pendingRegistration || ! $otpService->matchesRegistration($pendingRegistration->otp, $request->otp)
-                    || $otpService->expired($pendingRegistration->expire_at)) {
-                    throw new \RuntimeException('Registration OTP is no longer valid');
+                $groupId = $pendingRegistration->credential_group_id;
+                if ($groupId) {
+                    $group = DB::table('credential_groups')->where('id', $groupId)->lockForUpdate()->first();
+                    if (! $group || $group->phone !== $pendingRegistration->phone
+                        || $identity->email($group->email) !== $identity->email($pendingRegistration->email)
+                        || ! hash_equals($group->password, $pendingRegistration->password)) {
+                        return $this->failed_response(TranslationHelper::translate('wrong_otp'));
+                    }
+                } else {
+                    $conflict = User::withTrashed()->where(function ($q) use ($pendingRegistration) {
+                        \App\Helpers\MobileNumber::matching($q, $pendingRegistration->phone);
+                        if ($pendingRegistration->email !== null) {
+                            $q->orWhereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($pendingRegistration->email), 'UTF-8')]);
+                        }
+                    })->exists();
+                    if ($conflict) { return $this->failed_response(TranslationHelper::translate('email_address_exists')); }
+                    $groupId = DB::table('credential_groups')->insertGetId([
+                        'phone' => \App\Helpers\MobileNumber::normalize($pendingRegistration->phone),
+                        'email' => $identity->email($pendingRegistration->email), 'password' => $pendingRegistration->password,
+                    ]);
                 }
                 $user = User::create([
+                    'credential_group_id' => $groupId,
                     'name' => $pendingRegistration->name,
                     'email' => $pendingRegistration->email,
                     'phone' => \App\Helpers\MobileNumber::normalize($pendingRegistration->phone),
@@ -90,20 +104,19 @@ class VerifyAccountController extends Controller
                 }
 
                 $otpService->consume($pendingRegistration, 'otp', true);
-                DB::commit();
-            } catch (\Throwable $th) {
-                DB::rollBack();
-                if ($th instanceof \Illuminate\Database\QueryException && \App\Exceptions\Handler::identityConflict($th)) {
-                    return app(\App\Exceptions\Handler::class)->render($request, $th);
-                }
+                \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+                    ->where('type', 'register')->where('is_verified', false)->update(['deleted_at' => now()]);
 
-                return $this->failed_response(TranslationHelper::translate('Something went wrong'));
+                $user['token'] = $user->createToken('MyApp')->accessToken;
+                $data = new UserResource($user);
+
+                return $this->success_response(TranslationHelper::translate('your_account_logged_in_successfully'), $data);
+            }, 3);
+        } catch (\Illuminate\Database\QueryException $exception) {
+            if (\App\Exceptions\Handler::identityConflict($exception)) {
+                return app(\App\Exceptions\Handler::class)->render($request, $exception);
             }
-
-            $user['token'] = $user->createToken('MyApp')->accessToken;
-            $data = new UserResource($user);
-
-            return $this->success_response(TranslationHelper::translate('your_account_logged_in_successfully'), $data);
-        });
+            return $this->failed_response(TranslationHelper::translate('Something went wrong'));
+        }
     }
 }

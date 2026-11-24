@@ -24,12 +24,17 @@ class UpdateProfileRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation()
+    {
+        \App\Helpers\MobileNumber::prepare($this);
+    }
+
     public function rules()
     {
         return [
             'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . auth('api')->user()->id,
-            'phone' => 'required|unique:users,phone,' . auth('api')->user()->id,
+            'email' => \App\Helpers\MobileNumber::emailRules(auth('api')->id()),
+            'phone' => \App\Helpers\MobileNumber::rules(auth('api')->id(), 'users', auth('api')->user()->user_type),
 
         ];
     }

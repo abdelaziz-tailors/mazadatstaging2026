@@ -1,5 +1,8 @@
 # Shared credentials: contract safety gate, 2026-11-24
 
+Superseded by [the backend-only shared credential implementation](BACKEND_LEGACY_REGISTRATION_2026_11_24.md).
+The earlier stop decision and mandatory challenge requirement below are historical.
+
 Follow-up: the required registration challenge field was subsequently authorized.
 See [challenge binding implementation](REGISTRATION_CHALLENGE_BINDING_2026_11_24.md).
 The replay blocker recorded below is historical; shared-credential gaps remain separate.

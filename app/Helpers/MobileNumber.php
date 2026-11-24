@@ -88,6 +88,10 @@ class MobileNumber
                 if ($userType !== null) { $query->where('user_type', $userType); }
                 if ($ignore !== null) {
                     $query->where('id', '<>', $ignore);
+                    if ($table === 'users') {
+                        $group = DB::table('users')->where('id', $ignore)->value('credential_group_id');
+                        if ($group) { $query->where(function ($q) use ($group) { $q->whereNull('credential_group_id')->orWhere('credential_group_id', '<>', $group); }); }
+                    }
                 }
                 if ($query->exists()) {
                     $fail(TranslationHelper::translate('phone_number_exists'));
@@ -103,6 +107,10 @@ class MobileNumber
                     ->whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim($value), 'UTF-8')]);
                 if ($ignore !== null) {
                     $query->where('id', '<>', $ignore);
+                    if ($table === 'users') {
+                        $group = DB::table('users')->where('id', $ignore)->value('credential_group_id');
+                        if ($group) { $query->where(function ($q) use ($group) { $q->whereNull('credential_group_id')->orWhere('credential_group_id', '<>', $group); }); }
+                    }
                 }
                 if ($query->exists()) {
                     $fail(TranslationHelper::translate('email_address_exists'));

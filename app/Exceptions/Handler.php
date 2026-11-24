@@ -104,7 +104,7 @@ class Handler extends ExceptionHandler
             return null;
         }
         foreach (['phone', 'email'] as $field) {
-            if (preg_match('/(?:multi_account_'.$field.'_key|registration_'.$field.'_(?:unique|key|role_unique)|(?:users|admins)_'.$field.'_unique)/', $exception->getMessage())) {
+            if (preg_match('/(?:multi_account_'.$field.'_key|shared_'.$field.'_key|shared_'.$field.'_type_unique|credential_groups[._]'.$field.'(?:_unique)?|registration_'.$field.'_(?:unique|key|role_unique)|(?:users|admins)_'.$field.'_unique)/', $exception->getMessage())) {
                 return $field;
             }
         }

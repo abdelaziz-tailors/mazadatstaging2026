@@ -57,7 +57,7 @@ class RegisterRequest extends FormRequest
 //            'user_name' => 'required|min:3',
 
             'national_id' => 'nullable|string|max:32|unique:users,national_id,'.($ignore ?? 'NULL').',id,deleted_at,NULL',
-            'email' => MobileNumber::emailRules($ignore),
+            'email' => ['nullable', 'email', 'max:255'],
             // 'account_type' => 'required',
             'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'commercial_register' => 'exclude_unless:user_type,vendor|required|file|mimes:jpeg,jpg,png,pdf|max:10240',

@@ -58,6 +58,8 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $hidden = [
+        'credential_group_id',
+        'shared_email_key',
         'password',
         'remember_token',
         'registration_phone_key',
@@ -68,6 +70,17 @@ class User extends Authenticatable
     protected $casts = [
         'expire_at' => 'datetime',
     ];
+    public function save(array $options = [])
+    {
+        if (! $this->exists || ! $this->isDirty(['phone', 'email', 'password'])) {
+            return parent::save($options);
+        }
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($options) {
+            app(\App\Services\RegistrationIdentity::class)->synchronize($this);
+            return parent::save($options);
+        });
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class, 'department_id')->withTrashed()->select('id','image', 'name->'.app()->getLocale().' as name');

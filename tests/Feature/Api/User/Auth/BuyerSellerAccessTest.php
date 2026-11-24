@@ -35,8 +35,8 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
     {
         $user = $this->account($original);
         $before = $user->fresh()->getRawOriginal();
-        $payload = $this->registration($requested, ['user_name' => 'independent', 'email' => null,
-            'password' => 'another123', 'password_confirmation' => 'another123']);
+        $payload = $this->registration($requested, ['user_name' => 'independent', 'email' => 'owner@example.com',
+            'password' => 'secret123', 'password_confirmation' => 'secret123']);
         $this->postJson('/api/user/register', $payload)->assertJsonPath('success', true);
         $otp = UserOtp::where('type', 'register')->firstOrFail();
         $this->assertSame('1111', $otp->otp);
@@ -44,9 +44,9 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
         $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId(), 'phone' => $otp->phone, 'user_type' => $requested, 'otp' => '1111'])
             ->assertJsonPath('success', true)->assertJsonPath('data.user_type', $requested);
         $this->assertSame(2, User::count());
-        $this->assertSame($before, $user->fresh()->getRawOriginal());
+        $after = $user->fresh()->getRawOriginal(); unset($after['credential_group_id'], $before['credential_group_id']); $this->assertSame($before, $after);
         $this->assertSame(0, DB::table('user_access_roles')->count());
-        foreach ([[$original, 'secret123', $user->id], [$requested, 'another123', User::where('user_type', $requested)->firstOrFail()->id]] as [$role, $password, $id]) {
+        foreach ([[$original, 'secret123', $user->id], [$requested, 'secret123', User::where('user_type', $requested)->firstOrFail()->id]] as [$role, $password, $id]) {
             $this->postJson('/api/user/login', ['phone' => '0512345678', 'user_type' => $role, 'password' => $password])
                 ->assertJsonPath('success', true)->assertJsonPath('data.id', $id);
         }
@@ -136,26 +136,19 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
         $this->assertSame(0, DB::table('user_access_roles')->count());
     }
 
-    public function test_simultaneous_pending_accounts_resolve_by_challenge_and_consumption_is_isolated(): void
+    public function test_latest_pending_supersedes_older_account_and_consumes_once(): void
     {
         foreach (['buyer', 'seller'] as $role) {
             $this->postJson('/api/user/register', $this->registration($role, ['user_name' => $role, 'email' => null]))
                 ->assertJsonPath('success', true);
         }
-        $this->assertSame(2, UserOtp::count());
+        $this->assertSame(1, UserOtp::count());
+        $this->assertSame(2, UserOtp::withTrashed()->count());
+        $this->postJson('/api/user/verify-account', ['phone' => '0512345678', 'otp' => '1111'])
+            ->assertJsonPath('success', true)->assertJsonPath('data.user_type', 'seller');
         $this->postJson('/api/user/verify-account', ['phone' => '0512345678', 'otp' => '1111'])->assertJsonPath('success', false);
-        $this->assertSame(0, User::count());
-        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId('buyer'), 'phone' => '0512345678', 'user_type' => 'buyer', 'otp' => '1111'])
-            ->assertJsonPath('success', true);
-        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId('buyer'), 'phone' => '0512345678', 'user_type' => 'buyer', 'otp' => '1111'])
-            ->assertJsonPath('success', false);
-        $seller = UserOtp::where('user_type', 'seller')->firstOrFail();
-        $this->assertFalse($seller->is_verified);
-        $this->assertSame('1111', $seller->otp);
-        $this->postJson('/api/user/verify-account', ['challenge_id' => $this->registrationChallengeId('seller'), 'phone' => '0512345678', 'user_type' => 'seller', 'otp' => '1111'])
-            ->assertJsonPath('success', true);
+        $this->assertSame(1, User::count());
     }
-
     public function test_shared_phone_login_validates_role_password_and_token_owner(): void
     {
         $buyer = $this->account();
@@ -188,8 +181,8 @@ class BuyerSellerAccessTest extends OptionalRegistrationEmailTest
             ->assertJsonPath('data.id', $seller->id);
         $this->postJson('/api/user/login', ['email' => $seller->email, 'user_type' => 'buyer', 'password' => 'secret123'])
             ->assertJsonPath('success', false);
-        // Registration keeps global email uniqueness. Legacy inconsistent data must still resolve safely.
-        DB::statement('DROP INDEX users_registration_email_unique');
+        // The database scopes email uniqueness by type; ambiguous historical same-type data fails closed.
+        DB::statement('DROP INDEX users_shared_email_type_unique');
         $seller->update(['email' => $buyer->email]);
         $this->postJson('/api/user/login', ['email' => $buyer->email, 'user_type' => 'seller', 'password' => 'secret123'])
             ->assertJsonPath('data.id', $seller->id);

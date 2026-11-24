@@ -18,6 +18,13 @@ class RegisterController extends Controller
     {
         try {
             return \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+                $identity = app(\App\Services\RegistrationIdentity::class);
+                $identity->lock($request->phone);
+                $groupId = $identity->resolve($request->phone, $request->email, $request->password);
+                if (\App\Helpers\MobileNumber::matching(User::withTrashed(), $request->phone)
+                    ->where('user_type', $request->input('user_type') ?: 'buyer')->exists()) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['phone' => TranslationHelper::translate('phone_number_exists')]);
+                }
                 $otpService = app(\App\Services\OtpService::class);
                 $otpType = 'register';
                 $challenge = $otpService->registrationChallenge();
@@ -33,22 +40,26 @@ class RegisterController extends Controller
                 }
 
                 $pendingRegistration = [
+                    'credential_group_id' => $groupId,
                     'type' => $otpType,
                     'is_verified' => false,
                     'name' => $request->name,
-                    'email' => $request->email,
+                    'email' => $identity->email($request->email),
                     'phone' => $request->phone,
                     'user_name' => $request->user_name,
                     'national_id' => $request->input('national_id'),
                     'user_type' => $request->user_type ?? 'buyer',
                     'city_id' => $request->city,
                     'commercial_register' => $commercialRegisterName,
-                    'password' => bcrypt($request->password),
+                    'password' => $groupId ? \Illuminate\Support\Facades\DB::table('credential_groups')->where('id', $groupId)->value('password') : bcrypt($request->password),
                     'otp' => $numbers,
                     'expire_at' => $expire_at,
                     'registration_challenge_hash' => hash('sha256', $challengeId),
                 ];
 
+                // Superseded registrations must never become fallback candidates.
+                \App\Helpers\MobileNumber::matching(UserOtp::query(), $request->phone)
+                    ->where('type', 'register')->where('is_verified', false)->update(['deleted_at' => now()]);
                 $otpRecords = \App\Helpers\MobileNumber::matching(UserOtp::withTrashed(), $request->phone)
                     ->where('type', $otpType)->where('user_type', $request->input('user_type') ?: 'buyer')->lockForUpdate()->limit(2)->get();
                 if ($otpRecords->count() > 1) {
@@ -58,7 +69,7 @@ class RegisterController extends Controller
 
                 if ($otpRecord) {
                     $otpRecord->update(array_merge($pendingRegistration, [
-                        'deleted_at' => null,
+                        'deleted_at' => null, 'created_at' => now(),
                     ]));
                 } else {
                     $otpRecord = UserOtp::create($pendingRegistration);
@@ -70,8 +81,12 @@ class RegisterController extends Controller
                     'expire_at' => $expire_at,
                 ]);
 
-            });
+            }, 3);
         } catch (\Throwable $th) {
+            if ($th instanceof \Illuminate\Validation\ValidationException) {
+                return response()->json(['code' => 422, 'success' => false,
+                    'message' => collect($th->errors())->flatten()->first(), 'errors' => $th->errors()], 422);
+            }
             if ($th instanceof \Illuminate\Database\QueryException && \App\Exceptions\Handler::identityConflict($th)) {
                 return app(\App\Exceptions\Handler::class)->render($request, $th);
             }

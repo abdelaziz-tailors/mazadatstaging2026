@@ -26,7 +26,7 @@ class VerifyAccountRequest extends FormRequest
      */
     protected function prepareForValidation()
     {
-        // Resolve only the supplied challenge hash and canonical phone in the controller.
+        \App\Helpers\MobileNumber::prepare($this);
     }
 
     public function rules()
@@ -35,7 +35,7 @@ class VerifyAccountRequest extends FormRequest
             'phone' => 'required|string',
             'user_type' => 'nullable|string|in:buyer,vendor,buyer_vendor,seller',
             'otp' => 'required',
-            'challenge_id' => ['required', 'string', 'regex:/^[a-f0-9]{64}$/D'],
+            'challenge_id' => ['nullable', 'string', 'regex:/^[a-f0-9]{64}$/D'],
         ];
     }
 

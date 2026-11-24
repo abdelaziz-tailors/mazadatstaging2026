@@ -377,6 +377,7 @@ class OptionalRegistrationEmailTest extends TestCase
         }
         (require database_path('migrations/2026_11_24_000001_scope_account_phone_uniqueness_by_type.php'))->up();
         (require database_path('migrations/2026_11_24_000002_add_registration_challenge_hash_to_user_otps.php'))->up();
+        (require database_path('migrations/2026_11_24_000003_add_shared_registration_credentials.php'))->up();
         // Retain the response token, as a client would; never reconstruct it from storage.
         app('events')->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) {
             if ($event->request->is('api/user/register')) {

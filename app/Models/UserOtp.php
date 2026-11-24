@@ -13,7 +13,7 @@ class UserOtp extends Model
         'id',
     ];
 
-    protected $hidden = ['registration_challenge_hash'];
+    protected $hidden = ['registration_challenge_hash', 'credential_group_id'];
 
     protected $casts = [
         'expire_at' => 'datetime',

@@ -47,6 +47,6 @@ class ResetPasswordController extends Controller
                 TranslationHelper::translate('your_password_changed_successfully'),
                 new UserResource($user)
             );
-        });
+        }, 3);
     }
 }

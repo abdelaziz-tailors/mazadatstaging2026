@@ -9,6 +9,7 @@ use App\Http\Requests\api\User\Profile\UpdateProfileNameRequest;
 use App\Helpers\TranslationHelper;
 use App\Http\Requests\api\User\Profile\UpdateProfileFileRequest;
 use App\Http\Requests\api\User\Profile\UpdateProfileUserNameRequest;
+use App\Http\Requests\api\User\Profile\UpdateProfileRequest;
 use App\Http\Resources\User\ProfileResource;
 use App\Http\Resources\User\UserNoTokenResource;
 use App\Models\Patient;
@@ -45,7 +46,7 @@ class UpdateProfileController extends Controller
         $data = new UserNoTokenResource(auth('api')->user());
         return $this->success_response(TranslationHelper::translate('your_account_updated_successfully'), $data);
     }
-    public function updateProfile (UpdateProfileNameRequest $request) {
+    public function updateProfile (UpdateProfileRequest $request) {
         if (!auth('api')->user()){
 
             return $this->failed_response(TranslationHelper::translate('Un Authenticated'));
